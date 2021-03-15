@@ -2,12 +2,12 @@ PortSystem          1.0
 PortGroup           github 1.0
 PortGroup           compiler_blacklist_versions 1.0
 
-set vim_version     8.1
-set snapshot        155
+set vim_version     8.2
+set snapshot        166
 github.setup        macvim-dev macvim ${snapshot} snapshot-
+revision            1
 name                MacVim
 version             ${vim_version}.snapshot${snapshot}
-revision            1
 categories          editors
 platforms           darwin
 license             Vim GPL-2+
@@ -20,9 +20,9 @@ long_description \
 
 homepage            https://macvim-dev.github.io/macvim/
 
-checksums           rmd160  f7053908d25b0dd76e33a468f424a861840cfc7e \
-                    sha256  e684e25056e90b425dccd86c877e90339f5ee0c18d6794d5c7ee80c3cf6c6199 \
-                    size    20419832
+checksums           rmd160  653794d83ca1dbf116a3c765acea5d25b5f6749f \
+                    sha256  7ebc9c5ad56e4a75a3fc1c35b2730c646f5fb82635c04b9e5b8e9192e92652f7 \
+                    size    21834717
 
 depends_lib         port:ncurses \
                     port:gettext \
@@ -32,13 +32,9 @@ depends_lib         port:ncurses \
 # https://trac.macports.org/ticket/54666
 supported_archs     x86_64
 
-patchfiles          patch-MacVim-GCC-VERSION.diff \
-                    patch-remove-sparkle.diff \
+patchfiles          patch-remove-sparkle.diff \
                     patch-remove-Homebrew-python.diff \
-                    patch-vim-8.1.1365.diff \
-                    patch-vim-8.1.1366.diff \
-                    patch-vim-8.1.1367.diff \
-                    patch-vim-8.1.1368.diff
+                    ce7be3a0e6f19bc85990bb8fcfe5e208944777b4.patch
 
 pre-fetch {
     if {${os.platform} eq "darwin" && ${os.major} < 12} {
@@ -63,6 +59,8 @@ post-patch {
     }
 }
 
+use_xcode yes
+
 autoconf.cmd make autoconf
 autoconf.pre_args
 autoconf.args
@@ -80,8 +78,9 @@ configure.args      --enable-gui=macvim \
 # Old pre-compiled headers could influence build, #26723
 build.args          XCODEFLAGS="CACHE_ROOT=${workpath}/caches"
 
-# this port does not build with the new xcode build system at present
-if {[vercmp ${xcodeversion} 10.0] >= 0} {
+if {[vercmp ${xcodeversion} 12.0] >= 0} {
+    build.args    XCODEFLAGS="CACHE_ROOT=${workpath}/caches -UseNewBuildSystem=NO MACOSX_DEPLOYMENT_TARGET=${macosx_deployment_target} ARCHS=${configure.build_arch}"
+} elseif {[vercmp ${xcodeversion} 10.0] >= 0} {
     build.args    XCODEFLAGS="CACHE_ROOT=${workpath}/caches -UseNewBuildSystem=NO MACOSX_DEPLOYMENT_TARGET=${macosx_deployment_target}"
 }
 
@@ -134,7 +133,7 @@ variant python27 description {Enable Python scripting} {
     # Overwriting autoconf.cmd above removes dependency, add it again
     depends_build-append port:autoconf
 }
-variant python36 conflicts python37 description {Enable Python scripting} {
+variant python36 conflicts python37 python38 description {Enable Python scripting} {
     configure.args-append   --enable-python3interp --with-python3-command=${prefix}/bin/python3.6
     patchfiles-append       patch-python3.diff
     depends_lib-append      port:python36
@@ -143,10 +142,19 @@ variant python36 conflicts python37 description {Enable Python scripting} {
     # Overwriting autoconf.cmd above removes dependency, add it again
     depends_build-append port:autoconf
 }
-variant python37 conflicts python36 description {Enable Python scripting} {
+variant python37 conflicts python36 python38 description {Enable Python scripting} {
     configure.args-append   --enable-python3interp --with-python3-command=${prefix}/bin/python3.7
     patchfiles-append       patch-python3.diff
     depends_lib-append      port:python37
+
+    use_autoconf yes
+    # Overwriting autoconf.cmd above removes dependency, add it again
+    depends_build-append port:autoconf
+}
+variant python38 conflicts python36 python37 description {Enable Python scripting} {
+    configure.args-append   --enable-python3interp --with-python3-command=${prefix}/bin/python3.8
+    patchfiles-append       patch-python3.diff
+    depends_lib-append      port:python38
 
     use_autoconf yes
     # Overwriting autoconf.cmd above removes dependency, add it again

@@ -3,7 +3,12 @@
 PortSystem          1.0
 
 name                birdfont
-version             2.25.0
+version             2.29.1
+revision            0
+checksums           rmd160  a93db476c60b2bc8bc26d1c487b6e329a4f68884 \
+                    sha256  d107802a90b4cc19cb9739ca4ff83b294fee9e294c9306285a37d5c5ee5d4018 \
+                    size    2588816
+
 maintainers         openmaintainer {gmail.com:johan.mattsson.m @johanmattssonm}
 categories          graphics
 description         Font editor
@@ -14,7 +19,7 @@ license             GPL-3
 platforms           darwin
 
 depends_build       port:pkgconfig \
-                    port:python37
+                    port:python38
 
 depends_lib         path:lib/pkgconfig/webkit2gtk-4.0.pc:webkit2-gtk \
                     path:lib/pkgconfig/glib-2.0.pc:glib2 \
@@ -28,17 +33,12 @@ depends_lib         path:lib/pkgconfig/webkit2gtk-4.0.pc:webkit2-gtk \
                     port:xmlbird
 
 master_sites        http://birdfont.org/releases/
-
 use_xz              yes
-
-checksums           rmd160  0559c52a7faab864ab9beb75a6cf7b2956b48554 \
-                    sha256  4274934ba6ac1532372113473c0d19f7dfbbd301017d4cd14abaab98ea34283a \
-                    size    2605312
 
 patchfiles          fix-install-name.patch
 
 post-patch {
-    reinplace "s|/usr/bin/python3|${prefix}/bin/python3.7|" \
+    reinplace "s|/usr/bin/python3|${prefix}/bin/python3.8|" \
         configure \
         build.py \
         install.py

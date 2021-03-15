@@ -13,12 +13,12 @@ long_description    ${description}. This is a simple library used for userspace,
 license             LGPL-2+
 platforms           darwin
 
-github.setup analogdevicesinc libad9361-iio e7e0011d0d7e55df6668be6bac8a98fc2978ece0
-version   20190214
-checksums rmd160 d77ec6435a519fd750b31f7f013804d3297f59ef \
-          sha256 9e358275cfece637db5fb732fe75df7371bd82b4e2a239a6df38dd1b9be107df \
-          size   168138
-revision  1
+github.setup        analogdevicesinc libad9361-iio fe0babd3f36bfad26da393339665f809e04da239
+version             20210118-[string range ${github.version} 0 7]
+checksums           rmd160  5f883a4f0d5c063d64fef37019fc8f407b2f10de \
+                    sha256  05da9c83c8186eee7909bdf24cab40ac20f6180b569f28836caa55a23bf71c1f \
+                    size    169894
+revision            0
 
 # patch to fix install IIO header inclusion
 

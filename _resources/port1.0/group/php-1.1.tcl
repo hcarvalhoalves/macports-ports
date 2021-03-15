@@ -11,7 +11,7 @@ default categories              php
 # built. For unified extension ports (name begins with "php-") setting
 # php.branches is mandatory; there is no default. Example:
 #
-#   php.branches                5.3 5.4 5.5 5.6 7.0 7.1 7.2 7.3
+#   php.branches                5.3 5.4 5.5 5.6 7.0 7.1 7.2 7.3 7.4 8.0
 #
 # For unified ports, setting php.branches will create the subports.
 #
@@ -101,7 +101,7 @@ proc php._set_name {option action args} {
 # when the php port is updated.
 
 options php.latest_stable_branch
-default php.latest_stable_branch 7.3
+default php.latest_stable_branch 8.0
 
 
 # php.default_branch: the branch of PHP for which the port should be installed
@@ -262,13 +262,23 @@ proc php._set_pecl_prerelease {option action args} {
     global php.pecl
 
     if {${php.pecl}} {
+        set re1 {[quotemeta <a\\s+href="/get/${php.pecl.name}-[join ${php.pecl.regex}][quotemeta ${extract.suffix}]">]}
         if {${args}} {
-            livecheck.regex     {>([0-9a-zA-Z.]+)</a></th>}
+            default livecheck.regex ${re1}
         } else {
-            livecheck.regex     {>([0-9a-zA-Z.]+)</a></th>\s*<[^>]+>stable<}
+            set re2 {[quotemeta <\[^>\]+>stable</\[^>\]+>\\s*<\[^>\]+>\[^<\]*</\[^>\]+>\\s*<\[^>\]+>]}
+            default livecheck.regex ${re2}${re1}
         }
     }
 }
+
+
+# php.pecl.regex: for PECL extensions, the default regular expression to use
+# when matching version numbers in livecheck. Most ports don't need to change
+# this and should instead look at php.pecl.prerelease.
+
+options php.pecl.regex
+default php.pecl.regex {(\[0-9a-zA-Z.]+)}
 
 
 # php: the name of this branch of PHP, e.g. "php53" or "php54".
@@ -357,7 +367,7 @@ pre-livecheck {
 
 proc php.add_port_code {} {
     global php php.branch php.branches php.build_dirs php.config php.extension_ini php.extensions php.ini_dir php.rootname
-    global destroot name subport version
+    global destroot macosx_deployment_target name os.major subport version xcodeversion
 
     # Set up distfiles default for non-bundled extensions.
     default distname        {${php.rootname}-${version}}
@@ -365,6 +375,25 @@ proc php.add_port_code {} {
     depends_build-append    port:autoconf
 
     depends_lib-append      port:${php}
+
+    platform darwin {
+        # PHP's libtool.m4 has the macOS 11+ bug; use the compatibility
+        # deployment target for now.
+        if {[vercmp ${macosx_deployment_target} 11] >= 0} {
+            macosx_deployment_target 10.[expr {${os.major} - 4}]
+        }
+
+        if {[vercmp ${php.branch} 7.0] < 0 && [vercmp ${xcodeversion} 12.0] >= 0} {
+            # Implicit function declarations. Need to backport upstream fixes from php73+.
+            # https://bugs.php.net/80176
+            # https://trac.macports.org/ticket/60988
+            known_fail          yes
+            pre-fetch {
+                ui_error "${subport} @${version} cannot currently be compiled with Xcode 12 or later"
+                return -code error "incompatible Xcode version"
+            }
+        }
+    }
 
     configure.pre_args-append --with-php-config=${php.config}
 

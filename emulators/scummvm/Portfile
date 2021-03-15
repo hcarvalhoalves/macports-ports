@@ -1,9 +1,10 @@
 PortSystem          1.0
+PortGroup           github 1.0
 
 name                scummvm
 platforms           darwin
 categories          emulators games
-maintainers         {kencu @kencu} openmaintainer
+maintainers         nomaintainer
 license             {GPL-2 BSD}
 description         cross-platform interpreter for several adventure engines
 long_description    \
@@ -11,49 +12,51 @@ long_description    \
     adventure engines. A current list of playable games is available at \
     <https://www.scummvm.org/compatibility/>.
 
-homepage            https://scummvm.org/
-
-subport             ${name}-devel {}
+homepage            https://www.scummvm.org
 
 if {${subport} eq ${name}} {
+    github.setup        scummvm scummvm 2.2.0 v
+    revision            1
+    checksums           sha256  1469657e593bd8acbcfac0b839b086f640ebf120633e93f116cab652b5b27387 \
+                        rmd160  3011e4d66fd3b5e28029afbd894a9cd7df9e9ec1 \
+                        size    63652348
 
-    # release
     conflicts           ${name}-devel
     long_description ${description}: \
         This port follows the release version of ${name}, which is typically updated every \
         6 months. If for some reason this port does not build or function as desired, try \
         the ${name}-devel port.
 
-    version             2.0.0
-    revision            4
-    master_sites        http://scummvm.org/frs/${name}/${version}
-    use_bzip2           yes
-    checksums           sha256  46482e9f4eccd8590a86c70b024bdd0b319af8cbe8b7abaef592a9c52abbe1dc \
-                        rmd160  669f1e8c342e874d2478593898cb6840531eff01
+    master_sites        https://downloads.scummvm.org/frs/${name}/${version}
+    use_xz              yes
 
-    livecheck.url       https://github.com/scummvm/scummvm/releases
-    livecheck.regex     v(\[0-9.\]+).tar.gz
+    patchfiles-append   patch-scummvm-sdl2indet.diff
+    patchfiles-append   remove-date-time-from-version.patch
 
-} else {
+    github.livecheck.regex {([0-9.]+)}
+}
 
-    # devel
+subport ${name}-devel {
+    github.setup        scummvm scummvm 62581d91cdc4f18ef22aeae8778c96e1e0c63dca
+    version             20201209
+    revision            1
+    checksums           rmd160  c26b3eb067e299ef15f10e88deb8027d8d6e5821 \
+                        sha256  f40e642d50fde808a7f8102ed957a7b832047e1b762d87b737ac840dc738b097 \
+                        size    140636255
+
     conflicts           ${name}
     long_description ${description}: \
         This port follows the master version of ${name}, which is typically updated every few weeks.
 
-    PortGroup           github 1.0
-    github.setup        scummvm scummvm 0a9ad229a89a04b2fe437597584684f43479ca14
-    version             20190122
-    revision            1
-    checksums           rmd160  b4cf1bcca4163092e87a77efdb052f0ea5dbacf8 \
-                        sha256  7d75f4adaa5f2d7ccd4afb2cdb3f764034c09cb0bfdbbbcda6fb7f3edc257676 \
-                        size    37817083
-                        
+    patchfiles-append   patch-scummvm-sdl2indet.diff
+    patchfiles-append   remove-date-time-from-version-devel.patch
+
+    # this needs to be added to the devel build at present, otherwise all the plugins
+    # fail to link against libSDL2
+    configure.ldflags-append -lSDL2
+
     livecheck.type      none
-
 }
-
-patchfiles-append   patch-scummvm-sdl2indet.diff
 
 depends_lib-append  port:libsdl2 \
                     port:libsdl2_net \
@@ -65,7 +68,7 @@ depends_lib-append  port:libsdl2 \
                     port:libtheora \
                     port:fluidsynth \
                     port:faad2 \
-                    port:jpeg \
+                    path:include/turbojpeg.h:libjpeg-turbo \
                     port:freetype \
                     port:bzip2 \
                     port:curl \
@@ -93,25 +96,18 @@ configure.args-append  \
                     --enable-jpeg \
                     --enable-readline \
                     --enable-all-engines \
-                    --enable-verbose-build
-
-if {${subport} eq "${name}-devel"} {
-    # disable this engine, which doesn't build on macOS as of 20190122
-    configure.args-append  \
-                     --disable-engine=glk
-}
+                    --enable-verbose-build \
+                    --enable-c++11
 
 # libcurl needs --enable-cloud as well otherwise link errors
 # also connected to --enable-sdlnet
 
-variant cxx11 description {build with c++11} {
-     # scummvm builds fine without c++11
-     # I'm not sure if there is any advantage to enabling c++11 support at present
-     # but keep it here as a variant in case someone finds there is
-     PortGroup cxx11 1.1
-     configure.args-append \
-                    --enable-c++11
+if {[string match *clang* ${configure.cxx}]} {
+    configure.ldflags-append -stdlib=${configure.cxx_stdlib}
 }
+
+# Leopard build, at least, fails without c++11
+compiler.cxx_standard   2011
 
 variant mpeg2 description {add mpeg2 support - has many dependencies} {
      # this builds fine, but libmpeg2 is old (2008) and pulls in a lot of deps

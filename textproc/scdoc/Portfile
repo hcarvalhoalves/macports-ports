@@ -1,13 +1,13 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
+PortGroup           makefile 1.0
 
 name                scdoc
-version             1.9.4
+version             1.11.1
 categories          textproc
 license             MIT
-maintainers         {@herrbischoff herrbischoff.com:marcel} \
-                    openmaintainer
+maintainers         nomaintainer
 description         Simple man page generator.
 long_description    scdoc is a simple man page generator for POSIX systems written in C99.
 platforms           darwin
@@ -16,16 +16,16 @@ master_sites        https://git.sr.ht/~sircmpwn/scdoc/archive/
 distname            ${version}
 worksrcdir          ${name}-${distname}
 
-checksums           rmd160  01fa4a1284d647afa60ea83c38865bab18a0df00 \
-                    sha256  a10e200bcbc7d6faf9678444636886fee2fd99c754b630fc62fa9d247f1eec03 \
-                    size    11527
+checksums           rmd160  305b125872d87cb0a068590c1e076887db3153bb \
+                    sha256  e529fcb00508e7e4c5025a745591b805b754b3bd5c84c5192acaefabdfa8f700 \
+                    size    12482
 
-use_configure       no
+patchfiles-append   patch-0001-adjust-makefile-flags.diff
 
-patchfiles          patch-makefile.diff
+installs_libs       no
 
-post-patch {
-    reinplace "s|/usr/local|${prefix}|g" ${worksrcpath}/Makefile
-}
+test.run            yes
+test.target         check
 
-build.target
+livecheck.url       https://git.sr.ht/~sircmpwn/scdoc/refs/rss.xml
+livecheck.regex     ${homepage}refs/\(\[0-9.\]+\)

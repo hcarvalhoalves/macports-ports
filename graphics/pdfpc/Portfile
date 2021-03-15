@@ -5,8 +5,7 @@ PortGroup               github 1.0
 PortGroup               active_variants 1.1
 PortGroup               cmake 1.1
 
-github.setup            pdfpc pdfpc 4.2.1 v
-revision                1
+github.setup            pdfpc pdfpc 4.4.1 v
 
 maintainers             {gmx.de:Torsten.Maehne @maehne} openmaintainer
 
@@ -27,18 +26,21 @@ license                 GPL-2+
 
 homepage                https://${github.author}.github.io/
 
-fetch.type              git
-post-fetch {
-    system -W ${worksrcpath} "git submodule update --init"
-}
-
 depends_build-append    port:vala \
                         port:pkgconfig
 depends_lib-append      port:gtk3 \
                         port:poppler \
-                        port:libgee
+                        port:libgee \
+                        port:librsvg
 
 cmake.out_of_source     yes
+
+checksums               rmd160  b1346ebfa595587ecc762696f1f060a43ac55c5c \
+                        sha256  c13e82599d2455583bd0bd8ac2744b343c25e8dd217b9eadedd529d0de2753ab \
+                        size    7734039
+
+configure.args          -DCMAKE_INSTALL_SYSCONFDIR=${prefix}/etc \
+                        -DMOVIES=off
 
 pre-configure {
     if {![variant_isset quartz] && ![variant_isset x11]} {
@@ -48,19 +50,25 @@ pre-configure {
 
 variant quartz conflicts x11 {
     require_active_variants     port:gtk3 quartz
-    configure.args-append       -DMOVIES=off
 }
 
 variant x11 conflicts quartz {
     require_active_variants     port:gtk3 x11
+}
+
+variant video description {Enable video playback using gstreamer1} {
     depends_lib-append          port:gstreamer1 \
                                 port:gstreamer1-gst-plugins-base \
                                 port:gstreamer1-gst-plugins-good
     require_active_variants     port:gstreamer1-gst-plugins-good gtk3
+
+    configure.args-delete       -DMOVIES=off
 }
 
 if {![variant_isset quartz]} {
-    default_variants +x11
+    default_variants +x11 +video
+} else {
+    default_variants +video
 }
 
 livecheck.type          regex

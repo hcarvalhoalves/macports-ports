@@ -4,7 +4,9 @@ PortSystem          1.0
 PortGroup           github 1.0
 PortGroup           muniversal 1.0
 PortGroup           compilers 1.0
+PortGroup           xcodeversion 1.0
 PortGroup           compiler_blacklist_versions 1.0
+PortGroup           xcode_workaround 1.0
 
 name                OpenBLAS
 categories          math science
@@ -20,31 +22,22 @@ platforms           darwin
 compiler.blacklist-append cc {*gcc-3*} {*gcc-4.[0-7]} {clang < 800.0.38}
 platform darwin i386 {
     compiler.blacklist-append {macports-clang-[3-4].*}
-    compiler.fallback-append macports-clang-5.0 macports-clang-6.0 macports-clang-7.0
 }
 
-#Define target based on version of OS
-#OS 10.5 supports down to Intel Core Solo (Intel) or PowerPC G4
-if {${os.major} == 9} { 
-    if {${os.arch} eq "i386" || [variant_isset universal]} {
-        set blas_arch "YONAH"
-    } else {
-        set blas_arch "PPCG4"
-    }
-}
-#OS 10.6 supports down to Intel Core Solo architecture
-if {${os.major} == 10} { 
-    set blas_arch "YONAH"
-} 
 #OS 10.7-10.11 supports down to iMac 7,1, with Intel Core 2 Duo architecture
 #OS 10.12-13 supports down to iMac 10,1, with Intel Core 2 Duo architecture
 if {${os.major} >= 11 && ${os.major} <= 17} { 
     set blas_arch "CORE2"
 }
 #OS 10.14 supports down to Mac Pro 5,1 that has Nehalem architecture
-if {${os.major} >= 18} { 
-    set blas_arch "NEHALEM"
-} 
+if {${os.major} >= 18} {
+    if {${os.arch} eq "arm"} {
+        # FIXME use correct arch name
+        #set blas_arch "???"
+    } else {
+        set blas_arch "NEHALEM"
+    }
+}
 if {![info exists blas_arch]} {
     #For older versions, we force native variant as there is no PPCG3 target in OpenBLAS
     default_variants-append +native
@@ -53,18 +46,17 @@ if {![info exists blas_arch]} {
 subport OpenBLAS-devel {}
 if {[string first "-devel" $subport] > 0} {
 
-    github.setup    xianyi OpenBLAS 2a43062de7d72f205d85cbc7f897ae35c20fada4
-    version         20190610-[string range ${github.version} 0 7]
-    checksums       rmd160 22c4f094847e7ceed3a7bc3cfbf645c7eb56517a \
-                    sha256 8f742f7844043cac2052cb8ec5de56b8a9b22a07af1b46c19472c47ff774247e \
-                    size   11969719
+    github.setup    xianyi OpenBLAS 1caa44bea999e196918afc095d26ad418db4ba19
+    version         20210219-[string range ${github.version} 0 7]
+    checksums       rmd160  9ec75a885fc4fc0fc5bd8f37f72aec4d6b6931cb \
+                    sha256  f397bfafb0babe40a38270c7eaf966428fe331b6ff71c91f1b7ecd076f312130 \
+                    size    12456354
     revision        0
 
     name            ${github.project}-devel
     conflicts       OpenBLAS
 
     patchfiles      patch-libnoarch.devel.diff \
-                    patch-linkLib.devel.diff \
                     patch-OpenBLAS-i386-Apple.diff
 
     github.livecheck.branch develop
@@ -74,16 +66,15 @@ if {[string first "-devel" $subport] > 0} {
 
 } else {
 
-    github.setup    xianyi OpenBLAS 0.3.6 v
-    checksums       rmd160 1e64aaaf26c92e8d49e3a9a61b1c43c7b99ad647 \
-                    sha256 57e9fab61e1993005ab9f5d6b99929febbeddee3fda6d0e446b515ccff4f4fe4 \
-                    size   11923774
-    revision        1
+    github.setup    xianyi OpenBLAS 0.3.13 v
+    checksums       rmd160  ac0847547d4d1ca21c1e8bb1a681a3680826907c \
+                    sha256  9223b504b90ddf854339f6fdd9e89755feeb9efbdbfbd09ae61411a5fc183d27 \
+                    size    12442494
+    revision        0
 
     conflicts       OpenBLAS-devel
 
     patchfiles      patch-libnoarch.release.diff \
-                    patch-linkLib.release.diff  \
                     patch-OpenBLAS-i386-Apple.diff
 
     if {![variant_isset native]} {
@@ -107,8 +98,14 @@ variant native description "Force compilation on machine to get fully optimized 
 
 use_configure       no
 
+# Workaround for test failure :-
+# > ./sblat2 < ./sblat2.dat
+# Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+xcode_workaround.fixed_xcode_version 11.2
+xcode_workaround.type append_to_compiler_name
+
 pre-build {
-    if {[variant_isset universal]} {
+    if {[variant_exists universal] && [variant_isset universal]} {
         foreach arch ${universal_archs_to_use} {
             set makeINC [open ${worksrcpath}-${arch}/Makefile.rule "w"]
             puts $makeINC "VERSION = 1"
@@ -117,7 +114,7 @@ pre-build {
             puts $makeINC "CC = ${configure.cc}"
             puts $makeINC "FC = ${configure.fc}"
 
-            if {${arch} eq "x86_64" || ${arch} eq "ppc64"} {
+            if {${arch} in [list arm64 ppc64 x86_64]} {
                 puts $makeINC "BINARY = 64"
             } else {
                 puts $makeINC "BINARY = 32"
@@ -139,8 +136,8 @@ pre-build {
                 }
             }
 
-            if {${build_arch} eq "ppc" || ${build_arch} eq "ppc64"} {
-                # on a PPC of some sort; just disable AVX
+            if {${build_arch} ni [list i386 x86_64]} {
+                # not on x86 of some sort; just disable AVX
                 puts $makeINC "NO_AVX = 1"
                 puts $makeINC "NO_AVX2 = 1"
                 puts $makeINC "NO_AVX512 = 1"
@@ -161,6 +158,11 @@ pre-build {
                     puts $makeINC "NO_AVX512 = 1"
                 }
             }
+            #Add configurations to build (not configurable yet as per original Makefile.rule)
+            puts $makeINC "BUILD_SINGLE = 1"
+            puts $makeINC "BUILD_DOUBLE = 1"
+            puts $makeINC "BUILD_COMPLEX = 1"
+            puts $makeINC "BUILD_COMPLEX16 = 1"
             close $makeINC
         }
     } else {
@@ -171,7 +173,7 @@ pre-build {
         puts $makeINC "CC = ${configure.cc}"
         puts $makeINC "FC = ${configure.fc}"
 
-        if {${build_arch} eq "x86_64" || ${build_arch} eq "ppc64"} {
+        if {${build_arch} in [list arm64 ppc64 x86_64]} {
             puts $makeINC "BINARY = 64"
         } else {
             puts $makeINC "BINARY = 32"
@@ -190,8 +192,8 @@ pre-build {
         }
 
         #Setting up build flags
-        if {${build_arch} eq "ppc" || ${build_arch} eq "ppc64"} {
-            # on a PPC of some sort; just disable AVX
+        if {${build_arch} ni [list i386 x86_64]} {
+            # not on x86 of some sort; just disable AVX
             puts $makeINC "NO_AVX = 1"
             puts $makeINC "NO_AVX2 = 1"
             puts $makeINC "NO_AVX512 = 1"
@@ -214,6 +216,12 @@ pre-build {
                 puts $makeINC "NO_AVX512 = 1"
             }
         }
+        #Add configurations to build (not configurable yet as per original Makefile.rule)
+        puts $makeINC "BUILD_SINGLE = 1"
+        puts $makeINC "BUILD_DOUBLE = 1"
+        puts $makeINC "BUILD_COMPLEX = 1"
+        puts $makeINC "BUILD_COMPLEX16 = 1"
+
         close $makeINC
     }
 }
@@ -232,7 +240,10 @@ platform darwin 8 {
 
 destroot.args       "PREFIX=${prefix}"
 
-if {[variant_isset universal]} {
+if {![info exists universal_possible]} {
+    set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+}
+if {${universal_possible} && [variant_isset universal]} {
     merger-post-destroot {
         foreach arch ${universal_archs_to_use} {
             if {${arch} ne ${build_arch}} {
@@ -246,7 +257,7 @@ if {[variant_isset universal]} {
             system "install_name_tool -id \
                 ${prefix}/lib/libopenblas-r1.dylib \
                 ${destroot}-${arch}${prefix}/lib/libopenblas-r1.dylib"
-            delete file ${destroot}-${arch}/${prefix}/lib/cmake
+            delete file ${destroot}-${arch}${prefix}/lib/cmake
             if {[variant_isset lapack]} {
                 #Install lapacke headers too
                 set LAPACKE_DIR [exec /bin/ls ${worksrcpath}/lapack-netlib | \
@@ -271,7 +282,7 @@ if {[variant_isset universal]} {
         system "install_name_tool -id \
             ${prefix}/lib/libopenblas-r1.dylib \
             ${destroot}${prefix}/lib/libopenblas-r1.dylib"
-        delete file ${destroot}/${prefix}/lib/cmake
+        delete file ${destroot}${prefix}/lib/cmake
         if {[variant_isset lapack]} {
             #Install lapacke headers too
             set LAPACKE_DIR [exec /bin/ls ${worksrcpath}/lapack-netlib | \

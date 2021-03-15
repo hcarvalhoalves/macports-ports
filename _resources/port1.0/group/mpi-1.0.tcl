@@ -21,9 +21,9 @@
 #   Available arguments: "require" means an MPI variant must be set.
 #   All of the arguments for compilers.setup are available too and will be passed to that procedure.
 #   "default" means an MPI variant (mpich) will be set as a default variant.
-#   You can either list which MPI's can be used (e.g. mpich mpich-devel),
+#   You can either list which MPI's can be used (e.g. mpich openmpi),
 #   which cannot be used (e.g. -mpich -openmpi-devel).
-#   There are four MPI variants: mpich, mpich-devel, openmpi, openmpi-devel.
+#   There are three MPI variants: mpich and openmpi openmpi-devel.
 
 PortGroup compilers 1.0
 
@@ -45,20 +45,16 @@ set mpidb(mpich,descrip)  "MPICH"
 set mpidb(mpich,name)     mpich
 set mpidb(mpich,conflict) ""
 
-set mpidb(mpich_devel,variant)  mpich_devel
-set mpidb(mpich_devel,descrip)  "MPICH-devel"
-set mpidb(mpich_devel,name)     mpich-devel
-set mpidb(mpich_devel,conflict) ""
-
 set mpidb(openmpi,variant)  openmpi
 set mpidb(openmpi,descrip)  "OpenMPI"
 set mpidb(openmpi,name)     openmpi
 set mpidb(openmpi,conflict) ""
 
-set mpidb(openmpi_devel,variant)  openmpi_devel
-set mpidb(openmpi_devel,descrip)  "OpenMPI-devel"
-set mpidb(openmpi_devel,name)     openmpi-devel
-set mpidb(openmpi_devel,conflict) ""
+# NOTE: Uncomment these if/when we re-enable openmpi-devel-* subports
+#set mpidb(openmpi_devel,variant)  openmpi_devel
+#set mpidb(openmpi_devel,descrip)  "OpenMPI-devel"
+#set mpidb(openmpi_devel,name)     openmpi-devel
+#set mpidb(openmpi_devel,conflict) ""
 
 foreach mpiname [array names mpidb *,variant] {
     lappend mpi.variants $mpidb($mpiname)
@@ -225,7 +221,8 @@ proc mpi_variant_isset {} {
 }
 
 proc mpi.setup {args} {
-    global cdb mpidb mpi.variants mpi.require mpi.default compilers.variants name
+    global cdb mpidb mpi.variants mpi.require mpi.default compilers.variants \
+        name os.major os.arch
 
     set add_list {}
     set remove_list ${mpi.variants}
@@ -279,10 +276,50 @@ proc mpi.setup {args} {
         }
     }
 
-    # here we add all compiler variants since we can't dynamically look up
-    # which variants are enabled for the mpi ports; instead we'll use active
-    # variants to detect an incompatibility
-    compilers.setup {*}$cl
+    # We can't dynamically look up which variants are enabled for the mpi
+    # ports. So we'll disable the ones we know aren't supported, try to keep
+    # that information synced, and use active variants to detect any
+    # incompatibility that may slip through.
+    set cur_variant [mpi_variant_name]
+    if {$cur_variant eq "" && ${mpi.default}} {
+        set cur_variant mpich
+    }
+    set disabled [list]
+    if {$cur_variant ne ""} {
+        set is_mpich [expr {$cur_variant in {mpich}}]
+        lappend disabled -gcc44 -gcc45 -gcc46 -gcc47 -gcc48
+        # gcc   4.x     not supported on macOS 10.12 (Darwin16) or newer
+        # clang 3.{3,4} not supported on macOS 10.12 (Darwin16) or newer
+        if {${os.major} >= 16} {
+            lappend disabled -gcc49
+        }
+        if {${os.major} >= 16 || $is_mpich} {
+            lappend disabled -clang33 -clang34
+        }
+        # clang 3.7,4.0 not supported on macOS 10.14 (Darwin18) or newer
+        if {${os.major} >= 18 || $is_mpich} {
+            lappend disabled -clang37
+        }
+        # gcc 9+ only available on OS X 10.7 (Darwin11) and newer
+        if {${os.major} <= 10} {
+            lappend disabled -gcc9 -gcc10
+        }
+        if {${os.major} <= 10 || !$is_mpich} {
+            lappend disabled -gccdevel
+        }
+
+        # this should probably be changed in mpich but we have to match it
+        if {${os.major} <= 12 && $is_mpich} {
+            lappend disabled -clang60 -clang70 -clang80 -clang90 -clang10 -clang11
+        }
+        # Disable compilers not support on arm
+        if {${os.arch} eq "arm" || !$is_mpich} {
+            lappend disabled -gcc5 -gcc6 -gcc7 -gcc8 -gcc9 -gcc10
+            lappend disabled -clang60 -clang70 -clang80 -clang90 -clang10
+        }
+    }
+
+    compilers.setup {*}$cl {*}$disabled
 
     # we need to check for a removed variant early so we can exit before
     # the wrong variant is passed up the dependency chain
@@ -297,7 +334,7 @@ proc mpi.setup {args} {
 
     mpi.setup_variants ${mpi.variants}
 
-    set mpi [ mpi_variant_name ]
+    set mpi [mpi_variant_name]
     if {$mpi ne ""} {
         set fv [fortran_variant_name]
         set cv "[c_variant_name] $fv"

@@ -6,10 +6,10 @@ PortGroup           python 1.0
 name                py-notify-python
 set myname			notify-python
 version             0.1.1
-revision            5
+revision            6
 categories-append   python devel
 license             GPL-2
-maintainers         {elelay @elelay} openmaintainer
+maintainers         nomaintainer
 platforms           darwin
 description         libnotify python bindings
 
@@ -52,14 +52,15 @@ if {${name} ne ${subport}} {
     build.type          gnu
     build.cmd           make
     build.target        all
-    build.args          {}
+    build.args
 
     destroot.cmd        ${build.cmd}
     destroot.target     install
-    destroot.args       {}
+    destroot.args
     destroot.destdir    DESTDIR=${destroot}
 
     patchfiles          patch-src-pynotifymodule-c.diff \
+                        implicit.patch \
                         libnotify07.patch
                    
     configure.python    ${python.bin}

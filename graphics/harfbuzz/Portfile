@@ -1,19 +1,13 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
-
-# https://github.com/harfbuzz/harfbuzz/issues/1642
-PortGroup           cxx11 1.1
-
-# https://github.com/harfbuzz/harfbuzz/issues/1651#issuecomment-484051395
 PortGroup           compiler_blacklist_versions 1.0
-compiler.blacklist-append {clang < 700}
+PortGroup           github 1.0
 
-name                harfbuzz
-version             2.5.1
-checksums           rmd160  8c8c2e64492cd8d167de11f2b176f1437286748b \
-                    sha256  6d4834579abd5f7ab3861c085b4c55129f78b27fe47961fd96769d3704f6719e \
-                    size    5636068
+github.setup        harfbuzz harfbuzz 2.7.4
+checksums           rmd160  3deffb03e1bf2993bdd8b65bb2c51e22ff1b14fa \
+                    sha256  6ad11d653347bd25d8317589df4e431a2de372c0cf9be3543368e07ec23bb8e7 \
+                    size    9532468
 
 categories          graphics
 platforms           darwin
@@ -22,18 +16,31 @@ license             MIT
 
 description         OpenType text shaping engine
 
-long_description    HarfBuzz is an ${description}.
+long_description    HarfBuzz is an {*}${description}.
 
-homepage            https://www.freedesktop.org/wiki/Software/HarfBuzz/
-master_sites        https://www.freedesktop.org/software/harfbuzz/release/
+homepage            https://harfbuzz.github.io
+github.tarball_from releases
 use_xz              yes
 
 depends_build       port:pkgconfig
 
-patchfiles          CGFloat.patch
+# https://github.com/harfbuzz/harfbuzz/issues/1642
+compiler.cxx_standard \
+                    2011
+
+# https://github.com/harfbuzz/harfbuzz/issues/1651#issuecomment-484051395
+compiler.blacklist-append {clang < 700}
+
+# Upstream recommends switching to meson but I'm not ready to tackle
+# that yet.
 
 configure.args      --disable-silent-rules \
                     ac_cv_prog_AWK=/usr/bin/awk
+
+# Do not use -Werror. New compilers may have new warnings; we don't want users
+# to encounter build failures because of that.
+configure.cflags-append     -DHB_NO_PRAGMA_GCC_DIAGNOSTIC_ERROR
+configure.cxxflags-append   -DHB_NO_PRAGMA_GCC_DIAGNOSTIC_ERROR
 
 if {${name} eq ${subport}} {
     revision        0
@@ -60,9 +67,8 @@ if {${name} eq ${subport}} {
         xinstall -m 0644 -W ${worksrcpath} \
                     AUTHORS \
                     COPYING \
-                    ChangeLog \
                     NEWS \
-                    README \
+                    README.md \
                     THANKS \
                     TODO \
                     ${destroot}${docdir}
@@ -82,10 +88,6 @@ if {${name} eq ${subport}} {
         test.env-append \
                     PATH=${frameworks_dir}/Python.framework/Versions/2.7/bin:$env(PATH)
     }
-
-    livecheck.type  regex
-    livecheck.url   [lindex ${master_sites} 0]
-    livecheck.regex ${name}-(\[0-9.\]+)${extract.suffix}
 } else {
     livecheck.type  none
 }
@@ -101,10 +103,6 @@ subport harfbuzz-icu {
                     port:harfbuzz \
                     port:icu
     
-    # Generate a newer libtool that passes -stdlib when linking C++ dylibs.
-    use_autoreconf  yes
-    autoreconf.args-append --force
-
     configure.args-append \
                     --without-cairo \
                     --without-freetype \

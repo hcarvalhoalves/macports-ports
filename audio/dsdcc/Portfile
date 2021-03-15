@@ -3,22 +3,22 @@
 PortSystem          1.0
 PortGroup           github 1.0
 PortGroup           cmake 1.1
-PortGroup           cxx11 1.1
 
 platforms           darwin macosx
 categories          audio
 license             GPL-3+
-maintainers         {@ra1nb0w irh.it:rainbow} openmaintainer
+maintainers         {ra1nb0w @ra1nb0w} openmaintainer
 
 description         Digital Speech Decoder (DSD) rewritten as a C++ library
 long_description    ${description}
 
-github.setup        f4exb dsdcc 5dd8d1eeddb5df53c9e46f53b50781864cf5f6fe
-version             1.8.5
-checksums           rmd160  e6011b353ae560dca34566076b04b18c6b54c498 \
-                    sha256  689afa355b2fcb9f02f5ee6789a3844489e14fe8797146f94e2594fa0db308a7 \
-                    size    12745955
+github.setup        f4exb dsdcc 1.9.0 v
+checksums           rmd160  455fe886fe988e1e717e68f97c60390e8a67e770 \
+                    sha256  e7c2e009924a4d77645a55531fb6e0224d598de480b37be9868d8ad82511319a \
+                    size    12750366
 revision            0
+
+compiler.cxx_standard 2011
 
 configure.args-append \
     -DBUILD_TYPE=RELEASE \
@@ -28,6 +28,8 @@ variant mbelib description {Enable mbelib support} {
     depends_lib-append      port:mbelib
     configure.args-replace  -DUSE_MBELIB=OFF -DUSE_MBELIB=ON
 }
+
+default_variants +mbelib
 
 test.run            yes
 test.cmd            ./dsdccx

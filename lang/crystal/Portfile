@@ -2,8 +2,9 @@
 
 PortSystem          1.0
 PortGroup           github 1.0
+PortGroup           compiler_blacklist_versions 1.0
 
-github.setup        crystal-lang crystal 0.27.2
+github.setup        crystal-lang crystal 0.36.1
 revision            0
 categories          lang
 platforms           darwin
@@ -25,10 +26,11 @@ depends_lib         port:boehmgc \
                     port:libiconv \
                     port:libxml2 \
                     port:libyaml \
-                    port:llvm-6.0 \
-                    port:openssl \
+                    port:llvm-11 \
+                    path:lib/libssl.dylib:openssl \
                     port:pcre \
-                    port:zlib
+                    port:zlib \
+                    port:pkgconfig
 
 # Use a prebuilt version of Crystal to build itself
 set cr_ver          ${version}
@@ -38,24 +40,16 @@ master_sites-append https://github.com/crystal-lang/${name}/releases/download/${
 distfiles-append    ${name}-${cr_full_ver}-${os.platform}-${build_arch}${extract.suffix}:bootstrap
 
 checksums           ${distname}${extract.suffix} \
-                    rmd160  a235fe9128e09cda28bfc96957ede3833b9f2633 \
-                    sha256  2be4039d912dc1150b81624c078af256c98fc45ab3ee0e7761e35c7842503e42 \
-                    size    2061826 \
+                    rmd160  350e76b93fe0875eea6ed851113569837c433d45 \
+                    sha256  026a24ab48fffab301c599a1932b21fdbce0d0d4283bb837f110595f6332f228 \
+                    size    2414074 \
                     ${name}-${cr_full_ver}-${os.platform}-${build_arch}${extract.suffix} \
-                    rmd160  87aa8d75d973c87f5785103f7dc07672d88ccc68 \
-                    sha256  2fcd11a3c3d12176004c13aa90d8ca15acde7d1ffa9a82cbaadcd526984a8691 \
-                    size    15340333
+                    rmd160  1e288d4c3905ec09c812cf6becc589a659e2f985 \
+                    sha256  3b381d4ac1241514d63b1f243ed183a1b10945b0e77c5dd625067e91a657ef75 \
+                    size    19214304
 
-patchfiles          patch-compiler.diff patch-readline.diff \
-                    patch-crypto.diff patch-ssl.diff patch-xml.diff \
-                    patch-xml-reader.diff ; # Remove on next release
-
-if {${os.platform} eq "darwin" && ${os.major} <= 15} {
-    pre-fetch {
-        ui_error "${name} ${version} requires macOS 10.12 or greater at present."
-        return -code error "incompatible OS X version"
-    }
-}
+patchfiles          patch-compiler.diff patch-xml.diff \
+                    patch-crypto.diff patch-ssl.diff
 
 post-patch {
     reinplace "s|\"/usr/lib\", \"/usr/local/lib\"|\"${prefix}/lib\"|" \
@@ -68,12 +62,20 @@ post-patch {
 configure.cmd       env | grep -v ^PATH=
 configure.pre_args  > Makefile.local
 
-set llvm_config     LLVM_CONFIG=llvm-config-mp-6.0
+set llvm_version    11
+set llvm_config     LLVM_CONFIG=llvm-config-mp-${llvm_version}
 
-build.args          BUILD_PATH="PATH=${workpath}/${name}-${cr_full_ver}/bin:\$PATH" \
-                    CC="${configure.cc} -L${prefix}/lib" \
-                    EXPORTS="CRYSTAL_CONFIG_PATH=lib:${prefix}/lib/${name}" \
-                    FLAGS="--no-debug --release"
+# Use MP's clang based on above LLVM version
+compiler.blacklist-append *gcc* clang
+compiler.fallback   macports-clang-${llvm_version}
+compiler.whitelist  macports-clang-${llvm_version}
+
+compiler.cxx_standard  2011
+
+build.args          CC="${configure.cc} -L${prefix}/lib" \
+                    FLAGS="--no-debug --release" \
+                    EXPORTS="CRYSTAL_CONFIG_PATH=lib:${prefix}/lib/${name} \
+                        PATH=${workpath}/${name}-${cr_full_ver}/bin:\$PATH"
 
 build.env           ${llvm_config}
 

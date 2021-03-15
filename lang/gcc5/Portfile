@@ -1,15 +1,16 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:filetype=tcl:et:sw=4:ts=4:sts=4
 
-PortSystem 1.0
-PortGroup select 1.0
+PortSystem                            1.0
+PortGroup select                      1.0
 PortGroup compiler_blacklist_versions 1.0
-PortGroup xcodeversion 1.0
-PortGroup conflicts_build 1.0
+PortGroup xcodeversion                1.0
+PortGroup conflicts_build             1.0
+PortGroup xcode_workaround            1.0
 
 name                gcc5
 epoch               2
 version             5.5.0
-revision            4
+revision            6
 platforms           darwin
 categories          lang
 maintainers         nomaintainer
@@ -79,6 +80,8 @@ post-extract {
     ln -s ${prefix}/libexec/isl18/include/isl ${worksrcpath}/gcc
 }
 
+patchfiles-append   patch-gcj-unwind.diff
+
 if {[vercmp ${xcodeversion} 10.2] >= 0} {
     # https://trac.macports.org/ticket/58260
     # Patch for Xcode bug, taken from
@@ -101,6 +104,15 @@ platform darwin {
         patchfiles-append   boehm-gc-darwin15-hack.patch
     }
     configure.pre_args-append --build=${build_arch}-apple-darwin${os.major}
+}
+
+platform darwin 11 {
+    # work around a hiccup building this due to MacPort's cctools modifications
+    # that forces the use of /usr/bin/clang as assembler, which doesn't work for gcc5 on 10.7.5
+    # any clang >= 5.0 would work, but at present, all 10.7.5 users will have clang-9.0
+    # https://trac.macports.org/ticket/62072
+    # TODO: find a way to force "gas" as assembler
+    depends_build-append port:clang-9.0
 }
 
 configure.dir       ${workpath}/build
@@ -193,6 +205,23 @@ use_parallel_build  yes
 
 destroot.target     install install-info-host
 
+# On Darwin19+ fails to build for Xcode < 11.3
+# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90835
+# https://trac.macports.org/ticket/59351
+# for more background on the issue.
+if { ${os.major} >= 19 } {
+    if {[vercmp ${xcodeversion} 11.3] < 0} {
+        known_fail  yes
+        pre-fetch {
+            ui_error "${name} ${version} is (currently) not supported on Darwin ${os.major} Xcode ${xcodeversion}"
+            ui_error "See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90835 and"
+            ui_error "    https://trac.macports.org/ticket/59351 for more details"
+            ui_error "To install this port upgrade Xcode to 11.3 or newer"
+            return -code error "incompatible Xcode version"
+        }
+    }
+}
+
 post-destroot {
     file delete ${destroot}${prefix}/share/info/dir
 
@@ -212,7 +241,7 @@ post-destroot {
             ln -s ${prefix}/lib/libgcc/${dylib} ${destroot}${prefix}/lib/${name}/${dylib}
         }
 
-        if {[variant_isset universal]} {
+        if {[variant_exists universal] && [variant_isset universal]} {
             foreach archdir [glob ${destroot}${prefix}/lib/${name}/*/] {
                 if {[file exists ${archdir}/${dylib}]} {
                     delete ${archdir}/${dylib}
@@ -237,21 +266,12 @@ variant universal {
     configure.args-delete --disable-multilib
 }
 # the generated compiler doesn't accept -arch
-if {[vercmp [macports_version] 2.5.99] >= 0} {
 configure.env-append \
     "CPP=${configure.cc} -E" \
     "CXXCPP=${configure.cxx} -E"
 build.env-append \
     "CPP=${configure.cc} -E" \
     "CXXCPP=${configure.cxx} -E"
-} else {
-configure.env-append \
-    CPP="${configure.cc} -E" \
-    CXXCPP="${configure.cxx} -E"
-build.env-append \
-    CPP="${configure.cc} -E" \
-    CXXCPP="${configure.cxx} -E"
-}
 configure.cc-append [get_canonical_archflags]
 configure.cc_archflags
 configure.cxx-append ${configure.cxx_archflags}

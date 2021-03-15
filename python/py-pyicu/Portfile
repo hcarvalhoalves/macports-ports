@@ -1,28 +1,29 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
+PortGroup           compiler_blacklist_versions 1.0
 PortGroup           python 1.0
 
 name                py-pyicu
-version             2.3.1
+python.rootname     PyICU
+version             2.6
 revision            0
+
 categories-append   textproc
 platforms           darwin
-maintainers         nomaintainer
 license             MIT
+maintainers         nomaintainer
 
 description         Python extension wrapping the ICU C++ API
 long_description    ${description}
 
 homepage            https://github.com/ovalhub/pyicu
-master_sites        pypi:P/PyICU/
-distname            PyICU-${version}
 
-checksums           rmd160  82f80a3db2f2ef574361413363753c9ddec85268 \
-                    sha256  ddb2b453853b4c25db382bc5e8c4cde09b3f4696ef1e1494f8294e174f459cf4 \
-                    size    214761
+checksums           rmd160  eb7526087021f6fcedaca42c3e951860112a914b \
+                    sha256  a9a5bf6833360f8f69e9375b91c1a7dd6e0c9157a42aee5bb7d6891804d96371 \
+                    size    233826
 
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 
 if {${name} ne ${subport}} {
     depends_build-append \
@@ -30,11 +31,21 @@ if {${name} ne ${subport}} {
 
     depends_lib-append  port:icu
 
+    # icu requires C++11
+    compiler.cxx_standard 2011
+
+    # clang 503.0.40 provided by Xcode 5.1.1 supports C++11 but apparently not <type_traits>
+    # fatal error: 'type_traits' file not found
+    # #include <type_traits>
+    compiler.blacklist-append {clang < 600.0.57}
+
     pre-test {
         test.env    PYTHONPATH=[glob -nocomplain ${worksrcpath}/build/lib*]
     }
+
     depends_test-append port:py${python.version}-pytest \
                         port:py${python.version}-six
+
     test.run            yes
     test.cmd            py.test-${python.branch}
     test.target
@@ -47,6 +58,4 @@ if {${name} ne ${subport}} {
     }
 
     livecheck.type      none
-} else {
-    livecheck.name      PyICU
 }

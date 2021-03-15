@@ -1,5 +1,4 @@
 PortSystem          1.0
-PortGroup           cxx11 1.1
 
 name                lirc
 version             0.9.4d
@@ -31,6 +30,8 @@ set pythonver       python${pythonbranch}
 set pythonbin       ${prefix}/bin/${pythonver}
 set pymodver        py36
 
+compiler.cxx_standard 2011
+
 use_autoreconf      yes
 autoreconf.cmd      ./autogen.sh
 # setting autoreconf.cmd means that autotools build dependencies are not added
@@ -55,6 +56,10 @@ patchfiles          patch-commandir_support.diff
 if {${os.platform} eq "darwin" && ${os.major} < 12} {
     # https://trac.macports.org/ticket/53314
     patchfiles-append   old-scandir.diff
+}
+if {${os.platform} eq "darwin" && ${os.major} < 11} {
+    # https://trac.macports.org/ticket/58950
+    patchfiles-append   patch-nodocs-snowleopard.diff
 }
 
 post-patch {
@@ -91,7 +96,7 @@ post-destroot {
 }
 
 post-activate {
-    if ![file exists ${prefix}/etc/lirc/lirc_options.conf] {
+    if {![file exists ${prefix}/etc/lirc/lirc_options.conf]} {
         copy ${prefix}/etc/lirc/lirc_options.conf.template \
             ${prefix}/etc/lirc/lirc_options.conf
     }

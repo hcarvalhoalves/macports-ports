@@ -9,7 +9,7 @@ license         LGPL
 platforms       macosx
 maintainers     {michaelld @michaelld} openmaintainer
 description     Fast Light Tool Kit
-homepage        http://www.fltk.org/
+homepage        https://www.fltk.org/
 
 long_description \
     FLTK (pronounced fulltick) \
@@ -35,7 +35,7 @@ if {${subport} eq ${name}} {
     checksums    rmd160 564a331014629299574925c43c1efb03da1a9ed1 \
                  sha256 49d03ea050a9d1c88be7d91a52ef5e4381cf34c65078742da78e47a3cb305f56 \
                  size   5099236
-    revision     0
+    revision     1
 
     patchfiles-append \
         patch-fluid-Makefile.release.diff
@@ -51,20 +51,17 @@ if {${subport} eq ${name}} {
     long_description ${long_description} \
         This port provides the snapshot released of FLTK, typically updated a few times a month.
 
-    github.setup fltk fltk b238ec26e54d0f062629044c1842191200cdda3c
-    version      20190611-[string range ${github.version} 0 7]
-    checksums    rmd160 2904171ce2a3ce0123f9adf7a6c5c77bd7c20c03 \
-                 sha256 5dd551ba3c4decd28da4a5d2879be8e346fcb5a18beaee7ff1b58385d3f5cd7e \
-                 size   5950076
-    revision     0
-
-    patchfiles-append \
-        patch-fluid-Makefile.devel.diff
+    github.setup    fltk fltk dd75da6351c3e08618df3fd46a30d06582ae3163
+    version         20210221-[string range ${github.version} 0 7]
+    checksums       rmd160  14d0643de27ceecec2b97b9e6d3f58e582d9597e \
+                    sha256  c3ae6f014fdec1568c0fe5490d2fe15e9fd703e32366b409844b218ada2219fe \
+                    size    6225114
+    revision        0
 
 }
 
 depends_build   port:autoconf
-depends_lib     port:jpeg \
+depends_lib     path:include/turbojpeg.h:libjpeg-turbo \
                 port:libpng \
                 port:zlib
 
@@ -106,6 +103,8 @@ configure.args  --enable-shared \
                 --disable-localzlib \
                 --disable-localpng
 
+configure.cppflags-delete -I${prefix}/include
+configure.ldflags-delete -L${prefix}/lib
 configure.universal_args-delete --disable-dependency-tracking
 
 post-configure {

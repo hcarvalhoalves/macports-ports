@@ -3,7 +3,7 @@
 PortSystem  1.0
 
 name            nagios
-version         4.4.3
+version         4.4.6
 revision        0
 categories      net
 license         GPL-2
@@ -23,9 +23,9 @@ homepage        https://nagios.org
 livecheck.regex     nagios-(\[0-9.\]+)${extract.suffix}
 
 master_sites        sourceforge:project/nagios/nagios-4.x/nagios-${version}
-checksums           rmd160  5e99b448c8332fe800e4c880f4158f9a134e4d4c \
-                    sha256  bba8f0e8dc8cf72f7a7ae4e8ce9c60f5bd315629421b9ec34818a28b8da49f67\
-                    size    11302228
+checksums           rmd160  f27d298e71c192c48e0f55cc2c906706771d4ea9 \
+                    sha256  ab0d5a52caf01e6f4dcd84252c4eb5df5a24f90bb7f951f03875eef54f5ab0f4\
+                    size    11333414
 
 depends_build       port:gd2
 depends_lib         path:lib/libssl.dylib:openssl \

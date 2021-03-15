@@ -9,12 +9,13 @@ name                automake
 # Otherwise glibtoolize will provide an incompatible version of aclocal.m4
 # from the older version of automake.
 # cf: ${prefix}/share/libtool/aclocal.m4
-version             1.16.1
-revision            1
+version             1.16.3
+revision            0
 
 categories          devel
 platforms           darwin freebsd
 supported_archs     noarch
+configure.cxx_stdlib
 license             {GPL-2+ Permissive}
 maintainers         nomaintainer
 
@@ -31,8 +32,9 @@ depends_build       port:autoconf
 installs_libs       no
 
 master_sites        gnu
-checksums           rmd160  3bada190697e5683d5a0353e1a39bfc24e883061 \
-                    sha256  608a97523f97db32f1f5d5615c98ca69326ced2054c9f82e65bade7fc4c9dea8
+checksums           rmd160  4fab83db67aeef05f020354a697ed3e2aaa1ce93 \
+                    sha256  ce010788b51f64511a1e9bb2a1ec626037c6d0e7ede32c1c103611b9d3cba65f \
+                    size    2359513
 
 patchfiles          test-glibtool.patch \
                     patch-issue57329.diff

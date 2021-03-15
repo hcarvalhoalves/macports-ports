@@ -3,7 +3,8 @@
 PortSystem      1.0
 
 name            links
-version         2.19
+version         2.21
+revision        0
 description     Lynx-like WWW browser that supports tables, menus, etc
 
 long_description \
@@ -16,19 +17,21 @@ license         GPL-2+
 homepage        http://links.twibright.com/
 master_sites    http://links.twibright.com/download/
 
-checksums       rmd160  4ee2ac48d97dc071032b10ed4d6456f6b6a29ae2 \
-                sha256  70758c7dd9bb70f045407900e0a90f1114947fce832c2f9bdefd5c0158089a0a \
-                size    6460441
+checksums       rmd160  c03da60d98d6c48b56ac3365d19fabb9aa39f105 \
+                sha256  285eed8591c7781ec26213df82786665aaa1b9286782e8a7a1a7e2a6e1630d63 \
+                size    6491465
 
 maintainers     nomaintainer
 use_bzip2       yes
 
 depends_build   port:pkgconfig
-depends_lib     path:lib/libssl.dylib:openssl \
-                port:bzip2 \
-                port:zlib \
+depends_lib     port:bzip2 \
+                port:libevent \
+                path:lib/libssl.dylib:openssl \
                 port:xz \
-                port:libevent
+                port:zlib
+
+patchfiles      implicit.patch
 
 configure.args  --disable-graphics \
                 --disable-javascript \
@@ -42,7 +45,7 @@ configure.args  --disable-graphics \
                 --without-x
 
 post-patch {
-    reinplace s|/etc/|${prefix}/etc/| ${workpath}/${worksrcdir}/os_dep.h
+    reinplace s|/etc/|${prefix}/etc/| ${worksrcpath}/os_dep.h
 }
 
 variant svg requires x11 description {Enable SVG support} {
@@ -56,7 +59,7 @@ variant tiff requires x11 description {Enable TIFF support} {
 }
 
 variant x11 {
-    depends_lib-append      port:jpeg port:libpng port:xorg-libXt
+    depends_lib-append      path:include/turbojpeg.h:libjpeg-turbo port:libpng port:xorg-libXt
     configure.args-replace  --disable-graphics --enable-graphics
     configure.args-replace  --without-libjpeg --with-libjpeg
     configure.args-replace  --without-libpng  --with-libpng

@@ -1,11 +1,10 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem                  1.0
-PortGroup                   cxx11 1.1
 
 name                        asio
 version                     1.12.2
-revision                    0
+revision                    1
 license                     Boost-1
 description                 Asio C++ Library.
 long_description            Asio is a cross-platform C++ library for network and low-level I/O \
@@ -31,6 +30,7 @@ configure.args              --with-boost=no
 depends_build               port:autoconf \
                             port:automake
 
+compiler.cxx_standard       2014
 configure.cxxflags-append   -std=gnu++14
 configure.env-append        ASIO_HAS_STD_CHRONO=1 \
                             ASIO_DISABLE_STD_STRING_VIEW=1
@@ -39,5 +39,5 @@ build.post_args-delete      VERBOSE=ON
 
 variant ssl {
     configure.args-append   --with-openssl=${prefix}/
-    depends_lib-append      port:openssl
+    depends_lib-append      path:lib/libssl.dylib:openssl
 }

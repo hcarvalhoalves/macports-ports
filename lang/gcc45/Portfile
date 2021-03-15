@@ -8,7 +8,7 @@ name                gcc45
 # Whenever this port is bumped for version/revision, please revbump dragonegg-3.4-gcc-4.5
 epoch               1
 version             4.5.4
-revision            16
+revision            17
 subport             libgcc45 { revision 16 }
 platforms           darwin
 categories          lang
@@ -150,6 +150,7 @@ configure.env-append \
                     OTOOL64=${prefix}/bin/otool
 
 if {${os.platform} eq "darwin" && ([vercmp $xcodeversion 9.0] > 0)} {
+    known_fail      yes
     depends_build
     depends_lib
     depends_run
@@ -245,7 +246,7 @@ if {${subport} == "libgcc45"} {
 
         foreach dylib ${dylibs} {
             move ${destroot}${prefix}/lib/libgcc/${dylib} ${destroot}${prefix}/lib/libgcc.merged
-            if {[variant_isset universal]} {
+            if {[variant_exists universal] && [variant_isset universal]} {
                 foreach archdir [glob ${destroot}${prefix}/lib/libgcc/*/] {
                     set archdir_nodestroot [string map "${destroot}/ /" ${archdir}]
                     if {[file exists ${archdir}/${dylib}]} {
@@ -305,7 +306,7 @@ post-destroot {
             ln -s ${prefix}/lib/libgcc/${dylib} ${destroot}${prefix}/lib/${name}/${dylib}
         }
 
-        if {[variant_isset universal]} {
+        if {[variant_exists universal] && [variant_isset universal]} {
             foreach archdir [glob ${destroot}${prefix}/lib/${name}/*/] {
                 if {[file exists ${archdir}/${dylib}]} {
                     delete ${archdir}/${dylib}
@@ -339,21 +340,12 @@ variant universal {
     configure.args-delete --disable-multilib
 }
 # the generated compiler doesn't accept -arch
-if {[vercmp [macports_version] 2.5.99] >= 0} {
 configure.env-append \
     "CPP=${configure.cc} -E" \
     "CXXCPP=${configure.cxx} -E"
 build.env-append \
     "CPP=${configure.cc} -E" \
     "CXXCPP=${configure.cxx} -E"
-} else {
-configure.env-append \
-    CPP="${configure.cc} -E" \
-    CXXCPP="${configure.cxx} -E"
-build.env-append \
-    CPP="${configure.cc} -E" \
-    CXXCPP="${configure.cxx} -E"
-}
 configure.cc-append [get_canonical_archflags]
 configure.cc_archflags
 configure.cxx_archflags

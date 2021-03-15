@@ -20,7 +20,7 @@ long_description \
 
 homepage            https://www.riverbankcomputing.com/software/sip/intro
 
-version             4.19.17
+version             4.19.25
 
 # bumped the epoch to revert from 4.19.10 to 4.19.8. The former caused
 # configuration errors in py*-qscitilla-qt5 and py*-pyqt4, and
@@ -36,7 +36,8 @@ epoch               1
 # removed or the order changed then the major number must be
 # incremented and the minor number set to 0.
 #
-# SIP 4.19.[14-17] provides SIP API 12.6
+# SIP 4.19.[19-25] provides SIP API 12.7
+# SIP 4.19.[14-18] provides SIP API 12.6
 # SIP 4.19.[12-13] provides SIP API 12.5
 # SIP 4.19.[9-11] do not work with MacPorts
 # -> see the "epoch" note above for more info
@@ -53,7 +54,7 @@ epoch               1
 # SIP 4.16.[1-7] provides SIP API 11.1.
 # SIP 4.15.5 provided SIP API 11.0.
 
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 python.default_version 27
 
 if {${name} ne ${subport}} {
@@ -69,9 +70,9 @@ if {${name} ne ${subport}} {
         distname        sip-${version}
     }
 
-    checksums           rmd160 ea4d01d8d4632276b9f88dc93fe16a3e696db28d \
-                        sha256 12bcd8f4d5feefc105bc075d12c5090ee783f7380728563c91b8b95d0ec45df3 \
-                        size   1056156
+    checksums           rmd160 9709eda79d7e0a73eca82e25cbbfd0af6da074c8 \
+                        sha256 b39d93e937647807bac23579edbff25fe46d16213f708370072574ab1f1b4211 \
+                        size   1056384
     revision            0
 
     patchfiles          patch-siputils.py.diff \
@@ -99,7 +100,10 @@ if {${name} ne ${subport}} {
     # always add some arch flags, since the user might have overridden
     # the default arch build (e.g., ticket #44086).
     python.add_archflags    no
-    if {[variant_isset universal]} {
+    if {![info exists universal_possible]} {
+        set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+    }
+    if {${universal_possible} && [variant_isset universal]} {
 
         foreach arch ${configure.universal_archs} {
             configure.args-append   "--arch=${arch}"
@@ -120,37 +124,11 @@ if {${name} ne ${subport}} {
 
     }
 
-    # find a way to specify the OS MINOR version.  For OSX 10.X, this
-    # value will be X.  The type is this variable is integer, so we
-    # can use "==" and so forth for comparison.
-
-    set MINOR ""
-
-    # hopefully the MACOSX_DEPLOYMENT_TARGET exists and is set by now.  if
-    # not, last resort (which is not desirable) is to use the os.version.
-
-    if {${macosx_deployment_target} ne ""} {
-        set MINOR [lindex [split ${macosx_deployment_target} "."] 1]
-    } else {
-        set MINOR [expr [lindex [split ${os.version} "."] 0] - 4]
+    if {${configure.sdkroot} eq ""} {
+        set configure.sdkroot "/"
     }
 
-    # set SDK version depending on OS version
-    set sdk_version ""
-    if {${MINOR} == 4} {
-        # OSX 10.4 requires an additional 'u'
-        set sdk_version "10.4u"
-    } else {
-        set sdk_version "10.${MINOR}"
-    }
-
-    if {[vercmp ${xcodeversion} 4.3] < 0} {
-        set sdk_dir_top ""
-    } else {
-        set sdk_dir_top Platforms/MacOSX.platform/Developer
-    }
-
-    configure.args-append --sdk=${developer_dir}/${sdk_dir_top}/SDKs/MacOSX${sdk_version}.sdk
+    configure.args-append --sdk=${configure.sdkroot}
 
     build.cmd           make
     build.target        all
@@ -186,6 +164,6 @@ if {[string last devel ${subport}] != -1} {
 
     livecheck.type   regex
     livecheck.url    https://www.riverbankcomputing.com/software/sip/download
-    livecheck.regex  sip-(\\d+(\\.\\d+)+)${extract.suffix}
+    livecheck.regex  sip-(4(\\.\\d+)+)${extract.suffix}
 
 }

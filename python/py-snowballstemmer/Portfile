@@ -4,28 +4,36 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-snowballstemmer
-version             1.2.1
+version             2.1.0
+revision            0
+
 platforms           darwin
 supported_archs     noarch
 license             BSD
 maintainers         nomaintainer
 
-description         This package provides 16 stemmer algorithms 15 Poerter English stemmer \
+description         This package provides 23 stemmer algorithms for 22 languages \
                     generated from Snowball algorithms.
 long_description    ${description}
 
-homepage            https://github.com/shibukawa/snowball_py
-master_sites        pypi:s/snowballstemmer
-distname            snowballstemmer-${version}
+homepage            https://github.com/snowballstem/snowball
 
-checksums           rmd160  433de19c91b3f0914bb280f37cebc21324da4db5 \
-                    sha256  919f26a68b2c17a7634da993d91339e288964f93c274f1343e3bbbe2096e1128 \
-                    size    49626
+checksums           sha256  e997baa4f2e9139951b6f4c631bad912dfd3c792467e2f03d7239464af90e914 \
+                    rmd160  9c4d7c512477590572b77f9b1fcab09941e4c33f \
+                    size    85674
 
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 
-if {$subport ne $name} {
-    livecheck.type      none
-} else {
-    livecheck.type      pypi
+if {${subport} ne ${name}} {
+    depends_build-append \
+                    port:py${python.version}-setuptools
+
+    post-destroot {
+        set docdir ${prefix}/share/doc/${subport}
+        xinstall -d ${destroot}${docdir}
+        xinstall -m 0644 -W ${worksrcpath} README.rst NEWS COPYING \
+            ${destroot}${docdir}
+    }
+
+    livecheck.type  none
 }

@@ -3,8 +3,8 @@
 PortSystem          1.0
 
 name                tcpdump
-version             4.9.2
-revision            1
+version             4.99.0
+revision            0
 categories          net
 maintainers         {mps @Schamschula} openmaintainer
 license             BSD
@@ -16,8 +16,9 @@ homepage            http://www.tcpdump.org/
 platforms           darwin
 master_sites        ${homepage}release/
 
-checksums           rmd160  966b95adee5c405dc7e631f73b43ced849ee1e80 \
-                    sha256  798b3536a29832ce0cbb07fafb1ce5097c95e308a6f592d14052e1ef1505fe79
+checksums           rmd160  ee0aeea16a3e3429f224dd3be1818051c273bb5f \
+                    sha256  8cf2f17a9528774a7b41060323be8b73f76024f7778f59c34efa65d49d80b842 \
+                    size    2008080
 
 depends_lib         port:libpcap \
                     port:libsmi \

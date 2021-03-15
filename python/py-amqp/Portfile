@@ -4,14 +4,14 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-amqp
-version             2.5.0
+version             5.0.5
 revision            0
 categories-append   devel
 platforms           darwin
 license             BSD
 supported_archs     noarch
 
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 
 maintainers         {stromnov @stromnov} openmaintainer
 
@@ -19,26 +19,29 @@ description         Low-level AMQP client for Python (fork of amqplib).
 long_description    ${description}
 
 homepage            https://github.com/celery/py-amqp
-master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}
 
-distname            ${python.rootname}-${version}
-
-checksums           rmd160  7fedbff8065cd0ec31009925d55b20082ea5b0c0 \
-                    sha256  cbb6f87d53cac612a594f982b717cc1c54c6a1e17943a0a0d32dc6cc9e2120c8 \
-                    size    117022
+checksums           rmd160  74b8fea2b8e15362645dd0389e8789891d4a13b0 \
+                    sha256  affdd263d8b8eb3c98170b78bf83867cdb6a14901d586e00ddb65bfe2f0c4e60 \
+                    size    122289
 
 if {${name} ne ${subport}} {
     depends_build-append \
                         port:py${python.version}-setuptools
     depends_lib-append  port:py${python.version}-vine
 
-    if {${python.version} eq 34} {
-        version             2.4.2
+    if {${python.version} <= 35} {
+        version             2.6.1
         revision            0
         distname            ${python.rootname}-${version}
-        checksums           rmd160  78514e5604eff9220a051bf6eb55ee91b4c5e39e \
-                            sha256  043beb485774ca69718a35602089e524f87168268f0d1ae115f28b88d27f92d7 \
-                            size    116265
+        checksums           rmd160  2e20b43d72c92a3dcf4415ea713931cc1609c8f9 \
+                            sha256  70cdb10628468ff14e57ec2f751c7aa9e48e7e3651cfd62d431213c0c4e58f21 \
+                            size    119956
+    } else {
+        variant speedups description {Enable Celery speedups} {
+            depends_build-append    port:py${python.version}-cython
+            configure.env-append    CELERY_ENABLE_SPEEDUPS=1
+            destroot.env-append     CELERY_ENABLE_SPEEDUPS=1
+        }
     }
 
     livecheck.type      none

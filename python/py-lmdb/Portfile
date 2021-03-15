@@ -1,0 +1,32 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+
+PortSystem          1.0
+PortGroup           python 1.0
+
+name                py-lmdb
+version             1.1.1
+platforms           darwin
+license             BSD
+maintainers         {gmail.com:herby.gillot @herbygillot} \
+                    openmaintainer
+
+description         Universal Python binding for the LMDB Lightning Database
+long_description    {*}${description}
+
+homepage            https://lmdb.readthedocs.io/en/release
+
+checksums           rmd160  5db11eddbb004a9b7c5ce460b9ec4ec58726531d \
+                    sha256  165cd1669b29b16c2d5cc8902b90fede15a7ee475c54d466f1444877a3f511ac \
+                    size    880359
+
+python.versions     38 39
+
+if {${name} ne ${subport}} {
+    depends_build-append \
+                    port:py${python.version}-setuptools
+
+    depends_lib-append \
+                    port:py${python.version}-cffi
+
+    livecheck.type  none
+}

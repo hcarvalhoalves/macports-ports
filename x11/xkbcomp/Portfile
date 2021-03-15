@@ -3,7 +3,8 @@
 PortSystem          1.0
 
 name                xkbcomp
-version             1.4.2
+version             1.4.4
+revision            0
 categories          x11
 license             X11
 maintainers         {jeremyhu @jeremyhu} openmaintainer
@@ -21,9 +22,9 @@ homepage            https://www.x.org/
 master_sites        xorg:individual/app/
 use_bzip2           yes
 
-checksums           rmd160  aaeb0dfb70220997fb1d1f07312e424977957a28 \
-                    sha256  6dd8bcb9be7e85bd7294abe261b8c7b0539d2fc93e41b80fb8bd013767ce8424 \
-                    size    248399
+checksums           rmd160  635ecf94e8e05ddfb61a8aebdee2567ea2149f98 \
+                    sha256  59cce603a607a17722a0a1cf99010f4894e7812beb5d695abbc08474d59af27e \
+                    size    251224
 
 depends_build       port:pkgconfig
 
@@ -38,4 +39,4 @@ if {[string match *clang* ${configure.cc}]} {
 
 livecheck.type      regex
 livecheck.regex     ${name}-(\[\\d.\]+)${extract.suffix}
-livecheck.url       http://xorg.freedesktop.org/archive/individual/app/?C=M&O=D
+livecheck.url       https://xorg.freedesktop.org/archive/individual/app/?C=M&O=D

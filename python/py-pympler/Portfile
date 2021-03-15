@@ -4,12 +4,15 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-pympler
-set real_name       Pympler
-version             0.6
+python.rootname     Pympler
+version             0.9
 revision            0
+
 categories-append   devel
+platforms           darwin
+supported_archs     noarch
 license             Apache-2 BSD MIT
-maintainers         nomaintainer
+maintainers         {reneeotten @reneeotten} openmaintainer
 
 description         measure, monitor and analyze the memory behavior of Python objects
 long_description    \
@@ -19,17 +22,13 @@ long_description    \
     lifetime of Python objects can be obtained. Undesirable or unexpected runtime \
     behavior like memory bloat and other "pymples" can easily be identified.
 
-platforms           darwin
-supported_archs     noarch
-
 homepage            https://github.com/pympler/pympler
-master_sites        pypi:P/${real_name}/
-distname            ${real_name}-${version}
-checksums           rmd160  dd5394d53b662431a5027d745ce345182ed3add5 \
-                    sha256  c262ceca4dac67b8b523956833c52443420eabc3321a07185990b358b8ba13a7 \
-                    size    174276
 
-python.versions     27 34 35 36 37
+checksums           rmd160  b2dc8fcaf70a235ea6f2e6fb2249a748b6ac8bbb \
+                    sha256  f2cbe7df622117af890249f2dea884eb702108a12d729d264b7c5983a6e06e47 \
+                    size    178371
+
+python.versions     27 35 36 37 38 39
 
 if {${name} ne ${subport}} {
     post-destroot {

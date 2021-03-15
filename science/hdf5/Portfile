@@ -5,11 +5,11 @@ PortGroup           muniversal 1.0
 PortGroup           mpi 1.0
 
 name                hdf5
-version             1.10.5
+version             1.12.0
 revision            0
 set shortversion    [join [lrange [split ${version} .] 0 1] .]
 categories          science
-maintainers         {mmoll @mamoll} openmaintainer
+maintainers         {eborisch @eborisch} openmaintainer
 
 description         HDF5 general purpose library and file format for storing\
                     scientific data
@@ -25,9 +25,10 @@ homepage            https://portal.hdfgroup.org/display/HDF5
 platforms           darwin
 master_sites \
     https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-${shortversion}/hdf5-${version}/src
-checksums           rmd160  1880b8688015540abb5d6a73221775d780c07155 \
-                    sha256  68d6ea8843d2a106ec6a7828564c1689c7a85714a35d8efafa2fee20ca366f44 \
-                    size    8706317
+checksums \
+    rmd160  56356ac0814da104d988e33eed88e6819a2e5d37 \
+    sha256  97906268640a6e9ce0cde703d5a71c9ac3092eded729591279bf2e3ca9765f61 \
+    size    9081988
 mpi.setup           -gcc44 -gcc45
 
 use_bzip2           yes
@@ -35,6 +36,16 @@ depends_lib         port:zlib
 use_parallel_build  yes
 
 patchfiles          patch-tools-src-misc-h5cc.in.diff
+
+post-patch {
+    reinplace -E {s/^(EXAMPLE(TOP)?DIR) = \$\(ex/\1 = ${DESTDIR}$(ex/} \
+        c++/examples/Makefile.in \
+        hl/c++/examples/Makefile.in \
+        hl/examples/Makefile.in \
+        hl/fortran/examples/Makefile.in \
+        examples/Makefile.in \
+        fortran/examples/Makefile.in
+}
 
 # llvm-gcc-4.2 produced code fails type conversion tests
 # Upstream suggestion is use -O0. Clang-produced code passes all tests.
@@ -49,10 +60,12 @@ if {[vercmp ${xcodeversion} 4.0] < 0} {
 
 # Use lib/hdf5 rather than hdf5/lib plugin directory
 configure.args      --with-zlib=yes \
+                    --disable-silent-rules \
                     --enable-build-mode=production --disable-fortran \
                     --disable-cxx --disable-hl --enable-shared --enable-static \
                     --disable-parallel --disable-threadsafe \
-                    --with-default-plugindir=${prefix}/lib/hdf5
+                    --with-default-plugindir=${prefix}/lib/hdf5 \
+                    --with-default-api-version=v110
 
 # http://mail.hdfgroup.org/pipermail/hdf-forum_hdfgroup.org/2010-March/002682.html
 license             NCSA
@@ -60,7 +73,7 @@ license             NCSA
 default_variants    +cxx +hl
 
 post-configure {
-    if {[variant_isset universal]} {
+    if {[variant_exists universal] && [variant_isset universal]} {
         set dirs {}
         foreach arch ${universal_archs_to_use} {
             lappend dirs ${worksrcpath}-${arch}
@@ -70,12 +83,12 @@ post-configure {
     }
     foreach dir ${dirs} {
         reinplace -E {s|-arch [a-z0-9_]+||g} \
-            ${dir}/tools/src/misc/h5cc \
+            ${dir}/bin/h5cc \
             ${dir}/c++/src/h5c++ \
             ${dir}/src/libhdf5.settings \
             ${dir}/fortran/src/h5fc
-        if ${configure.ccache} {
-            reinplace -W ${dir} {s|ccache ||} tools/src/misc/h5cc c++/src/h5c++
+        if {${configure.ccache}} {
+            reinplace -W ${dir} {s|ccache ||} bin/h5cc c++/src/h5c++
         }
     }
 }
@@ -117,15 +130,13 @@ variant fortran description {
 } {
     configure.args-delete       --disable-fortran
     configure.args-append       --enable-fortran --enable-fortran2003
-
-    if {![fortran_variant_isset]} {
-        default_variants +gfortran
-    }
 }
 
-if {[ variant_isset fortran ] && ![ fortran_variant_isset ] } {
-    ui_error "+fortran requires a fortran compiler to be selected"
-    return -code error
+if {[variant_isset fortran] && ![fortran_variant_isset]} {
+    default_variants +gfortran
+    if {![fortran_variant_isset]} {
+        error "+fortran requires a fortran compiler to be selected"
+    }
 }
 
 if {([ variant_isset gfortran ] || [ variant_isset g95 ]) && ![ variant_isset fortran ]} {
@@ -176,9 +187,9 @@ if {[ mpi_variant_isset ]} {
 
 notes-append {
 Mac users may need to set the environment variable "HDF5_USE_FILE_LOCKING"\
-to the five-character string "FALSE" when accessing network mounted files. \
-This is an application run-time setting, not a configure or build setting. \
-Otherwise errors such as "unable to open file" or "HDF5 error" may be \
+to the five-character string "FALSE" when accessing network mounted files.\
+This is an application run-time setting, not a configure or build setting.\
+Otherwise errors such as "unable to open file" or "HDF5 error" may be\
 encountered.
 }
 

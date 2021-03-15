@@ -4,25 +4,57 @@ PortSystem          1.0
 PortGroup           cmake 1.1
 PortGroup           github 1.0
 
-github.setup        ARMmbed mbedtls 2.17.0 mbedtls-
+github.setup        ARMmbed mbedtls 2.26.0 mbedtls-
 revision            0
+
 categories          devel
 license             Apache-2
 maintainers         {mps @Schamschula} openmaintainer
 description         An open source, portable, easy to use, readable and flexible SSL \
                     library.
-long_description    ${description}
+long_description    {*}${description}
 platforms           darwin
 
-checksums           rmd160  6ded3b1f31dc0bb368a1d65f1d760396afc18c6c \
-                    sha256  688848d50a8eb122e2e266149f7dc676e39771778f3fe00ddb2b58ec3c9e70f6 \
-                    size    2738816
+homepage            https://tls.mbed.org
+github.tarball_from archive
+
+checksums           rmd160  c7c5ec41b4974d3b24897ac0d65ed3bcd50e50e8 \
+                    sha256  35d8d87509cd0d002bddbd5508b9d2b931c5e83747d087234cc7ad551d53fe05 \
+                    size    4080986
+
+set python.branch 3.8
+variant python38 conflicts python39 description {Use Python 3.8} {
+    depends_build-append \
+                    port:python38
+}
+variant python39 conflicts python38 description {Use Python 3.9} {
+    depends_build-append \
+                    port:python39
+
+    set python.branch 3.9
+}
+
+if {![variant_isset python39]} {
+    default_variants +python38
+}
 
 depends_build-append \
-                    port:perl5 \
-                    port:python27
+                    port:perl5
 
 configure.args-append \
-                    -DPERL_EXECUTABLE=${prefix}/bin/perl
+                    -DENABLE_TESTING=On \
+                    -DPERL_EXECUTABLE=${prefix}/bin/perl \
+                    -DMBEDTLS_PYTHON_EXECUTABLE:FILEPATH=${prefix}/bin/python${python.branch} \
+                    -DUSE_SHARED_MBEDTLS_LIBRARY=ON \
+                    -DMBEDTLS_FATAL_WARNINGS=OFF
+
+# error: /usr/bin/ranlib: unknown option character `n' in: -no_warning_for_no_symbols
+# see: https://trac.macports.org/ticket/60762
+if {${os.platform} eq "darwin" && ${os.major} < 13} {
+    depends_build-append \
+                    port:cctools
+    configure.args-append \
+                    -DCMAKE_RANLIB=${prefix}/bin/ranlib
+}
 
 test.run            yes

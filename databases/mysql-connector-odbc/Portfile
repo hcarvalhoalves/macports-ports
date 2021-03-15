@@ -4,7 +4,7 @@ name                    mysql-connector-odbc
 version                 5.1.8
 revision                1
 set branch              [join [lrange [split ${version} .] 0 1] .]
-homepage                http://www.mysql.com/products/connector/
+homepage                https://www.mysql.com/products/connector/
 categories              databases
 platforms               darwin
 maintainers             nomaintainer
@@ -18,12 +18,7 @@ long_description \
     (previously called MyODBC drivers) that provide access to a MySQL database \
     using the industry standard Open Database Connectivity (ODBC) API.
 
-master_sites \
-    http://mysql.mirrors.pair.com/Downloads/Connector-ODBC/${branch}/ \
-    http://mysql.he.net/Downloads/Connector-ODBC/${branch}/ \
-    http://mirrors.sunsite.dk/mysql/Downloads/Connector-ODBC/${branch}/ \
-    http://sunsite.informatik.rwth-aachen.de/mysql/Downloads/Connector-ODBC/${branch}/ \
-    http://ftp.plusline.de/mysql/Downloads/Connector-ODBC/${branch}/
+master_sites            mysql:Connector-ODBC/${branch}/
 
 checksums               sha1    2272075c66712cf7a05e50eeb4520f7c504c3ae8 \
                         rmd160  0db5c4d42c7377f7fc1fa2ad569f50f9a497511e
@@ -44,7 +39,7 @@ pre-configure {
 }
 
 livecheck.type          regex
-livecheck.url           http://dev.mysql.com/downloads/connector/odbc/${branch}.html
+livecheck.url           https://dev.mysql.com/downloads/connector/odbc/${branch}.html
 livecheck.regex         ${name}-(${branch}.\[0-9\.\]+)
 
 notes "To test ${name}

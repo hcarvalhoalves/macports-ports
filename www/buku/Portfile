@@ -4,14 +4,26 @@ PortSystem          1.0
 PortGroup           github 1.0
 PortGroup           python 1.0
 
-github.setup        jarun Buku 4.2.2 v
-name                buku
+github.setup        jarun buku 4.5 v
 revision            0
-checksums           rmd160  fac1af78f8910b2df5ec3bcf6868b3c6cf156dad \
-                    sha256  baa80075369f74bbb0f5f6248159be4f8d682094cf6d62ad8e1e869c36779b37 \
-                    size    480214
+checksums           rmd160  2d9bae34717c962c69f5474cda95f391677e2fb2 \
+                    sha256  e043ca1467e6f5740648951b05ef09f57b241dd5a70d27637e78e3e586498ef5 \
+                    size    488981
 
 description         A command-line bookmark manager
+long_description    buku is a powerful bookmark manager written in \
+                    Python3 and SQLite3. buku can auto-import \
+                    bookmarks from your browser(s) or fetch the title \
+                    and description of a bookmarked url from the web. \
+                    You can use your favourite editor to compose and \
+                    update bookmarks. With multiple search options, \
+                    including regex and a deep scan mode (particularly \
+                    for URLs), it can find any bookmark instantly. \
+                    buku can look up the latest snapshot of a broken \
+                    link on the Wayback Machine.  There's an Easter \
+                    egg to revisit random forgotten bookmarks too! \
+                    buku is too busy to track you: no hidden history, \
+                    obsolete records, usage analytics or homing.
 
 categories          www
 platforms           darwin
@@ -19,16 +31,13 @@ supported_archs     noarch
 maintainers         {isi.edu:calvin @cardi} openmaintainer
 license             GPL-3
 
-python.default_version  37
+python.default_version  38
 
 depends_lib-append  port:py${python.version}-beautifulsoup4 \
                     port:py${python.version}-certifi \
                     port:py${python.version}-cryptography \
                     port:py${python.version}-html5lib \
                     port:py${python.version}-urllib3
-
-# remove patch in the next release
-patchfiles          patch-prompt-colors-fix.diff
 
 post-extract {
     # build only buku by default

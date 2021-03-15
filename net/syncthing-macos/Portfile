@@ -3,14 +3,15 @@
 PortSystem              1.0
 PortGroup               github 1.0
 
-github.setup            syncthing syncthing-macos 1.0.0-2 v
+github.setup            syncthing syncthing-macos 1.13.1-1 v
+revision                0
 
-checksums               rmd160  d03ca0944889cbd9cac7426cfc178cf45873734a \
-                        sha256  3fb4bb66b836a3f0f33162eccfb65ae91ad0a56904b1a127a880183674160418 \
-                        size    7482753
+checksums               rmd160  2bf595c15ff7efdcf853fd1e9ab2d6bdae84ef61 \
+                        sha256  2d9b204c850d95aa7c2c742c26033f00f3902d0a98950755e165ad8aab34eef3 \
+                        size    12198931
 
 categories              net aqua
-maintainers             {yan12125 @yan12125} openmaintainer
+maintainers             {@lbschenkel lbschenkel} openmaintainer
 
 description             Frugal and native macOS Syncthing application bundle
 long_description        ${description}
@@ -20,13 +21,15 @@ license                 MIT
 
 depends_lib-append      port:syncthing
 
-patchfiles              no-bundled-syncthing.patch
+patchfiles              no-bundled-syncthing.patch \
+                        disable-autoupdatechecks.patch
 
 post-patch {
     reinplace "s|__PREFIX__|${prefix}|" ${worksrcpath}/syncthing/STApplication.m
 }
 
 use_configure           no
+use_xcode               yes
 
 build {
     system -W ${build.dir} "make release"

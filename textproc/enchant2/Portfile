@@ -1,10 +1,9 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
-PortGroup           cxx11 1.1
 PortGroup           github 1.0
 
-github.setup        AbiWord enchant 2.2.3 v
+github.setup        AbiWord enchant 2.2.15 v
 name                enchant2
 categories          textproc devel
 platforms           darwin
@@ -18,22 +17,22 @@ long_description    Enchant aims to provide a simple but comprehensive abstracti
 
 github.tarball_from releases
 
-# Remove dist_subdir when updating to the next version.
-dist_subdir         ${name}/${version}_1
-
-checksums           rmd160  87ac76b00ed54d47d246b0938d493d2a82180de6 \
-                    sha256  abd8e915675cff54c0d4da5029d95c528362266557c61c7149d53fa069b8076d \
-                    size    957451
+checksums           rmd160  32a49f18c78f6aa50cc77d86ecae9d33cab0709a \
+                    sha256  3b0f2215578115f28e2a6aa549b35128600394304bd79d6f28b0d3b3d6f46c03 \
+                    size    990693
 
 depends_lib         path:lib/pkgconfig/glib-2.0.pc:glib2
 
 depends_build       port:pkgconfig
+
+compiler.cxx_standard   2011
 
 configure.args      --without-hunspell \
                     --without-applespell \
                     --without-aspell \
                     --without-voikko \
                     --without-hspell \
+                    --without-nuspell \
                     --without-zemberek \
                     --disable-silent-rules \
                     --disable-gcc-warnings
@@ -61,6 +60,13 @@ variant hunspell description {Enable hunspell backend} {
     configure.args-replace --without-hunspell --with-hunspell
     configure.args-append  --with-hunspell-dir=${prefix}/share/hunspell
     depends_lib-append  port:hunspell
+    depends_run-append  port:hunspell-en_US
+}
+
+variant nuspell description {Enable nuspell backend} {
+    configure.args-replace --without-nuspell --with-nuspell
+    configure.args-append  --with-nuspell-dir=${prefix}/share/hunspell
+    depends_lib-append  port:nuspell
     depends_run-append  port:hunspell-en_US
 }
 

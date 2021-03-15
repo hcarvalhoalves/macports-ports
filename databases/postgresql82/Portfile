@@ -1,10 +1,14 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem 1.0
+PortGroup deprecated 1.0
+
+# Final release was on 2011-12-05
+deprecated.upstream_support no
 
 name			postgresql82
 version			8.2.23
-revision  3
+revision  4
 
 categories		databases
 platforms		darwin
@@ -50,7 +54,10 @@ configure.args	--sysconfdir=${prefix}/etc/${name} \
 				--enable-thread-safety \
 				--enable-integer-datetimes
 
-if {[variant_isset universal]} {
+if {![info exists universal_possible]} {
+    set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+}
+if {${universal_possible} && [variant_isset universal]} {
     post-patch {
         xinstall -m 755 ${filespath}/ldfat.sh ${workpath}
         reinplace s|@UNIVERSAL_ARCHS@|${universal_archs}| ${workpath}/ldfat.sh

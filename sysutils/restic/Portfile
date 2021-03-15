@@ -3,22 +3,32 @@
 PortSystem          1.0
 PortGroup           golang 1.0
 
-go.setup            github.com/restic/restic 0.9.5 v
-categories          sysutils
+go.setup            github.com/restic/restic 0.11.0 v
+revision            0
 
+categories          sysutils
 license             BSD
 maintainers         nomaintainer
 
 description         Fast, secure, efficient backup program.
-long_description    Restic is a program that does backups right. Its design goals are: Easy, Fast, Verifiable, Secure, Efficient and Free.
 
-homepage            https://restic.net/
+long_description    Restic is a program that does backups right. Its design \
+                    goals are: Easy, Fast, Verifiable, Secure, Efficient and \
+                    Free.
 
-checksums           rmd160  7297c7dc01980c0ece228ad492bbc7d06fae6d37 \
-                    sha256  f818778b135d3b0ca9710992e13b7e06458fcde3aa914b60907aeca7ac84bb5e \
-                    size    26934307
+homepage            https://restic.net
 
-set pyver           3.7
+checksums           ${distname}${extract.suffix} \
+                        rmd160  89c0647a53dcb1333371734ce8c57cb26d91ffb8 \
+                        sha256  3fee12f2bf405e28cc35e8fe8379d9d73345a79ee8347f4928701158495bb266 \
+                        size    23760697
+
+# FIXME: This port currently can't be built without allowing go mod to fetch
+# dependencies during the build phase. See
+# https://trac.macports.org/ticket/61192
+build.env-delete    GOPROXY=off GO111MODULE=off
+
+set pyver           3.9
 
 variant             docs description {Build the documentation} {
     set pyver_nodot [string map {. {}} ${pyver}]
@@ -29,7 +39,13 @@ variant             docs description {Build the documentation} {
                     port:py${pyver_nodot}-sphinx_rtd_theme
 }
 
-build.cmd           go run build.go
+variant             debug description {Enable debug options} {
+    build.post_args-append \
+                    -tags debug
+}
+
+build.cmd           ${go.bin} run
+build.target        build.go
 
 post-build {
     if {[variant_isset docs]} {
@@ -38,12 +54,29 @@ post-build {
     }
 }
 
+test.run            yes
+
+test {
+    set repository_path ${workpath}/repo
+    set restore_path    ${workpath}/restore
+    set file_name       build.go
+
+    system -W ${worksrcpath} \
+        "RESTIC_PASSWORD=\"foo\" ./restic -r ${repository_path} init"
+    system -W ${worksrcpath} \
+        "RESTIC_PASSWORD=\"foo\" ./restic -r ${repository_path} backup ${file_name} --no-cache"
+    system -W ${worksrcpath} \
+        "RESTIC_PASSWORD=\"foo\" ./restic -r ${repository_path} restore latest -t ${restore_path} --no-cache"
+    system -W ${worksrcpath} \
+        "diff -q ${file_name} ${restore_path}/${file_name}"
+}
+
 destroot {
     xinstall -m 755 ${worksrcpath}/${name} ${destroot}${prefix}/bin/
 
     set docdir ${prefix}/share/doc/${name}
     xinstall -m 755 -d ${destroot}${docdir}
-    xinstall -m 644 -W ${worksrcpath} LICENSE README.rst ${destroot}${docdir}
+    xinstall -m 644 -W ${worksrcpath} LICENSE README.md ${destroot}${docdir}
 
     if {[variant_isset docs]} {
         file copy ${worksrcpath}/doc/_build/html ${destroot}${docdir}

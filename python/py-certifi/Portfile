@@ -4,7 +4,7 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-certifi
-version             2019.03.09
+version             2020.12.05
 set distversion     [regsub -all {(\.)0} ${version} {\1}]
 revision            0
 categories-append   devel net
@@ -12,7 +12,7 @@ platforms           darwin
 license             {MPL-1.1 GPL-2+ LGPL-2.1+}
 supported_archs     noarch
 
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 
 maintainers         {stromnov @stromnov} openmaintainer
 
@@ -20,13 +20,12 @@ description         Python package for providing Mozilla's CA Bundle.
 long_description    ${description}
 
 homepage            https://pypi.python.org/pypi/certifi
-master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}
 
 distname            ${python.rootname}-${distversion}
 
-checksums           rmd160  667a2e8d032455eb63e5a0f2cc7ef798bc5e925e \
-                    sha256  b26104d6835d1f5e49452a26eb2ff87fe7090b89dfcaee5ea2212697e1e1d7ae \
-                    size    158179
+checksums           rmd160  190412fa0dd9413b6c55e4b78687571f589205b2 \
+                    sha256  1a4995114262bffbc2413b159f2a1a480c969de6e6eb13ee966d470af86af59c \
+                    size    149468
 
 if {${name} ne ${subport}} {
     livecheck.type      none

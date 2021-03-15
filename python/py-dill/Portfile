@@ -4,7 +4,8 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-dill
-version             0.2.9
+version             0.3.3
+revision            0
 
 platforms           darwin
 supported_archs     noarch
@@ -24,17 +25,35 @@ long_description    \
 
 homepage            https://github.com/uqfoundation/dill
 
-distname            ${python.rootname}-${version}
-master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}/
+use_zip             yes
+checksums           rmd160  e21992ba9dcea23d91091b5dd886062cd65debf5 \
+                    sha256  efb7f6cb65dba7087c1e111bb5390291ba3616741f96840bfc75792a1a9b5ded \
+                    size    177693
 
-checksums           rmd160  ea8b58390f3ce9bc8f5641e77817839b30490592 \
-                    sha256  f6d6046f9f9195206063dd0415dff185ad593d6ee8b0e67f12597c0f4df4986f \
-                    size    150738
-
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 
 if {${name} ne ${subport}} {
-    depends_build-append    port:py${python.version}-setuptools
+    depends_build-append \
+                    port:py${python.version}-setuptools
+
+    # make sure the tests are run with the correct Python version
+    post-patch {
+        reinplace "s|python = 'python'|python = '${python.bin}'|g" \
+            ${worksrcpath}/tests/__main__.py
+    }
+
+    test.run        yes
+    test.dir        ${build.dir}/tests
+    test.cmd        ${python.bin} __main__.py
+    test.target
+    test.env        PYTHONPATH=${worksrcpath}/build/lib
+
+    post-destroot {
+        set docdir ${prefix}/share/doc/${subport}
+        xinstall -d ${destroot}${docdir}
+        xinstall -m 0644 -W ${worksrcpath} LICENSE README README.md \
+            ${destroot}${docdir}
+    }
 
     livecheck.type  none
 }

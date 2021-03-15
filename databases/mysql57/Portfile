@@ -5,7 +5,7 @@ PortGroup           conflicts_build 1.0
 
 name                mysql57
 set name_mysql      ${name}
-version             5.7.26
+version             5.7.33
 set boost_version   1.59.0
 # Set revision_client and revision_server to 0 on version bump.
 set revision_client 0
@@ -15,14 +15,15 @@ categories          databases
 platforms           darwin
 license             GPL-2
 maintainers         nomaintainer
-homepage            http://www.mysql.com/
+homepage            https://www.mysql.com/
 
 if {$subport eq $name} {
     PortGroup           muniversal 1.0
     PortGroup           cmake 1.0
     PortGroup           select 1.0
+    PortGroup           legacysupport 1.0
 
-    PortGroup           cxx11 1.1
+    compiler.cxx_standard   2011
     configure.cxxflags-append -std=c++11
 
     revision            ${revision_client}
@@ -44,9 +45,9 @@ if {$subport eq $name} {
                         ${boost_distname}${extract.suffix}:boost
 
     checksums           ${distname}${extract.suffix} \
-                        rmd160  3ab0a5b4d6883af767869fa9d55a5c8fd9013121 \
-                        sha256  5f01d579a20199e06fcbc28f0801c3cb545a54a2863ed8634f17fe526480b9f1 \
-                        size    54056899 \
+                        rmd160  b041f96c892083f03228eb2e4a24f05cce452f3f \
+                        sha256  ad3b8d80d7b6e307cdf9eb061cbecccfe78bb5ecef24f2b17818d8e3ea2063ad \
+                        size    56179381 \
                         ${boost_distname}${extract.suffix} \
                         rmd160  a7974be69a426e8a56b880a412d6c418e4cd751c \
                         sha256  47f11c8844e579d02691a607fbd32540104a9ac7a2534a8ddaef50daf502baac \
@@ -54,6 +55,8 @@ if {$subport eq $name} {
 
     depends_lib-append  port:ncurses \
                         port:libedit \
+                        port:cyrus-sasl2 \
+                        path:lib/libssl.dylib:openssl \
                         port:zlib
     depends_run-append  port:mysql_select
 
@@ -66,11 +69,11 @@ if {$subport eq $name} {
 
     patch.pre_args  -p1
     patchfiles      patch-cmake-install_layout.cmake.diff \
-                    patch-cmake-install_layout.cmake-yassl.diff \
                     patch-configure.cmake.diff \
                     patch-innodb_memcached-daemon_memcached-include-memcached-util.h.diff \
                     patch-lockpool.diff \
-                    patch-cmake-fix-test-env.diff
+                    patch-cmake-fix-test-env.diff \
+                    patch-sql-locks-shared_spin_lock.cc.diff
 
     post-patch {
         reinplace "s|@NAME@|${name_mysql}|g" \
@@ -104,7 +107,7 @@ if {$subport eq $name} {
         -DENABLE_GCOV:BOOL=OFF \
         -DENABLE_DTRACE:BOOL=OFF \
         -DWITH_LIBWRAP:BOOL=OFF \
-        -DWITH_SSL:STRING=bundled \
+        -DWITH_SSL:STRING=${prefix} \
         -DWITH_INNODB_MEMCACHED=1 \
         -DWITH_PARTITION_STORAGE_ENGINE=1 \
         -DDOWNLOAD_BOOST=1 \
@@ -158,15 +161,6 @@ if {$subport eq $name} {
         }
     }
 
-    variant openssl description {Enable OpenSSL support} {
-        depends_lib-append      path:lib/libssl.dylib:openssl
-
-        patchfiles-delete       patch-cmake-install_layout.cmake-yassl.diff
-
-        configure.args-delete   -DWITH_SSL:STRING=bundled
-        configure.args-append   -DWITH_SSL:STRING=${prefix}
-    }
-
     notes "
 On activation if no ${prefix}/etc/${name_mysql}/my.cnf file exists one
 will be created which loads
@@ -188,7 +182,7 @@ simultaneously.
 "
 
     livecheck.type      regex
-    livecheck.url       http://dev.mysql.com/downloads/mysql/${version_branch}.html
+    livecheck.url       https://dev.mysql.com/downloads/mysql/${version_branch}.html
     livecheck.regex     "MySQL Community Server (${version_branch}(\.\[0-9.\]+)?)"
 }
 
@@ -196,7 +190,7 @@ subport ${name_mysql}-server {
     revision            ${revision_server}
     license             BSD
     description         Run ${name_mysql} as server
-    long_description    ${description}
+    long_description    {*}${description}
 
     supported_archs     noarch
     distfiles

@@ -1,14 +1,13 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem 1.0
-PortGroup           cxx11 1.1
 
 name                qscintilla
 
-version             2.11.1
-checksums           rmd160 f4bae77927824e094d048d5823418b5436529347 \
-                    sha256 dae54d19e43dba5a3f98ac084fc0bcfa6fb713fa851f1783a01404397fd722f5 \
-                    size   2932060
+version             2.11.6
+checksums           rmd160  bc00b95128956424a2f3466d25c4dd9f03169c0b \
+                    sha256  e7346057db47d2fb384467fafccfcb13aa0741373c5d593bc72b55b2f0dd20a7 \
+                    size    3027764
 revision            0
 
 categories          devel
@@ -29,8 +28,12 @@ long_description    QScintilla is a port to Qt of Neil Hodgson's Scintilla C++ e
                     bold and italics, multiple foreground and background colours and    \
                     multiple fonts.
 
-distname            QScintilla_gpl-${version}
-master_sites        https://www.riverbankcomputing.com/static/Downloads/QScintilla
+#distname            QScintilla_gpl-${version}
+distname            QScintilla-${version}
+master_sites        https://www.riverbankcomputing.com/static/Downloads/QScintilla/${version}
+
+compiler.cxx_standard \
+                    2011
 
 foreach qt_major {4 5} {
     subport ${name}-qt${qt_major} {
@@ -44,6 +47,9 @@ foreach qt_major {4 5} {
 
         # temporary path to fix necessary inclusion of QUrl
         patchfiles-append patch-Qt4Qt5_qsciscintillabase.cpp.diff
+
+        # fixup @rpath in the library's install_name
+        patchfiles-append patch-Qt4Qt5-qscintilla.pro.diff
 
         if {${qt_major} eq 4} {
             # enable C++11
@@ -72,7 +78,7 @@ foreach qt_major {4 5} {
         }
 
         description       Qt Designer plugin for Qt${qt_major} QScintilla
-        long_description  ${description}
+        long_description  {*}${description}
 
         worksrcdir ${worksrcdir}/designer-Qt4Qt5
 
@@ -109,7 +115,7 @@ foreach qt_major {4 5} {
         }
     }
 
-    set python_versions {27 34 35 36 37}
+    set python_versions {27 35 36 37 38 39}
 
     foreach pver ${python_versions} {
         subport py${pver}-${name}-qt${qt_major} {
@@ -176,7 +182,7 @@ foreach qt_major {4 5} {
 }
 
 if {${subport} eq ${name}} {
-    revision 1
+    revision 2
 
     distfiles
     patchfiles
@@ -205,4 +211,4 @@ if {${subport} eq ${name}} {
 
 livecheck.type      regex
 livecheck.url       ${homepage}download
-livecheck.regex     >QScintilla\[_-\]gpl-\(\[0-9.\]+\)${extract.suffix}<
+livecheck.regex     >QScintilla\[^0-9.\]+\(\[0-9.\]+\)${extract.suffix}<

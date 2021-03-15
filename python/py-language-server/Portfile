@@ -5,31 +5,36 @@ PortGroup           github 1.0
 PortGroup           python 1.0
 PortGroup           select 1.0
 
-github.setup        palantir python-language-server 0.26.1
-revision            0
 name                py-language-server
+github.setup        palantir python-language-server 0.36.2
+github.tarball_from archive
+revision            1
+
+# stealth update, remove when updating to new version
+dist_subdir          ${name}/${version}
+
 categories-append   devel
+platforms           darwin
+supported_archs     noarch
 license             MIT
 maintainers         {reneeotten @reneeotten} openmaintainer
+
 description         An implementation of the Language Server Protocol for Python
 long_description    ${description}
 
-platforms           darwin
-supported_archs     noarch
+checksums           rmd160  cf9f5be95659eff1c9a9fabbf136e0653a9258d7 \
+                    sha256  fb573f780467c1cae0de47065eecbaaf9b457bd5cbe9f5cf8409224e1cd21cf6 \
+                    size    463591
 
-checksums           rmd160  36da3bda9239f72199f5ac63fdf3699be468d21c \
-                    sha256  c9d4ce47a4b7dd6886702106edb83182e2040e2e6a20a9023de4f9c505793bf0 \
-                    size    443749
-
-python.versions     27 35 36 37
+python.versions     27 35 36 37 38 39
 
 if {${subport} ne ${name}} {
     depends_lib-append \
                     port:py${python.version}-autopep8 \
                     port:py${python.version}-codestyle \
                     port:py${python.version}-docstyle \
+                    port:py${python.version}-flake8 \
                     port:py${python.version}-flake8-mccabe \
-                    port:py${python.version}-future \
                     port:py${python.version}-jedi \
                     port:py${python.version}-pluggy \
                     port:py${python.version}-pyflakes \
@@ -37,17 +42,31 @@ if {${subport} ne ${name}} {
                     port:py${python.version}-python-jsonrpc-server \
                     port:py${python.version}-rope \
                     port:py${python.version}-setuptools \
+                    port:py${python.version}-ujson \
                     port:py${python.version}-yapf
 
     if {${python.version} eq 27} {
         depends_lib-append  port:py${python.version}-backports-functools_lru_cache \
                             port:py${python.version}-configparser \
-                            port:py${python.version}-futures
+                            port:py${python.version}-future
+    }
+
+    patchfiles-append   patch-pyls_plugins_flake8_lint.py.diff \
+                        patch-test_plugins_flake8_lint.py.diff
+
+    post-patch {
+        reinplace "s|@@FLAKE8_BIN@@|flake8-${python.branch}|g" ${worksrcpath}/pyls/plugins/flake8_lint.py
+        reinplace "s|@@FLAKE8_BIN@@|flake8-${python.branch}|g" ${worksrcpath}/test/plugins/test_flake8_lint.py
+        reinplace "s|@@PYTHON_BIN@@|${python.bin}|g" ${worksrcpath}/pyls/plugins/flake8_lint.py
+
+        # temporary reinplace to remove version cap on jedi
+        reinplace {s|'jedi>=0\.17\.2,<0\.18\.0'|'jedi>=0\.17\.2,<0.19.0'|g} ${worksrcpath}/setup.py
     }
 
     depends_test-append \
                     port:py${python.version}-pytest \
-                    port:py${python.version}-mock
+                    port:py${python.version}-mock \
+                    port:py${python.version}-flaky
 
     test.run        yes
     test.cmd        py.test-${python.branch}

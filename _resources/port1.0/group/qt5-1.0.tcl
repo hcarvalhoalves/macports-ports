@@ -7,7 +7,8 @@
 
 global available_qt_versions
 array set available_qt_versions {
-    qt5   {qt5-qtbase   5.12}
+    qt5   {qt5-qtbase   5.15}
+    qt513 {qt513-qtbase 5.13}
     qt511 {qt511-qtbase 5.11}
     qt59  {qt59-qtbase  5.9}
     qt58  {qt58-qtbase  5.8}
@@ -17,6 +18,11 @@ array set available_qt_versions {
     qt53  {qt53-qtbase  5.3}
 }
 #qt5-kde {qt5-kde 5.8}
+
+global custom_qt_versions
+array set custom_qt_versions {
+    phantomjs-qt {phantomjs-qt-qtbase 5.5}
+}
 
 # Qt has what is calls reference configurations, which are said to be thoroughly tested
 # Qt also has configurations which are "occasionally tested" or are "[d]eployment only"
@@ -115,6 +121,8 @@ proc qt5.get_default_name {} {
         #
         # macOS Sierra (10.12)
         #
+        # Qt 5.14: Not Supported
+        # Qt 5.13: Supported
         # Qt 5.12: Supported
         # Qt 5.11: Supported
         # Qt 5.10: Supported
@@ -122,12 +130,14 @@ proc qt5.get_default_name {} {
         # Qt 5.8:  Supported
         # Qt 5.7:  Not Supported but seems to work
         #
-        return qt5
+        return qt513
         #
     } elseif { ${os.major} == 17 } {
         #
         # macOS High Sierra (10.13)
         #
+        # Qt 5.14: Supported
+        # Qt 5.13: Supported
         # Qt 5.12: Supported
         # Qt 5.11: Supported
         # Qt 5.10: Supported
@@ -138,7 +148,19 @@ proc qt5.get_default_name {} {
         #
         # macOS Mojave (10.14)
         #
+        # Qt 5.14: Supported
+        # Qt 5.13: Supported
         # Qt 5.12: Supported
+        #
+        return qt5
+        #
+    } elseif { ${os.major} == 19 } {
+        #
+        # macOS Catalina (10.15)
+        #
+        # Qt 5.14: Supported
+        # Qt 5.13: Not Supported but seems to work
+        # Qt 5.12: Not Supported but seems to work
         #
         return qt5
         #
@@ -178,6 +200,12 @@ if {[info exists name]} {
     }
 }
 
+if {[info exists qt5.custom_qt_name]} {
+    set qt5.name       ${qt5.custom_qt_name}
+    set qt5.base_port  [lindex $custom_qt_versions(${qt5.name}) 0]
+    set qt5.version    [lindex $custom_qt_versions(${qt5.name}) 1]
+}
+
 if {[tbool just_want_qt5_version_info]} {
     return
 }
@@ -185,6 +213,9 @@ if {[tbool just_want_qt5_version_info]} {
 # standard install directory
 global qt_dir
 set qt_dir               ${prefix}/libexec/qt5
+if {[info exists qt5.custom_qt_name]} {
+    set qt_dir           ${prefix}/libexec/${qt5.custom_qt_name}
+}
 
 # standard Qt non-.app executables directory
 global qt_bins_dir
@@ -309,7 +340,7 @@ namespace eval qt5pg {
         }
         qtcanvas3d {
             5.5
-            6.0
+            5.13
             libexec/qt5/qml/QtCanvas3D/libqtcanvas3d.dylib
             ""
         }
@@ -379,6 +410,12 @@ namespace eval qt5pg {
             lib/pkgconfig/Qt5Location.pc
             ""
         }
+        qtlottie {
+            5.13
+            6.0
+            lib/cmake/Qt5Bodymovin/Qt5BodymovinConfig.cmake
+            ""
+        }
         qtmacextras {
             5.2
             6.0
@@ -409,6 +446,12 @@ namespace eval qt5pg {
             lib/pkgconfig/Qt5Declarative.pc
             ""
         }
+        qtquick3d {
+            5.14
+            6.0
+            lib/pkgconfig/Qt5Quick3D.pc
+            ""
+        }
         qtquickcontrols {
             5.1
             6.0
@@ -419,6 +462,12 @@ namespace eval qt5pg {
             5.6
             6.0
             lib/pkgconfig/Qt5QuickControls2.pc
+            ""
+        }
+        qtquicktimeline {
+            5.14
+            6.0
+            libexec/qt5/qml/QtQuick/Timeline/libqtquicktimelineplugin.dylib
             ""
         }
         qtremoteobjects {
@@ -599,6 +648,7 @@ options qt5.min_version
 default qt5.min_version 5.0
 
 # use PKGCONFIG for Qt discovery in configure scripts
+depends_build-delete    port:pkgconfig
 depends_build-append    port:pkgconfig
 
 # standard qmake spec
@@ -610,17 +660,16 @@ global qt_qmake_spec_32
 global qt_qmake_spec_64
 compiler.blacklist-append *gcc*
 
-if {[vercmp ${qt5.version} 5.10]>=0} {
+if {[vercmp ${qt5.version} 5.15]>=0} {
+    # only qt5 5.15.x has so far been built as arm64 on MacPorts
+    default supported_archs "x86_64 arm64"
+} elseif {[vercmp ${qt5.version} 5.10]>=0} {
     # see https://bugreports.qt.io/browse/QTBUG-58401
     default supported_archs x86_64
 } else {
     # no PPC support in Qt 5
     #     see http://lists.qt-project.org/pipermail/interest/2012-December/005038.html
-    if {[vercmp [macports_version] 2.5.3] <= 0} {
-        default supported_archs {"i386 x86_64"}
-    } else {
-        default supported_archs "i386 x86_64"
-    }
+    default supported_archs "i386 x86_64"
 }
 
 if {[vercmp ${qt5.version} 5.9]>=0} {
@@ -635,30 +684,14 @@ if {[vercmp ${qt5.version} 5.9]>=0} {
     # no universal binary support in Qt 5 versions < 5.9
     #     see http://lists.qt-project.org/pipermail/interest/2012-December/005038.html
     #     and https://bugreports.qt.io/browse/QTBUG-24952
-    # override universal_setup found in portutil.tcl so it uses muniversal PortGroup
     # see https://trac.macports.org/ticket/51643
-    proc universal_setup {args} {
-        if {[variant_exists universal]} {
-            ui_debug "universal variant already exists, so not adding the default one"
-        } elseif {[exists universal_variant] && ![option universal_variant]} {
-            ui_debug "universal_variant is false, so not adding the default universal variant"
-        } elseif {[exists use_xmkmf] && [option use_xmkmf]} {
-            ui_debug "using xmkmf, so not adding the default universal variant"
-        } elseif {![exists os.universal_supported] || ![option os.universal_supported]} {
-            ui_debug "OS doesn't support universal builds, so not adding the default universal variant"
-        } elseif {[llength [option supported_archs]] == 1} {
-            ui_debug "only one arch supported, so not adding the default universal variant"
-        } else {
-            ui_debug "adding universal variant via PortGroup muniversal"
-            uplevel "PortGroup muniversal 1.0"
-            uplevel "default universal_archs_supported {\"i386 x86_64\"}"
-        }
-    }
+    PortGroup muniversal 1.0
+    default universal_archs_supported {i386 x86_64}
 
     # standard destroot environment
     pre-destroot {
         global merger_destroot_env
-        if { ![option universal_variant] || ![variant_isset universal] } {
+        if {![variant_exists universal]  || ![variant_isset universal]} {
             destroot.env-append \
                 INSTALL_ROOT=${destroot}
         } else {
@@ -677,7 +710,7 @@ default qt_qmake_spec {[qt5pg::get_default_spec]}
 namespace eval qt5pg {
     proc get_default_spec {} {
         global configure.build_arch qt_qmake_spec_32 qt_qmake_spec_64
-        if { ![option universal_variant] || ![variant_isset universal] } {
+        if {![variant_exists universal]  || ![variant_isset universal]} {
             if { ${configure.build_arch} eq "i386" } {
                 return ${qt_qmake_spec_32}
             } else {
@@ -697,6 +730,12 @@ foreach {qt_test_name qt_test_info} [array get available_qt_versions] {
         set private_building_qt5 true
     }
 }
+foreach {qt_test_name qt_test_info} [array get custom_qt_versions] {
+    set qt_test_base_port [lindex ${qt_test_info} 0]
+    if {${qt_test_base_port} eq ${subport}} {
+        set private_building_qt5 true
+    }
+}
 
 if {!${private_building_qt5}} {
     pre-configure {
@@ -708,7 +747,7 @@ if {!${private_building_qt5}} {
                 ui_error "qt5 PortGroup: please run `sudo port uninstall --follow-dependents ${qt5.base_port} and try again"
                 return -code error "improper Qt installed"
             }
-        } else {
+        } elseif { ![info exists qt5.custom_qt_name] } {
             if { ${qt5.name} ne [qt5.get_default_name] } {
                 # see https://wiki.qt.io/Qt-Version-Compatibility
                 ui_warn "qt5 PortGroup: default Qt for this platform is [qt5.get_default_name] but ${qt5.name} is installed"

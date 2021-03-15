@@ -4,18 +4,19 @@ PortSystem          1.0
 PortGroup           github 1.0
 PortGroup           xcode 1.0
 
-github.setup        ios-control ios-deploy 1.9.4
+github.setup        ios-control ios-deploy 1.11.4
+revision            0
 categories          devel
 license             GPL-3+
-maintainers         {amake @amake} openmaintainer
+maintainers         nomaintainer
 
 description         Install and debug iPhone apps from the command line, without using Xcode
-long_description    ${description}
+long_description    {*}${description}
 platforms           darwin
 
-checksums           rmd160  dec10dc3053fd6b568ba38afd74c85d715c94d99 \
-                    sha256  f6257f92005896fbb07adb139e62988c53776c0b830180109cb1a139833efe69 \
-                    size    43882
+checksums           rmd160  70186ed0c0f683fb3a4bbb6c8f5a7d9eba6cd310 \
+                    sha256  04da3e15bfdf63e1cdee5416cbdc3cc78dc9b9116264890f41cf00e6aa17ada5 \
+                    size    61988
 
 xcode.configuration Release
 xcode.target        ${name}
@@ -23,8 +24,6 @@ xcode.target        ${name}
 destroot {
     xinstall -m 0755 -W ${worksrcpath}/build/${xcode.configuration} \
         ${name} ${destroot}${prefix}/bin
-    xinstall -m 0644 -W ${worksrcpath}/build/${xcode.configuration} \
-        libios-deploy.a ${destroot}${prefix}/lib
-    xinstall -m 0644 -W ${worksrcpath}/build/${xcode.configuration} \
-        libios_deploy.h ${destroot}${prefix}/include
 }
+
+github.livecheck.regex  {([0-9.]+)}

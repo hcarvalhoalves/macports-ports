@@ -3,8 +3,8 @@
 PortSystem          1.0
 PortGroup           perl5 1.0
 
-perl5.branches      5.26 5.28
-perl5.setup         Catalyst-Runtime 5.90124
+perl5.branches      5.26 5.28 5.30
+perl5.setup         Catalyst-Runtime 5.90128
 license             {Artistic-1 GPL}
 maintainers         nomaintainer
 description         The Elegant MVC Web Application Framework
@@ -15,9 +15,9 @@ long_description    Catalyst is a modern framework for making web \
 
 platforms           darwin
 
-checksums           rmd160  975a1f2f9a0c367e2340b5f57a84cd080aabc506 \
-                    sha256  2a60cbe7c1f6fec25f0e7fd3f66273386d73edb625748cc0d8c4f20e62983e00 \
-                    size    383507
+checksums           rmd160  ea063958476f4b7afa7611bf2e93e5061153d1ac \
+                    sha256  a6df3b0daf5f66c5b43710c3bf22e348be8b05375ff1d9686087e6f6946260f9 \
+                    size    383967
 
 if {${perl5.major} != ""} {
     depends_build-append \
@@ -42,7 +42,6 @@ if {${perl5.major} != ""} {
                     port:p${perl5.major}-moosex-emulate-class-accessor-fast \
                     port:p${perl5.major}-moosex-getopt \
                     port:p${perl5.major}-moosex-methodattributes \
-                    port:p${perl5.major}-moosex-role-withoverloading \
                     port:p${perl5.major}-mro-compat \
                     port:p${perl5.major}-namespace-clean \
                     port:p${perl5.major}-path-class \

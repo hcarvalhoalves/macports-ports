@@ -11,7 +11,7 @@ PortGroup           compiler_blacklist_versions 1.0
 
 name                qt4-mac
 version             4.8.7
-revision            8
+revision            11
 set branch          [join [lrange [split ${version} .] 0 1] .]
 
 categories          aqua
@@ -30,8 +30,12 @@ distname            qt-everywhere-opensource-src-${version}
 master_sites        http://download.qt.io/official_releases/qt/${branch}/${version}/
 
 checksums           rmd160 afb5e5a99388e6429faca59cb5000054feffd166 \
-                    sha256 e2882295097e47fe089f8ac741a95fef47e0a73a3f3cdf21b56990638f626ea0
+                    sha256 e2882295097e47fe089f8ac741a95fef47e0a73a3f3cdf21b56990638f626ea0 \
+                    size   241075567
 
+if {[info exists use_xcode]} {
+    use_xcode           yes
+}
 minimum_xcodeversions   {8 2.5}
 
 depends_lib-append  port:zlib \
@@ -40,23 +44,34 @@ depends_lib-append  port:zlib \
                     port:tiff \
                     port:libpng \
                     port:libmng \
-                    path:lib/libjpeg.dylib:jpeg 
+                    path:include/turbojpeg.h:libjpeg-turbo
 
 # find a way to specify the OS MINOR version.  For OSX 10.X, this
 # value will be X.  The type is this variable is integer, so we can
 # use "==" and so forth for comparison.
 
-global MINOR
+global MINOR, MAJOR
+set MAJOR ""
 set MINOR ""
 
 # hopefully the MACOSX_DEPLOYMENT_TARGET exists and is set by now.  if
 # not, last resort (which is not desirable) is to use the os.version.
 
 if {${macosx_deployment_target} ne ""} {
+    set MAJOR [lindex [split ${macosx_deployment_target} "."] 0]
     set MINOR [lindex [split ${macosx_deployment_target} "."] 1]
 } else {
-    set MINOR [expr [lindex [split ${os.version} "."] 0] - 4]
+    # Do we really need this branch still ??
+    if { ${os.major} < 20 } {
+        set MAJOR 10
+        set MINOR [expr [lindex [split ${os.version} "."] 0] - 4]
+    } else {
+        # Bit of a guess, and will not work once we have macOS 12
+        set MAJOR 11
+        set MINOR [expr [lindex [split ${os.version} "."] 0] - 20]
+    }
 }
+ui_debug "Deduced OS MAJOR.MINOR = ${MAJOR}.${MINOR}"
 
 ###############################################
 # Patches are used to both fix compiling on various OS versions, and
@@ -219,7 +234,7 @@ patchfiles-append   \
 # (20) Under 10.8 and 10.9: Patch to fix corelib linking
 
 platform darwin {
-    if {${MINOR} >= 8} {
+    if {${MAJOR} > 10 || ${MINOR} >= 8} {
         patchfiles-append patch-src_corelib_corelib.pro.diff
     }
 }
@@ -266,7 +281,7 @@ patchfiles-append   \
 # https://trac.macports.org/ticket/52332
 
 platform darwin {
-    if {${MINOR} >= 12} {
+    if {${MAJOR} > 10 || ${MINOR} >= 12} {
         patchfiles-append patch-src_gui_kernel_qmime_mac.cpp.diff
     }
 }
@@ -350,15 +365,37 @@ patchfiles-append patch-src_corelib_io_qsettings.cpp.diff
 
 patchfiles-append patch-src_gui_text_qfontengine_coretext.mm.diff
 
-# error out if trying to build on a new OSX version (> 10.14).
+# fix build against openssl 1.1.1
+# see https://trac.macports.org/ticket/58205
+patchfiles-append patch-qt4-openssl111.diff
+
+# newer versions of MacPorts Clang default to newer C++ standards
+# see https://trac.macports.org/ticket/57751
+if {![variant_isset cxx11]} {
+    patchfiles-append patch-compiler_standard.diff
+}
+
+# the configure script uses the compiler version to determine if QtXmlPatterns and QtWebKit can be built
+# the logic does not work for newer versions of GCC or Clang (masquerading as GCC)
+patchfiles-append patch-test_compiler_version.diff
+
+# the version header file is part of C++20
+# newer versions of Clang find VERSION instead
+post-extract {
+    move \
+        ${worksrcpath}/src/3rdparty/javascriptcore/VERSION \
+        ${worksrcpath}/src/3rdparty/javascriptcore/VERSION.txt
+}
+
+# error out if trying to build on a new OSX version (> 11.0).
 
 platform darwin {
-    if {${MINOR} > 14} {
+    if { ( ${MAJOR} == 10 && ${MINOR} > 15 ) || ${MAJOR} > 11 } {
         # This project needs to be updated to build with clang++ against libc++
         depends_lib
         depends_run
         pre-fetch {
-            ui_error "$name does not currently build on Mac OS X later than 10.14 'Mojave'."
+            ui_error "$name does not currently build on Mac OS X later than 11 'Big Sur'."
             error "unsupported platform"
         }
     }
@@ -379,11 +416,11 @@ set SDK ${configure.sdkroot}
 if {${SDK} eq ""} {
     # set SDK version depending on OS version
     set sdk_version ""
-    if {${MINOR} == 4} {
+    if { ${MAJOR} == 10 && ${MINOR} == 4 } {
         # OSX 10.4 requires an additional 'u'
-        set sdk_version "10.4u"
+        set sdk_version "${MAJOR}.4u"
     } else {
-        set sdk_version "10.${MINOR}"
+        set sdk_version "${MAJOR}.${MINOR}"
     }
     if {[vercmp ${xcodeversion} 4.3] < 0} {
         set SDK ${developer_dir}/SDKs/MacOSX${sdk_version}.sdk
@@ -401,9 +438,9 @@ post-patch {
 
     set ARCHES ""
     if {[variant_exists universal] && [variant_isset universal]} {
-        set ARCHES [join ${universal_archs} " -arch "]
+        set ARCHES [join ${configure.universal_archs} " -arch "]
     } else {
-        set ARCHES ${build_arch}
+        set ARCHES ${configure.build_arch}
     }
     reinplace "s|@ARCHES@|${ARCHES}|g" ${worksrcpath}/configure
 
@@ -411,7 +448,7 @@ post-patch {
     # were all patched in (2) above, and can be easily changed or
     # overridden by the user in a project-local qmake .pro script.
 
-    set TARGET "10.${MINOR}"
+    set TARGET "${MAJOR}.${MINOR}"
     foreach fixfile {configure mkspecs/common/g++-macx.conf \
                      mkspecs/common/mac.conf qmake/qmake.pri \
                      src/tools/bootstrap/bootstrap.pro } {
@@ -518,8 +555,13 @@ post-patch {
 # this blacklist.
 #
 
-compiler.blacklist-append { clang <= 318.0.61 } \
-    gcc-3.3 *gcc-4.0 macports-gcc*
+# does not build against libc++ with Apple clangs up to 10.8
+# does not build against macports-clang-7+
+# not certain about macports-clang-6.0 at present
+
+compiler.blacklist-append { clang <= 503 } \
+    gcc-3.3 *gcc-4.0 macports-gcc* \
+    {macports-clang-[6-8].0}
 
 # --prefix is not recognized
 
@@ -617,6 +659,12 @@ foreach driver {mysql odbc psql sqlite sqlite2} {
     configure.args-append -no-sql-${driver}
 }
 
+# on older systems, /usr/include/rpcsvc/yp_prot.h redefines bool unless BOOL_DEFINED is defined
+if {${os.major} < 11} {
+    configure.args-append {-D BOOL_DEFINED}
+    patchfiles-append     patch-nis.diff
+}
+
 pre-configure {
 
     # use the corrected CPATH and LIBRARY_PATH for build
@@ -626,11 +674,11 @@ pre-configure {
 
     # for 10.4 or 10.5 32-bit PPC, build as Carbon only, not Cocoa
 
-    if {${MINOR} == 4} {
+    if {${MAJOR} == 10 && ${MINOR} == 4} {
 
         configure.args-append -carbon
 
-    } elseif {${MINOR} == 5 &&
+    } elseif {${MAJOR} == 10 && ${MINOR} == 5 &&
               [llength ${qt_arch_types}] == 1 &&
               [lsearch -exact ${qt_arch_types} ppc] == 0} {
 
@@ -651,7 +699,7 @@ pre-configure {
         # not building for native arch: disable optimizing qmake
         configure.args-delete -optimized-qmake
 
-    } elseif {${MINOR} == 6 &&
+    } elseif {${MAJOR} == 10 && ${MINOR} == 6 &&
               [llength ${qt_arch_types}] == 1 &&
               [lsearch -exact ${qt_arch_types} x86] == 0} {
 
@@ -1084,6 +1132,17 @@ post-destroot {
     ln -s ${qt_frameworks_dir}/QtGui.framework/Resources \
         ${dr_qt_libs_dir}
 
+    # link pkg-config files to where they will be found automatically
+    if {${qt_libs_dir} ne "${prefix}/lib"} {
+
+        set qt_pc_dir ${qt_libs_dir}/pkgconfig
+        set dr_lib_pc_dir ${destroot}${prefix}/lib/pkgconfig
+        xinstall -d -m 0755 ${destroot}${qt_pc_dir}
+        foreach pcfile [glob -nocomplain -tails -directory ${destroot}${qt_pc_dir} *.pc] {
+            ln -s ${qt_pc_dir}/${pcfile} ${dr_lib_pc_dir}
+        }
+
+    }
 }
 
 variant odbc description {Enable iODBC SQL Driver} {
@@ -1131,12 +1190,7 @@ variant openvg description {Build with support for OpenVG} {
 
 variant cxx11 description {Add library support for C++11 (EXPERIMENTAL; does not work with libc++)} {
 
-    # Block compilers that do not support C++11. This variant seems to
-    # work with MacPorts' clang 3.0 or newer and Apple clang newer
-    # than 318.0.58 (but, not that version, which is already blocked).
-
-    compiler.blacklist-append \
-        apple-gcc-4.2 gcc-4.2 llvm-gcc-4.2
+    compiler.cxx_standard 2011
 
     pre-fetch {
 

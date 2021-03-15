@@ -3,7 +3,7 @@
 PortSystem          1.0
 
 name                libdvdnav
-version             6.0.0
+version             6.1.0
 categories          devel multimedia
 license             GPL-2+
 maintainers         nomaintainer
@@ -31,8 +31,10 @@ use_autoreconf      yes
 homepage            http://dvdnav.mplayerhq.hu/
 master_sites        https://download.videolan.org/pub/videolan/${name}/${version}/
 use_bzip2           yes
-checksums           rmd160  0b972d4bb872135f8b6c206163373ee9b4454ea7 \
-                    sha256  f0a2711b08a021759792f8eb14bb82ff8a3c929bf88c33b64ffcddaa27935618
+
+checksums           rmd160  20d8caf6db1c4f7defb5506651aa1bffc73e0d81 \
+                    sha256  f697b15ea9f75e9f36bdf6ec3726308169f154e2b1e99865d0bbe823720cee5b \
+                    size    370145
 
 depends_build-append \
                     port:pkgconfig
@@ -41,6 +43,9 @@ configure.args-append   --disable-silent-rules
 
 # Fix build failure when upgrading from previous version.
 configure.cppflags-replace -I${prefix}/include -isystem${prefix}/include
+
+# rc/vm/vm.c:178: error: ‘for’ loop initial declaration used outside C99 mode
+configure.cflags-append -std=c99
 
 post-destroot {
     xinstall -m 755 -d ${destroot}${prefix}/share/doc/${name}

@@ -4,34 +4,33 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-pytest-cov
-version             2.7.1
+version             2.11.1
 revision            0
+
 categories-append   devel
 platforms           darwin
-license             MIT
 supported_archs     noarch
-
-python.versions     27 36 37
-
+license             MIT
 maintainers         {reneeotten @reneeotten} openmaintainer
 
 description         Pytest plugin for measuring coverage.
 long_description    ${description}
 
 homepage            https://github.com/pytest-dev/pytest-cov
-master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}
 
-distname            ${python.rootname}-${version}
+checksums           rmd160  c99eca643e434de99747cf093f7ddc401cfa52a1 \
+                    sha256  359952d9d39b9f822d9d29324483e7ba04a3a17dd7d05aa6beb7ea01e359e5f7 \
+                    size    59143
 
-checksums           rmd160  3728cd808b99ca8744d11a801a828f1ca13025f4 \
-                    sha256  e00ea4fdde970725482f1f35630d12f074e121a23801aabf2ae154ec6bdd343a \
-                    size    42121
+python.versions     27 35 36 37 38 39
 
 if {${name} ne ${subport}} {
-    depends_build-append    port:py${python.version}-setuptools
+    depends_build-append \
+                    port:py${python.version}-setuptools
 
-    depends_lib-append      port:py${python.version}-coverage \
-                            port:py${python.version}-pytest
+    depends_lib-append \
+                    port:py${python.version}-coverage \
+                    port:py${python.version}-pytest
 
     post-destroot {
         set docdir ${prefix}/share/doc/${subport}
@@ -40,5 +39,5 @@ if {${name} ne ${subport}} {
             AUTHORS.rst CHANGELOG.rst README.rst ${destroot}${docdir}
     }
 
-    livecheck.type      none
+    livecheck.type  none
 }

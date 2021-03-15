@@ -3,9 +3,9 @@
 PortSystem          1.0
 PortGroup           github 1.0
 
-github.setup        ArtifexSoftware ghostpdl-downloads 927 gs
+github.setup        ArtifexSoftware ghostpdl-downloads 9533 gs
 name                jbig2dec
-version             0.16
+version             0.19
 revision            0
 categories          graphics
 platforms           darwin
@@ -29,9 +29,9 @@ homepage            https://www.jbig2dec.com/
 github.tarball_from releases
 distname            ${name}-${version}
 
-checksums           rmd160  6e494531b7a43f0bd6ef700d6d7ead1d1860865d \
-                    sha256  a4f6bf15d217e7816aa61b92971597c801e81f0a63f9fe1daee60fb88e0f0602 \
-                    size    728225
+checksums           rmd160  c244a64937aa33a8972b9f598a78852c22c63940 \
+                    sha256  279476695b38f04939aa59d041be56f6bade3422003a406a85e9792c27118a37 \
+                    size    572889
 
 depends_build       port:autoconf
 
@@ -46,7 +46,6 @@ post-destroot {
             ${docdir}
 }
 
-livecheck.type      regex
-livecheck.url       ${homepage}
 livecheck.version   ${version}
-livecheck.regex     /${name}-(\[0-9.\]+)${extract.suffix}
+livecheck.url       ${github.homepage}/releases
+livecheck.regex     ${name}-(\[0-9.\]+)${extract.suffix}

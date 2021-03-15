@@ -4,7 +4,7 @@ PortSystem              1.0
 PortGroup               python 1.0
 PortGroup               github 1.0
 
-github.setup            lebigot uncertainties 3.1.1
+github.setup            lebigot uncertainties 3.1.5
 revision                0
 
 name                    py-uncertainties
@@ -17,20 +17,22 @@ long_description        The uncertainties package transparently handles\
 platforms               darwin
 supported_archs         noarch
 
-checksums               rmd160  d615a1e89fc708dbe133b392ef0d993f64c3fe55 \
-                        sha256  ce6cde393948e011023104d8b01fcae1dcaeadb70ab00f5fbcc9e31100358714 \
-                        size    148169
+checksums               rmd160  f0ed42646b54bca698419cc94f539cedab6d40ad \
+                        sha256  ca47739f37788f0a6aebab70411c6f55b4b4730f283b0a7314a6acdb997f9b57 \
+                        size    149780
 
-python.versions         27 34 35 36 37
+python.versions         27 35 36 37 38 39
 
 if {${name} ne ${subport}} {
     depends_build-append  \
                         port:py${python.version}-setuptools
 
+    depends_lib-append  port:py${python.version}-future
+
     depends_test-append port:py${python.version}-nose \
                         port:py${python.version}-numpy
+
     test.run            yes
-    test.cmd            ${python.bin} setup.py
     test.target         nosetests
     test.env            PYTHONPATH=${worksrcpath}/build/lib
 

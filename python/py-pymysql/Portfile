@@ -4,7 +4,9 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-pymysql
-version             0.9.2
+version             1.0.2
+revision            0
+
 license             MIT
 platforms           darwin
 supported_archs     noarch
@@ -12,19 +14,25 @@ maintainers         {@xeron gmail.com:xeron.oskom} openmaintainer
 description         Pure-Python MySQL client library
 long_description    ${description}
 
-python.versions     27 34 35 36 37
+python.versions     27 36 37 38 39
 
+python.rootname     PyMySQL
 homepage            https://pypi.python.org/pypi/${python.rootname}/
-master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}
-distname            PyMySQL-${version}
 
-checksums           rmd160  6c5c1015e61591e59927b4b8588acf274b6e6edd \
-                    sha256  9ec760cbb251c158c19d6c88c17ca00a8632bac713890e465b2be01fdc30713f \
-                    size    74532
+checksums           rmd160  60ba0624c3435097151c3576b5489ce5eaaf36f3 \
+                    sha256  816927a350f38d56072aeca5dfb10221fe1dc653745853d30a216637f5d7ad36 \
+                    size    45478
 
 if {${name} ne ${subport}} {
+    if {${python.version} eq 27} {
+        version     0.10.1
+        revision    0
+        checksums   rmd160  45a38ea36ec1ace9be4626a026cf4b4c86b30030 \
+                    sha256  263040d2779a3b84930f7ac9da5132be0fefcd6f453a885756656103f8ee1fdd \
+                    size    77363
+    }
+
     depends_build-append    port:py${python.version}-setuptools
+
     livecheck.type  none
-} else {
-    livecheck.type  pypi
 }

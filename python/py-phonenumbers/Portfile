@@ -4,9 +4,9 @@ PortSystem          1.0
 PortGroup           python 1.0
 PortGroup           github 1.0
 
-github.setup        daviddrysdale python-phonenumbers 8.9.12 v
+github.setup        daviddrysdale python-phonenumbers 8.12.19 v
 name                py-phonenumbers
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 categories-append   textproc
 license             apache
 platforms           darwin
@@ -15,9 +15,9 @@ maintainers         {aronnax @lpsinger} openmaintainer
 description         parsing, formatting, storing and validating international phone numbers
 long_description    Python version of Google's common library for ${description}
 
-checksums           rmd160  ab62b1ab5ba0857af63b75efc2a3f1fe4125a13f \
-                    sha256  3f506a939ccb8c198c2f9f6eee29eec5d42d0438c98cb214816814fcfd2d0ccf \
-                    size    5381388
+checksums           rmd160  11155dc7c3da6eeb8cff558d84f842430cd36604 \
+                    sha256  257c40d77b5c12e571483d3e9a34eaac62871212b84efb9bdf8fb7041d311862 \
+                    size    4832882
 
 if {$subport ne $name} {
     depends_build-append port:py${python.version}-setuptools

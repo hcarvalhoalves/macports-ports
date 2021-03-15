@@ -4,11 +4,11 @@ PortSystem                  1.0
 PortGroup                   compiler_blacklist_versions 1.0
 
 name                        kerberos5
-version                     1.17
+version                     1.19.1
 revision                    0
-checksums                   rmd160  cb6ec84514a1a1fab8a0faefdc3ecca706df8b2d \
-                            sha256  5a6e2284a53de5702d3dc2be3b9339c963f9b5397d3fbbc53beb249380a781f5 \
-                            size    8761763
+checksums                   rmd160  e4e826c6c8d08bb6179358fb2cdac5c55c1e057c \
+                            sha256  fa16f87eb7e3ec3586143c800d7eaff98b5e0dcdf0772af7d98612e49dbeb20b \
+                            size    8738142
 
 set branch                  [join [lrange [split ${version} .] 0 1] .]
 conflicts                   fbopenssl
@@ -32,11 +32,12 @@ master_sites                ${homepage}dist/krb5/${branch}/
 distname                    krb5-${version}
 
 depends_build               port:pkgconfig \
-                            port:python27
+                            port:python38
 
 depends_lib                 port:gettext \
                             port:libcomerr \
                             port:libedit \
+                            port:lmdb \
                             port:ncurses \
                             path:lib/libssl.dylib:openssl
 
@@ -48,7 +49,7 @@ patchfiles                  patch-util__verto__Makefile.in-use-nonzero-compat-ve
                             libressl.patch \
                             no-Werror.patch
 
-# AI_NUMERICSERV not available for OS X < 10.6
+# AI_NUMERICSERV not available for Leopard and earlier (OS X < 10.6)
 if {${os.major} < 10} {
     patchfiles-append       patch-src-lib-apputils-net-server.c.diff
 }
@@ -58,7 +59,7 @@ use_autoreconf              yes
 # remove ${prefix}/lib from configure.ldflags to allow linking against its own libs first
 # adding ${worksrcpath}/lib is not necessary and pollutes krb5-config --libs and pkg-config files
 configure.ldflags-delete    -L${prefix}/lib
-configure.python            ${prefix}/bin/python2.7
+configure.python            ${prefix}/bin/python3.8
 configure.args              --mandir=${prefix}/share/man \
                             --with-system-et \
                             --without-system-db \

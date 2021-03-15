@@ -5,7 +5,7 @@ PortSystem          1.0
 name                postgis2
 categories          databases gis
 license             GPL-2+
-version             2.5.0
+version             2.5.5
 epoch               1
 revision            0
 platforms           darwin
@@ -24,9 +24,9 @@ homepage            http://postgis.refractions.net/
 master_sites        http://download.osgeo.org/postgis/source
 distname            postgis-${version}
 
-checksums           rmd160  26a3b39507d2623a570f9e1afc69d309a80e904e \
-                    sha256  be73abd747e9665f29748e0e7dc6b3f7b1ce98f32e3567f08259420ca10e36d5 \
-                    size    16036455
+checksums           rmd160  958675896a106197f1434f3389644be0084df060 \
+                    sha256  1217a0212aaa143e44831849d1845b198f248923d7e96634219d3369a6ec8714 \
+                    size    15936193
 
 depends_build       port:autoconf \
                     port:automake \
@@ -34,7 +34,7 @@ depends_build       port:autoconf \
                     port:libxslt
 
 depends_lib         port:geos\
-                    port:proj\
+                    port:proj6\
                     port:libiconv\
                     port:libxml2\
                     port:json-c
@@ -45,7 +45,7 @@ conflicts           postgis
 
 # Neither is PostGIS 2.0 compatible with PostGreSQL 8
 # Database variants (from the GDAL port)
-set postgresql_suffixes {11 10 93 94 95 96}
+set postgresql_suffixes {12 11 10 93 94 95 96}
 
 set postgresql_variants {}
 
@@ -68,8 +68,8 @@ foreach suffix ${postgresql_suffixes} {
             --with-pgconfig=${prefix}/lib/${vrt}/bin/pg_config
         build.args-append       \
             PGSQL_DOCDIR=${destroot}${prefix}/share/doc/${vrt} \
-            PGSQL_MANDIR=${destroot}${prefix}/share/man 
-        " 
+            PGSQL_MANDIR=${destroot}${prefix}/share/man
+        "
 }
 
 # postgresql default
@@ -80,7 +80,7 @@ foreach suffix ${postgresql_suffixes} {
 }
 
 set pgdefault [string range ${pgdefault} 0 end-4]
-set pgdefault "${pgdefault}} { default_variants +postgresql10 }"
+set pgdefault "${pgdefault}} { default_variants +postgresql12 }"
 
 eval ${pgdefault}
 
@@ -106,23 +106,22 @@ variant gui                 description {Build the GUI import tool} {
     configure.args-append   --with-gui
 }
 
-configure.args-append       --with-projdir=${prefix}/lib/proj5
+configure.args-append       --with-projdir=${prefix}/lib/proj6
 
-variant proj4               description {Builds with PROJ4 4.9 instead of PROJ4 5+} {
-    depends_lib-delete      port:proj
-    depends_lib-append      port:proj4
-    configure.args-delete   --with-projdir=${prefix}/lib/proj5
-    configure.args-append   --with-projdir=${prefix}/lib/proj49
+variant proj7               description {Builds with PROJ7 instead of PROJ6} {
+    depends_lib-delete      port:proj6
+    depends_lib-append      port:proj7
+    configure.args-delete   --with-projdir=${prefix}/lib/proj6
+    configure.args-append   --with-projdir=${prefix}/lib/proj7
 }
-
 variant comments            description {Build comments -- ! broken } {
 
     ui_warn "The comments variant is currently broken. Use at your own risk."
-    
+
     depends_build-append    port:docbook-xsl-nons \
                             port:libxslt \
                             port:ImageMagick
-    
+
     configure.args-append   --datadir=${prefix}/share/${name} \
                             --with-xsldir=${prefix}/share/xsl/docbook-xsl-nons \
                             --with-json \
@@ -137,13 +136,13 @@ default_variants            +raster +topology
 # Port phases
 
 configure.cflags-append \
-    -Diconv=libiconv -Diconv_open=libiconv_open -Diconv_close=libiconv_close 
+    -Diconv=libiconv -Diconv_open=libiconv_open -Diconv_close=libiconv_close
 
 # see https://trac.macports.org/wiki/UsingTheRightCompiler
 configure.env-append    CPPBIN=${configure.cpp}
 
 post-configure {
-    if {[variant_isset universal]} {
+    if {[variant_exists universal] && [variant_isset universal]} {
         # We must add universal flags to compile liblwgeom properly
         file copy ${filespath}/ed_command ${worksrcpath}/ed_command
         reinplace -E "s#XXX#${configure.universal_cflags}#" \

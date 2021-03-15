@@ -3,11 +3,11 @@
 PortSystem              1.0
 PortGroup               github 1.0
 
-github.setup            Winetricks winetricks 20190310
+github.setup            Winetricks winetricks 20210206
 revision                0
-checksums               rmd160  e47f41e8f03637e3fb7d36fff9d754c1c88071ef \
-                        sha256  34fecde7b79fb190a5f18a85e0f95cac63c73a75575718f3102f4bc46cabb79a \
-                        size    673499
+checksums               rmd160  ef85e54fcf786169913f65cacbcd3b36d3a92300 \
+                        sha256  09dd531f2572b8b85b71c70ac3ae1ac3b581fb4dc0b4426777644d42e4af85fc \
+                        size    690963
 
 categories              x11
 maintainers             {ryandesign @ryandesign} openmaintainer
@@ -25,8 +25,7 @@ long_description        ${name} can help you prepare your system for Windows \
                         systems have all the needed redistributable runtime \
                         libraries or fonts.
 
-depends_run             port:zenity \
-                        port:cabextract \
+depends_run             port:cabextract \
                         path:bin/openssl:openssl \
                         bin:curl:curl \
                         bin:unzip:unzip
@@ -36,7 +35,13 @@ build {}
 destroot.args           PREFIX=${prefix}
 
 post-destroot {
-    set docdir ${prefix}/share/doc/${name}
+    set docdir ${prefix}/share/doc/${subport}
     xinstall -d ${destroot}${docdir}
     xinstall -m 0644 -W ${worksrcpath} COPYING README.md ${destroot}${docdir}
 }
+
+variant zenity description {Use zenity for GUI dialog boxes} {
+    depends_run-append  port:zenity
+}
+
+default_variants +zenity

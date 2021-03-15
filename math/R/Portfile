@@ -2,16 +2,17 @@
 
 PortSystem 1.0
 PortGroup compilers 1.0
+PortGroup compiler_blacklist_versions 1.0
 PortGroup active_variants 1.1
 
 name                        R
-#Remember to remove revision line when bumping version
-version                     3.5.1
-revision                    2
+# Remember to set revision to 0 when bumping version
+version                     4.0.4
+revision                    0
 
 set branch                  [join [lrange [split ${version} .] 0 1] .]
 categories                  math science
-maintainers                 {me.com:kjell.konis @kjellpk}
+maintainers                 {me.com:kjell.konis @kjellpk} {@i0ntempest me.com:szf1234} openmaintainer
 license                     {GPL-2 GPL-3}
 platforms                   macosx
 
@@ -24,14 +25,17 @@ long_description \
     classical statistical tests, time-series analysis, classification, \
     clustering, ...) and graphical techniques, and is highly extensible.
 
-homepage                    http://www.r-project.org/
+homepage                    https://www.r-project.org/
 
-master_sites                http://cran.rstudio.com/src/base/R-3/ \
-                            http://cran.r-project.org/src/base/R-3/
+master_sites                https://cran.rstudio.com/src/base/R-4/ \
+                            https://cran.r-project.org/src/base/R-4/
 
-checksums                   rmd160  394b122f4477b0c8e87c48fcc8cf4a1f8282a9bc \
-                            sha256  0463bff5eea0f3d93fa071f79c18d0993878fd4f2e18ae6cf22c1639d11457ed \
-                            size    29812849
+checksums                   rmd160  5f91668b89e3517f54fe6974c9b734150cf59ad4 \
+                            sha256  523f27d69744a08c8f0bd5e1e6c3d89a4db29ed983388ba70963a3cd3a4a802e \
+                            size    33687611
+
+# Fails to configure with Xcode clang 4.6.3
+compiler.blacklist-append   {clang < 500}
 
 compilers.choose            fc f77
 compilers.setup             require_fortran
@@ -44,7 +48,7 @@ depends_lib                 port:readline \
                             port:zlib \
                             port:pcre \
                             port:pcre2 \
-                            port:jpeg \
+                            path:include/turbojpeg.h:libjpeg-turbo \
                             port:tiff \
                             port:libpng \
                             port:curl \
@@ -87,7 +91,8 @@ post-patch {
 
 configure.pre_args          --prefix=${frameworks_dir}
 
-configure.args              --enable-R-framework \
+configure.args              --disable-openmp \
+                            --enable-R-framework \
                             --enable-memory-profiling \
                             --enable-R-shlib \
                             --enable-BLAS-shlib \
@@ -106,18 +111,33 @@ platform darwin 13 {
     configure.cflags-append -flax-vector-conversions
 }
 
-variant accelerate conflicts atlas builtin_lapack description {build using the BLAS and Lapack in Apple's Accelerate framework} {
+variant accelerate conflicts atlas builtin_lapack openblas description {build using the BLAS and Lapack in Apple's Accelerate framework} {
     configure.args-append   --with-blas="-framework Accelerate" --with-lapack
 }
 
-variant atlas conflicts accelerate builtin_lapack description {build using the BLAS in the atlas port} {
+variant atlas conflicts accelerate builtin_lapack openblas description {build using the BLAS in the atlas port} {
     depends_lib-append      port:atlas
     configure.args-append   --with-blas="-L${prefix}/lib -lptf77blas -latlas"
     #See A.3.2 in R Installation and Administration for why atlas LAPACK not used
 }
 
-variant builtin_lapack conflicts accelerate atlas description {build using reference BLAS and Lapack} {
+variant builtin_lapack conflicts accelerate atlas openblas description {build using reference BLAS and Lapack} {
     configure.args-append   --without-blas --without-lapack
+}
+
+variant openblas conflicts builtin_lapack accelerate atlas description {build using the BLAS and Lapack in the OpenBLAS port} {
+    depends_lib-append      port:OpenBLAS
+    configure.args-delete   --enable-BLAS-shlib
+    configure.args-append   --with-blas="-L${prefix}/lib -lopenblas" --with-lapack
+}
+
+variant openmp description {enable parallelism support using OpenMP} {
+    compiler.openmp_version 4.5
+    configure.args-replace  --disable-openmp --enable-openmp
+    notes-append "
+        Clang compilers provided by Xcode do not support OpenMP. Some R packages using\
+        OpenMP may require additional flags in the Makevar file (e.g. data.table) to\
+        build. Please consult package documentation."
 }
 
 variant cairo description {use cairo and pango} {
@@ -153,7 +173,8 @@ variant tests description {include tests of R installation} {
     destroot.target-append install-tests
 }
 
-variant x11 {
+variant x11 conflicts quartz {
+    require_active_variants tk x11
     depends_lib-append      port:xorg-libsm \
                             port:xorg-libice \
                             port:xorg-libX11 \
@@ -164,19 +185,35 @@ variant x11 {
                             --x-lib=${prefix}/lib
 }
 
+variant quartz conflicts x11 {
+    require_active_variants tk quartz
+    notes-append "
+        Note that R with quartz variant will not work with R.app because\
+        of conflicts over the macOS menu."
+}
+
 variant java description {enable Java} {
     PortGroup java 1.0
     configure.args-replace --disable-java --enable-java
 }
 
-default_variants +cairo +recommended +x11
+default_variants +cairo +recommended +openmp
+
+if {![variant_isset quartz]} {
+    default_variants-append +x11
+}
 
 if {[variant_isset cairo] && [variant_isset x11]} {
     require_active_variants path:lib/pkgconfig/cairo.pc:cairo x11
     require_active_variants path:lib/pkgconfig/pango.pc:pango x11
 }
 
-if {![variant_isset accelerate] && ![variant_isset atlas] && ![variant_isset builtin_lapack]} {
+if {[variant_isset cairo] && [variant_isset quartz]} {
+    require_active_variants path:lib/pkgconfig/cairo.pc:cairo quartz
+    require_active_variants path:lib/pkgconfig/pango.pc:pango quartz
+}
+
+if {![variant_isset accelerate] && ![variant_isset atlas] && ![variant_isset openblas] && ![variant_isset builtin_lapack]} {
     default_variants-append +builtin_lapack
 }
 
@@ -229,6 +266,8 @@ post-destroot {
 
     ln -s ${resources}/bin/R ${destroot}${prefix}/bin/R
     ln -s ${resources}/bin/Rscript ${destroot}${prefix}/bin/Rscript
+    ln -s ${resources}/man1/R.1 ${destroot}${prefix}/share/man/man1/R.1
+    ln -s ${resources}/man1/Rscript.1 ${destroot}${prefix}/share/man/man1/Rscript.1
 }
 
 livecheck.type      regex

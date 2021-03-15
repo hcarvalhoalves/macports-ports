@@ -1,0 +1,40 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+
+PortSystem          1.0
+PortGroup           python 1.0
+
+name                py-pikepdf
+version             2.9.0
+revision            0
+categories-append   graphics
+license             MPL-2
+maintainers         {mps @Schamschula} openmaintainer
+description         pikepdf is based on QPDF, a powerful PDF manipulation and repair \
+                    library.
+long_description    {*}${description}
+platforms           darwin
+
+homepage            https://github.com/pikepdf/pikepdf
+
+python.versions     37 38 39
+
+checksums           rmd160  e8b0e9e71014217cae89768c1203d3fdc56e019e \
+                    sha256  a9dbd2bb52fcdecb066c99cacf96f0ebb40edee50d8885502a5a22d7f723a8b7 \
+                    size    2381699
+
+if {${name} ne ${subport}} {
+    depends_build-append \
+                    port:py${python.version}-setuptools_scm \
+                    port:py${python.version}-setuptools_scm_git_archive \
+                    port:py${python.version}-toml \
+                    port:py${python.version}-wheel
+
+    depends_lib-append  \
+                    port:py${python.version}-pybind11 \
+                    port:qpdf
+
+    compiler.cxx_standard \
+                    2014
+
+    livecheck.type  none
+}

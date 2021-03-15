@@ -1,11 +1,10 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
-PortGroup           cxx11 1.1
 PortGroup           legacysupport 1.0
 
 name                exempi
-version             2.5.0
+version             2.5.2
 license             BSD
 categories          graphics
 maintainers         {devans @dbevans} openmaintainer
@@ -15,9 +14,9 @@ master_sites        https://libopenraw.freedesktop.org/download/
 
 use_bzip2           yes
 
-checksums           rmd160  e4e1fd4e12f6b1ced36e085f524884be45575aa6 \
-                    sha256  dc82fc24c0540a44a63fa4ad21775d24e00e63f1dedd3e2ae6f7aa27583b711b \
-                    size    3658187
+checksums           rmd160  17219342d5b71aed30bda82d81401539383e8d6d \
+                    sha256  52f54314aefd45945d47a6ecf4bd21f362e6467fa5d0538b0d45a06bc6eaaed5 \
+                    size    3658606
 
 description         Exempi is an implementation of XMP.
 
@@ -34,6 +33,8 @@ if {[vercmp $xcodeversion 4.3] < 0 && [string match "*macports*" ${configure.com
 
 patchfiles          limits.patch \
                     stdlib.patch
+
+compiler.cxx_standard 2011
 
 configure.args      --enable-unittest=no \
                     --disable-silent-rules

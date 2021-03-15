@@ -1,12 +1,11 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem      1.0
-PortGroup       compiler_blacklist_versions 1.0
 PortGroup       muniversal 1.0
-PortGroup       cxx11 1.1
+PortGroup       compiler_blacklist_versions 1.0
 
 name            gdb
-version         8.3
+version         10.1
 revision        0
 categories      devel
 license         GPL-3+
@@ -34,9 +33,9 @@ supported_archs x86_64 i386
 
 master_sites    gnu
 
-checksums       rmd160  5b0d8afa343a19b7574c2a7a7b62b89051cc90b5 \
-                sha256  b2266ec592440d0eec18ee1790f8558b3b8a2845b76cc83a872e39b501ce8a28 \
-                size    38121951
+checksums       rmd160  87163d96863e4923691f0c1bd34f58e30f2685e8 \
+                sha256  f12f388b99e1408c01308c3f753313fafa45517740c81ab7ed0d511b13e2cf55 \
+                size    40245323
 
 # these dependencies are listed under depends_lib rather than depends_build
 # because gdb will link with libraries they provide if installed.
@@ -50,15 +49,29 @@ depends_lib     port:boehmgc \
                 port:ncurses \
                 port:zlib
 
-# https://trac.macports.org/ticket/57877
-compiler.blacklist {clang < 801}
+# Older Apple clang versions segfault, c.f., https://trac.macports.org/ticket/56883
+compiler.blacklist      {clang < 601}
+compiler.thread_local_storage \
+                        yes
 
+# Needs C++11; halfway redundant due to the blacklist above, but make sure selected
+# compiler supports the standard - getting rid of old Apple GCC versions and the like?
+compiler.cxx_standard   2011
+
+configure.dir ${workpath}/build
+configure.cmd ${worksrcpath}/configure
 configure.args \
     --with-docdir=${prefix}/share/doc \
     --without-guile \
     --without-python \
     --program-prefix=g \
     --disable-werror
+
+pre-configure {
+    file mkdir ${configure.dir}
+}
+
+build.dir ${configure.dir}
 
 post-destroot {
     if {${os.platform} eq "darwin" && ${os.major} < 12} {
@@ -76,7 +89,7 @@ post-destroot {
     }
 }
 
-set pythons_suffixes {27 35 36 37}
+set pythons_suffixes {27 35 36 37 38}
 
 set pythons_ports {}
 foreach s ${pythons_suffixes} {
@@ -97,6 +110,7 @@ foreach s ${pythons_suffixes} {
 }
 
 variant multiarch description {Support all target architectures} {
+    patchfiles-append        patch-elf-bfd.h.diff
     configure.args-append    --enable-targets=all
 }
 

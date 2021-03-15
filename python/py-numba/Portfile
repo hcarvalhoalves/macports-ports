@@ -4,14 +4,14 @@ PortSystem          1.0
 PortGroup           python 1.0
 PortGroup           github 1.0
 
-github.setup        numba numba 0.44.0
+github.setup        numba numba 0.52.0
 name                py-numba
 revision            0
 categories-append   devel
 platforms           darwin
 license             BSD
 
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38
 
 maintainers         {stromnov @stromnov} openmaintainer
 
@@ -21,11 +21,11 @@ long_description    Numba is an Open Source NumPy-aware optimizing compiler \
                     for Python. It uses the remarkable LLVM compiler \
                     infrastructure to compile Python syntax to machine code.
 
-homepage            https://numba.pydata.com/
+homepage            https://numba.pydata.org/
 
-checksums           rmd160  f52fd6b6bb1e79694d9772257dfbcce4a38fc5bd \
-                    sha256  316142ed407dc93a129d023ea0334f72d064e078094e41df9c72d03b0857e371 \
-                    size    2088967
+checksums           rmd160  5dbec7dff8e9e3956e6c581edf3c6c6dc3e5b359 \
+                    sha256  a7094b175ed92bde715b32b2b04eee01970602a40b866b9c9d6be0ede71edc9e \
+                    size    2173425
 
 variant tbb description "Add support for TBB" {
     depends_lib-append  port:tbb
@@ -33,20 +33,30 @@ variant tbb description "Add support for TBB" {
 }
 
 if {${name} ne ${subport}} {
+
+    if {${python.version} <= 35} {
+        version             0.47.0
+        revision            0
+        distname            ${python.rootname}-${version}
+        checksums           rmd160  316a2fef2accf2cb829bf2c008085ca77e52fe52 \
+                            sha256  20818b20c74d763bb022d59201c9796d5812e0071abb3405a841ef1524553f48 \
+                            size    2351240
+
+        if {${python.version} < 33} {
+            depends_lib-append  port:py${python.version}-funcsigs
+        }
+
+        if {${python.version} < 34} {
+            depends_lib-append  port:py${python.version}-enum34 \
+                                port:py${python.version}-singledispatch
+        }
+    }
+
     depends_build-append \
                         port:py${python.version}-setuptools
 
     depends_lib-append  port:py${python.version}-llvmlite \
                         port:py${python.version}-numpy
-
-    if {${python.version} < 33} {
-        depends_lib-append  port:py${python.version}-funcsigs
-    }
-
-    if {${python.version} < 34} {
-        depends_lib-append  port:py${python.version}-enum34 \
-                            port:py${python.version}-singledispatch
-    }
 
     livecheck.type      none
 } else {

@@ -5,13 +5,12 @@ PortGroup           compilers  1.0
 PortGroup           muniversal 1.0
 PortGroup           compiler_blacklist_versions 1.0
 PortGroup           linear_algebra 1.0
-# see https://lists.gnu.org/archive/html/octave-maintainers/2016-05/msg00286.html
-PortGroup           cxx11 1.1
 
 name                octave
-version             5.1.0
-set package_version 5.x.x
+version             6.2.0
+set package_version 6.x.x
 revision            0
+
 categories          math science
 platforms           darwin
 license             GPL-3+
@@ -26,9 +25,13 @@ homepage            https://www.gnu.org/software/octave
 
 master_sites        gnu:octave
 
-checksums           rmd160  b8b4469d70f1b67be688e12ff551e6b614c70213 \
-                    sha256  e36b1124cac27c7caa51cc57de408c31676d5f0096349b4d50b57bfe1bcd7495 \
-                    size    32034788
+checksums           rmd160  a7d084c684f233b2c674d3cb0dc1c38e3ca16751 \
+                    sha256  457d1fda8634a839e2fd7cfc55b98bd56f36b6ae73d31bb9df43dde3012caa7c \
+                    size    32620419
+
+# see https://lists.gnu.org/archive/html/octave-maintainers/2016-05/msg00286.html
+compiler.cxx_standard \
+                    2011
 
 # if there is an error bulding octave package, avoid
 #    error: structure has no member 'dir'
@@ -47,7 +50,7 @@ patchfiles-append patch-configure_make.m.diff
 patchfiles-append patch-arch_arg.diff
 
 # see https://savannah.gnu.org/bugs/?50025
-patchfiles-append patch-crash_on_exit.diff
+# fails to apply: patchfiles-append patch-crash_on_exit.diff
 
 # octave compiles in the hostname value
 # it is used to determine installation locations
@@ -63,11 +66,24 @@ patchfiles-append patch-__opengl_info__.diff
 patchfiles-append patch-run-octave.diff
 
 # find MacPorts Qt libraries
-patchfiles-append patch-link_location.diff
+# fails to apply: patchfiles-append patch-link_location.diff
 
 # fix CXXFLAGS when testing for Qt5 properties
 # see https://trac.macports.org/ticket/58226
 patchfiles-append patch-qt5-cxxflags.diff
+
+# small fixes to allow Octave6 qt4 variant to build
+# can be enabled at all times
+patchfiles-append patch-octave6-qt4-fixes.diff
+
+# see https://savannah.gnu.org/patch/index.php?9806
+set java_version 1.8
+patchfiles-append patch-java_version.diff
+post-patch {
+    reinplace \
+        "s|__MACPORTS_JAVA_VERSION__|${java_version}|g" \
+        ${worksrcpath}/Makefile.in
+}
 
 post-patch {
     if { ${os.arch} eq "i386" } {
@@ -85,9 +101,7 @@ post-patch {
     }
     reinplace \
         "s|__MACPORTS_canonical_host_type__|${short_host_name}|g" \
-        configure
-    reinplace \
-        "s|__MACPORTS_canonical_host_type__|${short_host_name}|g" \
+        configure \
         build-aux/subst-config-vals.in.sh
 }
 
@@ -135,19 +149,11 @@ compiler.blacklist-append {*gcc-4.6}
 
 # see https://wiki.octave.org/Building for a list of dependencies
 
-if {[vercmp [macports_version] 2.5.99] >= 0} {
 # avoid depends_build-append port:coreutils
 configure.env-append "MKDIR_P=/bin/mkdir -p"
 
 # see https://trac.macports.org/ticket/57850
 configure.env-append "INSTALL_DATA=\${INSTALL} -m 644 -p"
-} else {
-# avoid depends_build-append port:coreutils
-configure.env-append MKDIR_P="/bin/mkdir -p"
-
-# see https://trac.macports.org/ticket/57850
-configure.env-append INSTALL_DATA="\${INSTALL} -m 644 -p"
-}
 
 if { ${os.major} > 10 } {
     # avoid depends_build-append port:cctools
@@ -213,11 +219,7 @@ depends_build-append port:flex
 configure.env-append LEX=${prefix}/bin/flex
 
 depends_build-append port:bison
-if {[vercmp [macports_version] 2.5.99] >= 0} {
 configure.env-append "YACC=${prefix}/bin/bison -y"
-} else {
-configure.env-append YACC="${prefix}/bin/bison -y"
-}
 
 depends_build-append port:gperf
 configure.env-append GPERF=/usr/bin/gperf
@@ -234,10 +236,6 @@ depends_build-append \
     port:pkgconfig
 
 compilers.choose    fc f77 f90 cc cxx
-
-# overrule cxx11 PortGroup because octave can use GCC compilers
-#    even if configure.cxx_stdlib is libc++
-compiler.blacklist-delete *gcc*
 
 # GCC 6 fails in several ways
 #  in order to use the Carbon framework, -fpermissive is required
@@ -283,6 +281,8 @@ configure.args-append       \
     --without-portaudio     \
     --without-magick        \
     --disable-docs
+
+configure.args-append --disable-silent-rules
 
 # avoid
 #     Undefined symbols for architecture x86_64:
@@ -403,6 +403,7 @@ pre-configure {
 variant java description {enable Java interface} {
     PortGroup java 1.0
     configure.args-replace --disable-java --enable-java
+    java.version ${java_version}+
 }
 # java variant seems to cause problems for both users and build bots
 #    https://lists.macosforge.org/pipermail/macports-users/2016-May/thread.html#41052
@@ -437,7 +438,7 @@ if { ![variant_isset qt4] && ![variant_isset qt5] } {
     #       see http://doc.qt.io/qt-4.8/supported-platforms.html
     #    OS X 10.10 (Darwin 14) is the oldest OS supported by the current long-term support version of Qt 5 (Qt 5.9).
     #       see http://web.archive.org/web/20170702143426/https://doc.qt.io/qt-5/supported-platforms-and-configurations.html
-    if {${os.major} >= 14} {
+    if {${os.major} >= 14 || ${os.platform} ne "darwin"} {
         default_variants-append +qt5
     } else {
         default_variants-append +qt4
@@ -465,22 +466,8 @@ if { ([variant_isset fltk] && [variant_isset qt4]) || ([variant_isset fltk] && [
     notes-append "unless octave is run with --no-gui-libs, graphics_toolkit(\"fltk\") will cause a crash"
 }
 
-variant jit description {enable JIT compiler (EXPERIMENTAL)} {
-    # JIT requires LLVM, so select a version to use
-    set llvm_ver 7.0
-
-    # prevent multiple versions of llvm being required
-    # if clangXY compiler is requested, use llvm-X.Y
-    foreach clang ${compilers.clang_variants} {
-        if { [variant_exists ${clang}] && [variant_isset ${clang}] } {
-            set llvm_ver [string index ${clang} end-1].[string index ${clang} end]
-        }
-    }
-
-    depends_lib-append port:llvm-${llvm_ver}
-    configure.args-replace --disable-jit --enable-jit
-    configure.env-append LLVM_CONFIG=${prefix}/bin/llvm-config-mp-${llvm_ver}
-    configure.cxxflags-append -std=c++11
+if {[variant_isset qt4]} {
+    notes-append "on-disk documentation is not building at present with qt4 variant, but online is available"
 }
 
 variant sound description {enable audio support (file I/O and playback)} {
@@ -582,7 +569,18 @@ variant app description "build application bundle to launch ${subport}" {
         copy ${worksrcpath}/${appName} ${destroot}${applications_dir}
     }
 }
-default_variants-append +app
+if {[variant_isset qt4] || [variant_isset qt5] } {
+    default_variants-append +app
+}
+
+
+# the qt gui uses a few Objective-C calls, and for some reason
+# libobjc.dylib is not being automatically linked in on older systems
+if {[variant_isset qt4] || [variant_isset qt5] } {
+   if { ${os.platform} eq "darwin" && ${os.major} < 18 } {
+       configure.ldflags-append -lobjc
+   }
+}
 
 variant docs description {build documentation files} {
     depends_build-append port:texinfo
@@ -602,7 +600,10 @@ variant docs description {build documentation files} {
 
     configure.args-replace --disable-docs --enable-docs
 }
-default_variants-append +docs
+# the documentation is not building when using qt4 at present
+if {![variant_isset qt4]} {
+    default_variants-append +docs
+}
 
 # GraphicsMagick and octave need to be built with the same C++ standard library
 # or else undefined symbols:
@@ -612,7 +613,8 @@ set magickDefault yes
 if {${configure.cxx_stdlib} eq "libc++"} {
     foreach gccVar ${compilers.gcc_variants} {
         if {[variant_exists ${gccVar}] } {
-            lappend magickConflict ${gccVar}
+            set varPort [fortran_depends_port_name ${gccVar}]
+            lappend magickConflict ${varPort}
             if {[variant_isset ${gccVar}] } {
                 set magickDefault no
             }
@@ -628,16 +630,6 @@ if {${magickDefault}} {
     default_variants-append +graphicsmagick
 }
 
-# see https://trac.macports.org/ticket/53021
-foreach gccVar ${compilers.gcc_variants} {
-    if {[variant_exists ${gccVar}] && [variant_isset ${gccVar}] } {
-        if {[vercmp ${xcodeversion} 7.0] >= 0} {
-            patchfiles-append patch-force_cxx.diff
-        }
-        break
-    }
-}
-
 post-destroot {
     # put any startup commands in ${destroot}${prefix}/share/octave/${version}/m/startup/octaverc
     # see https://www.gnu.org/software/octave/doc/interpreter/Startup-Files.html
@@ -651,15 +643,28 @@ post-destroot {
     }
 
     # do not force upgrade of every dependency every time the version changes
-    foreach lib {liboctave.7.dylib liboctgui.5.dylib liboctinterp.7.dylib} {
+    foreach lib {liboctave.8.dylib liboctinterp.8.dylib} {
         xinstall -d -m 0755 ${destroot}${prefix}/lib/octave/${package_version}
         ln -s ../${version}/${lib} ${destroot}${prefix}/lib/octave/${package_version}/${lib}
         system "install_name_tool -id ${prefix}/lib/octave/${package_version}/${lib} ${destroot}${prefix}/lib/octave/${version}/${lib}"
     }
+
+    if {[variant_isset qt4] || [variant_isset qt5]} {
+        # do not force upgrade of every dependency every time the version changes
+        foreach lib {liboctgui.6.dylib} {
+            xinstall -d -m 0755 ${destroot}${prefix}/lib/octave/${package_version}
+            ln -s ../${version}/${lib} ${destroot}${prefix}/lib/octave/${package_version}/${lib}
+            system "install_name_tool -id ${prefix}/lib/octave/${package_version}/${lib} ${destroot}${prefix}/lib/octave/${version}/${lib}"
+        }
+    }
+
 }
 
+if {![info exists universal_possible]} {
+    set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+}
 # generate default octave_packages file so that it is removed if Octave is uninstalled
-if { ![variant_isset universal] } {
+if {!${universal_possible} || ![variant_isset universal]} {
     post-destroot {
         set octave_install_share ${destroot}${prefix}/share/octave/packages
         set octave_install_lib   ${destroot}${prefix}/lib/octave/packages
@@ -693,8 +698,3 @@ post-activate {
 
 test.run    yes
 test.target check
-
-subport ${name}-devel {
-    replaced_by ${name}
-    PortGroup   obsolete 1.0
-}

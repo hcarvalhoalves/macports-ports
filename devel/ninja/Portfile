@@ -6,12 +6,19 @@ PortGroup           github 1.0
 PortGroup           muniversal 1.0
 
 epoch               1
-github.setup        ninja-build ninja 1.9.0 v
+github.setup        ninja-build ninja 1.10.2 v
+revision            0
+
+checksums           rmd160  1346989347fbb47b7211c1a49d5f9236f3027488 \
+                    sha256  ce35865411f0490368a8fc383f29071de6690cbadc27704734978221f25e2bed \
+                    size    213959
+
 categories          devel
 platforms           darwin
 maintainers         {ryandesign @ryandesign} openmaintainer
 license             Apache-2
 installs_libs       no
+conflicts           samurai
 
 description         Small build system with a focus on speed.
 
@@ -29,10 +36,7 @@ long_description    Ninja is yet another build system. It takes as input    \
                     after changing one file. Ninja is under a second.
 
 homepage            https://ninja-build.org
-
-checksums           rmd160  707da96ce9c9dbf18451ebe37aa5e0180a47e811 \
-                    sha256  8a0c79bec9b0006b543d70b55c256c8fc6825b4843cda8d8ab338816e56d0e1e \
-                    size    190870
+github.tarball_from archive
 
 installs_libs       no
 
@@ -56,16 +60,16 @@ build.target
 build.args          -v
 
 destroot {
-    xinstall -m 755 ${worksrcpath}/${name} ${destroot}${prefix}/bin
+    xinstall -m 0755 ${worksrcpath}/${name} ${destroot}${prefix}/bin
     xinstall -d ${destroot}${prefix}/etc/bash_completion.d
-    xinstall -m 644 ${worksrcpath}/misc/bash-completion ${destroot}${prefix}/etc/bash_completion.d/ninja
+    xinstall -m 0644 ${worksrcpath}/misc/bash-completion ${destroot}${prefix}/etc/bash_completion.d/ninja
     
     set docdir ${prefix}/share/doc/${subport}
     xinstall -d ${destroot}${docdir}
     xinstall -m 0644 -W ${worksrcpath} \
+        CONTRIBUTING.md \
         COPYING \
-        HACKING.md \
-        README \
+        README.md \
         ${destroot}${docdir}
 }
 

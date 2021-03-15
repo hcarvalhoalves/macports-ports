@@ -1,8 +1,8 @@
 PortSystem        1.0
 
 name              eiffelstudio
-set major_version 18.11
-set minor_version 10.2592
+set major_version 20.11
+set minor_version 105048
 version           ${major_version}.${minor_version}
 categories        lang
 license           GPL-2
@@ -18,38 +18,28 @@ long_description  EiffelStudio is a development environment for the \
                   in particular "pick-and-drop" for effective browsing.
 homepage          http://www.eiffel.com
 master_sites      sourceforge:eiffelstudio:source \
-                  ftp://ftp.eiffel.com/pub/download/${major_version}:source \
-                  http://ftp.eiffel.com/pub/download/${major_version}:source \
+                  ftp://ftp.eiffel.com/pub/beta/nightly:source \
+                  http://ftp.eiffel.com/pub/beta/nightly:source \
                   http://www.jann-roeder.net/download/:launcher
-depends_lib       port:gtk2 \
-                  lib:libXtst:xorg-libXtst
+depends_lib       port:gtk2
 depends_build     bin:bzip2:bzip2 \
                   port:pkgconfig
-
-# use_tar is new in MacPorts 2.5.0.
-if {[info command use_tar] eq "use_tar"} {
 use_tar           yes
-} else {
-extract.suffix    .tar
-extract.cmd       tar
-extract.post_args
-extract.pre_args  -xf
-}
-set eiffel_launch eiffel_launcher_20091003.tar.bz2
-distfiles         ${distname}${extract.suffix}:source \
+set eiffel_launch eiffel_launcher_20201029.tar.bz2
+set porterpackage PorterPackage_${minor_version}${extract.suffix}
+distfiles         ${porterpackage}:source \
                   ${eiffel_launch}:launcher
-extract.only      ${distname}${extract.suffix}
+extract.only      ${porterpackage}
 worksrcdir        PorterPackage
 
-checksums         ${distname}${extract.suffix} \
-			rmd160  efbce117f6f72989cf2ff94a4f17b3cb37a8a421 \
-            sha256  9ee3c9663e21123a84e1447e301919171c2939b117ed1ad5780ba3e8021204ef \
-            size    83906560 \
+checksums         ${porterpackage} \
+                  rmd160  4ae4f1f096ca099c8cf590db279f3eb4bd77b6b6 \
+                  sha256  0e23faf4db05513f6398829819e75034af95186d0c19969e3e14a5b2a4e3f9bd \
+                  size    82647040 \
                   ${eiffel_launch} \
-			rmd160 f52af5b8b09ecdd21af4b1d89d2716597a9c1340 \
-			sha256 862bce03664b1ef554e3b8f432cdc77284912d606f6ac58dc47dd499c3a3f594 \
-			size	21593
-
+                  rmd160  e0e0dfb909a4f6bc681fc302a2a43cac2e135903 \
+                  sha256  0aa3072008d25d1ad73582e6598e50e79341129f2c28c6199751c6ca2f1a8514 \
+                  size    22206
 
 use_configure     no
 
@@ -68,13 +58,10 @@ platform darwin powerpc  {
 
 build             {                   
                     system -W ${worksrcpath} "env CC=${configure.cc} ${worksrcpath}/compile_exes $ise_platform"
+                    file copy ${worksrcpath}/licensing/eiffelstudio/license.txt ${worksrcpath}/Eiffel_${major_version}/LICENSE
 
                     # Extract Eiffel Launcher
                     system "tar -xjf ${distpath}/${eiffel_launch} -C ${worksrcpath}/Eiffel_${major_version}/"
-                  }
-
-post-build        {
-                    file attributes ${worksrcpath}/Eiffel_${major_version}/studio/spec/$ise_platform/bin/ec -permissions 0755
                   }
 
 destroot          {
@@ -86,11 +73,10 @@ destroot          {
                   }
 
 notes "
-To complete the installation you have to add the following to your .bashrc or .profile file : \n\
+To complete the installation you have to add the following to your .zshenv or .profile file : \n\
 export ISE_PLATFORM=$ise_platform \n\
 export ISE_EIFFEL=${applications_dir}/Eiffel_${major_version} \n\
-export GOBO=\$ISE_EIFFEL/library/gobo/svn \n\
-export PATH=\$PATH:\$ISE_EIFFEL/studio/spec/\$ISE_PLATFORM/bin:\$GOBO/../spec/\$ISE_PLATFORM/bin \n\
+export PATH=\$PATH:\$ISE_EIFFEL/studio/spec/\$ISE_PLATFORM/bin:\$ISE_EIFFEL/library/gobo/spec/\$ISE_PLATFORM/bin \n\
 "
 
 livecheck.type    regex

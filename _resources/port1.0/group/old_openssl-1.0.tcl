@@ -10,12 +10,11 @@
 # openssl.branch: the OpenSSL branch to use (e.g. 1.0 for the latest OpenSSL on the 1.0.x branch).
 #   Currently only 1.0 is available.
 
-options openssl.branch
-option_proc openssl.branch openssl_set_branch
-options openssl.includedir
+options openssl.branch openssl.includedir openssl.libdir
+default openssl.branch 1.0
 default openssl.includedir      {${prefix}/include/openssl-${openssl.branch}}
-options openssl.libdir
 default openssl.libdir          {${prefix}/lib/openssl-${openssl.branch}}
+option_proc openssl.branch openssl_set_branch
 
 proc openssl_set_branch {option action args} {
     if {$action ne "set"} {
@@ -35,7 +34,8 @@ proc openssl.configure {method} {
 
     switch ${method} {
         pkgconfig {
-            configure.env-append PKG_CONFIG_PATH=${prefix}/lib/openssl-${openssl.branch}/pkgconfig
+            configure.pkg_config_path-prepend ${prefix}/lib/openssl-${openssl.branch}/pkgconfig
+            depends_build-delete port:pkgconfig
             depends_build-append port:pkgconfig
         }
         build_flags {

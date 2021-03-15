@@ -3,7 +3,12 @@
 PortSystem          1.0
 PortGroup           github 1.0
 
-github.setup        leesavide abcm2ps 8.14.4 v
+github.setup        leesavide abcm2ps 8.14.9 v
+revision            0
+checksums           rmd160  19ac97f1eeddb38b00700383028ec6ba15a7e317 \
+                    sha256  9d91c215d59bb3704fe174ba0729f634e656ab42210cfabf02f0c5c4e0c9d877 \
+                    size    259238
+
 categories          print audio
 platforms           darwin
 maintainers         nomaintainer
@@ -14,14 +19,19 @@ long_description    abcm2ps is a package that converts music tunes from \
                     extensions to the ABC language that make it suitable \
                     for classical music.
 homepage            http://moinejf.free.fr/
+github.tarball_from archive
 
-checksums           rmd160  7df6ca0e64aef9794c40bfa26fd4c5d346fac4c0 \
-                    sha256  fdd0283bd227b5f103ef1b4e788f07788f74b9efbbac17dbfd1865d35293a1f5 \
-                    size    258479
+depends_build       port:pkgconfig
+depends_lib         port:freetype \
+                    path:lib/pkgconfig/pango.pc:pango
 
-configure.args      --CC=${configure.cc} --docdir=${prefix}/share/doc
+configure.args      --CC=${configure.cc} \
+                    --CFLAGS="\$CFLAGS" \
+                    --docdir=${prefix}/share/doc
 
 build.target
+
+installs_libs       no
 
 test.run            yes
 test.target         test

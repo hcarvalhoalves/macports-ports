@@ -4,7 +4,7 @@ PortSystem          1.0
 PortGroup           cmake 1.1
 PortGroup           github 1.0
 
-github.setup        kpeeters cadabra2 2.2.6
+github.setup        kpeeters cadabra2 2.3.6.8
 revision            0
 
 categories          math
@@ -24,11 +24,11 @@ long_description    Cadabra is a computer algebra system for the \
 
 homepage            http://cadabra.phi-sci.com/
 
-checksums           rmd160  5a2f1a805f232bef981e6809c6b7688bb7d00432 \
-                    sha256  2f3c28a77291d4feea230f2d0e890121d46a3142bc3e6d61185975799031c302 \
-                    size    24109178
+checksums           rmd160  6e70234f824c4704dfcea694d797447517a4200d \
+                    sha256  9ea365d3a0df6caa88f0cf823cd95d1417c9d243c42856186d2cbcea39f2878a \
+                    size    24544641
 
-set python.version  37
+set python.version  39
 
 depends_build-append \
                     port:pkgconfig \
@@ -46,7 +46,8 @@ depends_lib-append  port:adwaita-icon-theme \
                     port:texlive-latex \
                     port:texlive-latex-recommended
 
-configure.args      -DENABLE_MATHEMATICA=OFF
+configure.args      -DENABLE_MATHEMATICA=OFF \
+                    -DSQLITE3_INCLUDE_DIR=${prefix}/include
 
 cmake.out_of_source yes
 

@@ -4,7 +4,7 @@ PortSystem 1.0
 PortGroup python 1.0
 
 name                py-peewee
-version             3.9.6
+version             3.14.3
 license             MIT
 platforms           darwin
 maintainers         {toby @tobypeterson} openmaintainer
@@ -16,15 +16,15 @@ homepage            https://github.com/coleifer/peewee/
 master_sites        pypi:p/peewee
 distname            peewee-${version}
 
-checksums           rmd160  214e503e5dca4651f9bdb279953fa391f2fe7e5e \
-                    sha256  bc879e1ffb7f7684f90d9dd236c77b5042118d079f94764f35e3806948829ac8 \
-                    size    810586
+checksums           rmd160  0fd50c33e8ab9c206da8f59631812f9818af11d1 \
+                    sha256  c90281517168448fa876e9a6c28d6c4f675ece1e42bc722f1fc8abf349edb497 \
+                    size    2292414
 
-python.versions     37
+python.versions     37 38 39
 
 if {${name} ne ${subport}} {
     depends_build-append    port:py${python.version}-setuptools \
-                            port:py${python.version}-cython \
+                            port:py${python.version}-cython
 
     livecheck.type          none
 } else {

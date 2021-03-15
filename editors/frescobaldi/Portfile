@@ -4,8 +4,7 @@ PortSystem          1.0
 PortGroup           python 1.0
 PortGroup           github 1.0
 
-github.setup        wbsoft frescobaldi 2.20.0 v
-revision            1
+github.setup        wbsoft frescobaldi 3.1.3 v
 conflicts           ${name}-devel ${name}2
 categories          editors python
 maintainers         {gmail.com:davide.liessi @dliessi} openmaintainer
@@ -18,73 +17,81 @@ homepage            http://www.frescobaldi.org/
 platforms           darwin
 license             GPL-2+
 
-# frescobaldi-devel points to a specific commit and not to a release
-if {"${name}-devel" ne ${subport}} {
-    github.tarball_from releases
-}
+github.tarball_from releases
 
-checksums           rmd160  27f121545cc7efe6a2b10fa69490a5714655f729 \
-                    sha256  c3d7faab7b21ddbab98749751a94d0a848138a800b0ae744f0ec94000b459ae4 \
-                    size    4478977
+checksums           rmd160  62735baae36fcd4b38813378c9a4322124bba540 \
+                    sha256  9c7f5036f367691454753f1db06ea02c33501c1e4f24bfb47485103911f3e9c1 \
+                    size    6691789
 
 subport ${name}-devel {
-    PortGroup           active_variants 1.1
-
-    github.setup        wbsoft ${name} 8e43f2f01cf56803a8c10b98d8787f97015895a0
-    revision            0
+    set devel_version   ${github.version}
+    # When frescobaldi-devel is different from frescobaldi and points
+    # to a commit hash, append '-dev' to devel_version above, then use
+    # github.setup with the commit hash (before setting version below).
     conflicts           ${name} ${name}2
-    version             20180806
-    set devel_version   3.0.0
+    version             20201226
 
-    checksums           rmd160  e79fb399116910fe15df5f449b495e7f0ab39165 \
-                        sha256  38e9f0f003316b70a1d11623087bd903d4f600e46930c757cedbf572979434f5 \
-                        size    8501726
+    # When using a commit hash, uncomment the following line.
+    # github.tarball_from archive
 }
 
 subport ${name}2 {
+    github.setup        wbsoft frescobaldi 2.20.0 v
+    revision            1
     conflicts           ${name} ${name}-devel
-}
 
-# remove this block after 8 August 2019
-if {${os.platform} eq "darwin" && ${os.major} < 11} {
-    if {"${name}-devel" eq ${subport}} {
-        version 20170217
-        revision 2
-        replaced_by ${name}2
-        long_description    ${long_description} \
-                            \n\nFrescobaldi 3 requires Qt 5, \
-                            which is not supported on your system. \
-                            You may install Frescobaldi 2 \
-                            (i.e., the port ${name}2) instead.
-    }
-    if {"${name}2" eq ${subport}} {
-        # don't conflict with frescobaldi-devel,
-        # allowing replaced_by to act as expected
-        conflicts   ${name}
-    }
+    checksums           rmd160  27f121545cc7efe6a2b10fa69490a5714655f729 \
+                        sha256  c3d7faab7b21ddbab98749751a94d0a848138a800b0ae744f0ec94000b459ae4 \
+                        size    4478977
 }
 
 depends_run-append  port:portmidi
 
-# keep Python 3.5 for frescobaldi until next version update
-# to avoid unnecessary building of py37-pyqt4 on user machine
-# (the next version of frescobaldi will depend on py37-pyqt5)
-if {${name} eq ${subport}} {
-    python.default_version  35
-} else {
+if {"${name}2" eq ${subport}} {
     python.default_version  37
+} else {
+    python.default_version  39
 }
 
 depends_build-append    port:py${python.version}-setuptools
 depends_lib-append      port:py${python.version}-ly
 
-if {"${name}-devel" eq ${subport}} {
-    depends_run-append      port:py${python.version}-pyqt5 \
-                            port:py${python.version}-poppler-qt5
-    require_active_variants py${python.version}-pyqt5 webkit
-} else {
+if {"${name}-devel" eq ${subport} && ${devel_version} ne ${github.version}} {
+    depends_build-append    port:gettext \
+                            port:appstream-glib
+}
+
+if {"${name}2" eq ${subport}} {
     depends_run-append      port:py${python.version}-pyqt4 \
                             port:py${python.version}-poppler-qt4
+} else {
+    depends_run-append      port:py${python.version}-pyqt5 \
+                            port:py${python.version}-poppler-qt5
+    if {${os.platform} eq "darwin" && ${os.major} < 13} {
+        # QtWebEngine appeared after Qt 5.3, which is the latest version
+        # available on Mac OS X 10.6 (Darwin 10);
+        # none of the supported versions (5.5, 5.6) builds on Mac OS X 10.7
+        # (Darwin 11);
+        # version 5.5 may build on OS X 10.8 (Darwin 12), where the
+        # default version is 5.7, but I am not sure and I don't want to
+        # take care of this case in the Portfile: I will give instructions
+        # on manually installing Qt 5.5 instead of 5.7 to individual users
+        # if needed.
+        long_description    ${long_description} \
+                            \nSome of Frescobaldi's tools \
+                            will not work on this system \
+                            (see port notes for details).
+        notes-append        "Some of Frescobaldi's tools, namely the\
+                            Documentation Browser and the SVG View,\
+                            require QtWebEngine,\
+                            which cannot be installed on your system.\
+                            You may use Frescobaldi 3 without those \
+                            tools or install Frescobaldi 2\
+                            (i.e., the port ${name}2) instead."
+        notes-append        {}
+    } else {
+        depends_run-append  port:py${python.version}-pyqt5-webengine
+    }
 }
 
 variant app description {Make application bundle} {
@@ -94,6 +101,15 @@ default_variants    +app
 
 if {![variant_isset app]} {
     supported_archs     noarch
+}
+
+if {"${name}-devel" eq ${subport} && ${devel_version} ne ${github.version}} {
+    pre-build {
+        system -W ${worksrcpath} "make PYTHON=${python.bin} -C i18n"
+        system -W ${worksrcpath} "make -C linux"
+        reinplace "s:version = \"\[^\"\]*\":version = \"${devel_version}\":g" \
+            ${worksrcpath}/frescobaldi_app/appinfo.py
+    }
 }
 
 build {
@@ -139,10 +155,13 @@ post-destroot {
     }
 }
 
-notes \
-"You may want to install FluidSynth and obtain a SoundFont\
-in order to have audio output from Frescobaldi's MIDI output.
+if {"${name}2" eq ${subport}} {
+    github.livecheck.regex {(2[^"]+)}
+}
 
+notes-append \
+"You may want to install FluidSynth and obtain a SoundFont\
+in order to have audio output from Frescobaldi's MIDI output.\
 You will need to select FluidSynth's MIDI input port\
 in Frescobaldi's MIDI settings (in Preferences)\
 while FluidSynth is running."

@@ -1,7 +1,6 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
-PortGroup           cxx11 1.1
 PortGroup           github 1.0
 PortGroup           xcode 1.0
 PortGroup           xcodeversion 1.0
@@ -80,7 +79,7 @@ post-extract {
     set bad_submodule no
     foreach {sub_author sub_project sub_commit sub_dest} ${submodules} {
         set commit_file ${worksrcpath}/ExternalRevisions/${sub_project}_repo_revision
-        if [file exists ${commit_file}] {
+        if {[file exists ${commit_file}]} {
             set commit_re {^(\S+)}
         } else {
             set commit_file ${worksrcpath}/External/glslang/known_good.json
@@ -97,7 +96,7 @@ post-extract {
         file mkdir [file dirname ${worksrcpath}/External/${sub_dest}]
         ln -s {*}[glob ${workpath}/${sub_project}-*] ${worksrcpath}/External/${sub_dest}
     }
-    if ${bad_submodule} {
+    if {${bad_submodule}} {
         ui_error "The submodules should be:\n${submodules}"
         return -code error "incorrect submodule commit"
     }
@@ -107,6 +106,8 @@ depends_build-append \
                     path:bin/cmake:cmake
 
 build.pre_args      -derivedDataPath ./DerivedData
+
+compiler.cxx_standard 2011
 
 xcode.configuration Release
 xcode.scheme        "MoltenVK Package (macOS only)"
@@ -131,6 +132,7 @@ platform darwin {
         archive_sites
         distfiles
         depends_build
+        known_fail  yes
         pre-fetch {
             ui_error "${subport} @${version} requires macOS Sierra or later"
             return -code error "incompatible OS X version"

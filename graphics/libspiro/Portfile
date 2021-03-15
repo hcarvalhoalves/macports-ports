@@ -4,22 +4,22 @@ PortSystem      1.0
 PortGroup       github 1.0
 
 epoch           1
-github.setup    fontforge libspiro 0.5.20150702
+github.setup    fontforge libspiro 20200505
 
 categories      graphics
 license         GPL-3+
 maintainers     {devans @dbevans} openmaintainer
 platforms       darwin
 
-description \
-    Raph Levien's Spiro package as a library.
+description     Raph Levien's Spiro package as a library.
 
 long_description \
-    Raph Levien's Spiro package as a library. A mechanism for drawing \
-    smooth contours with constant curvature at the spline joins.
+                Raph Levien's Spiro package as a library. A mechanism for drawing \
+                smooth contours with constant curvature at the spline joins.
 
-checksums       sha256  86633d1c1256f40ef761e375bfc9a7d0c536a2a212763fe1827332e1243bbc39 \
-                rmd160  8b5cf432a7329fe20438f58d7c173bd275983c8b
+checksums       sha256  6bb238d9102d62536edcb96b09e1d28c99dc5fa818eaa934ee0bba652380961a \
+                rmd160  48c12be785fa42a34f287832157f2359e6fb66e3 \
+                size    98689
 
 use_autoreconf  yes
 

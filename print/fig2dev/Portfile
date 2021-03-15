@@ -3,8 +3,8 @@
 PortSystem          1.0
 
 name                fig2dev
-version             3.2.7a
-revision            4
+version             3.2.8
+revision            0
 categories          print graphics
 platforms           darwin
 license             Permissive
@@ -26,8 +26,9 @@ homepage            http://xfig.org/
 master_sites        sourceforge:project/mcj
 use_xz              yes
 
-checksums           rmd160  708861557c98df3d3d6f2ff4e9d6b66da72747aa \
-                    sha256  bda219a15efcdb829e6cc913a4174f5a4ded084bf91565c783733b34a89bfb28
+checksums           rmd160  b59c24b248002aa7d5e606de4078065d4fe6f840 \
+                    sha256  931258ae43950d0931ddcea13ce6554d2cd7fc3c93585aebf74e393bb14fe27d \
+                    size    518984
 
 depends_lib         port:ghostscript \
                     port:libpng \
@@ -36,6 +37,12 @@ depends_lib         port:ghostscript \
 depends_run         port:netpbm
 
 variant universal {}
+
+patchfiles          patch-fig2dev-dev-genemf.h.diff
+
+if {${os.platform} eq "darwin" && ${os.major} < 11} {
+    patchfiles-append patch-fig2dev-getline-c.diff
+}
 
 post-destroot {
     set docdir ${destroot}${prefix}/share/doc/${name}

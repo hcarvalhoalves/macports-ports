@@ -3,9 +3,7 @@
 PortSystem          1.0
 
 name                libvterm
-set bzr_rev         679
-set git_rev         04781d37ce5af3f580376dc721bd3b89c434966b
-version             0.0.${bzr_rev}
+version             0.1.4
 categories          devel
 platforms           darwin
 maintainers         {raimue @raimue} \
@@ -23,32 +21,25 @@ long_description \
 
 homepage            http://www.leonerd.org.uk/code/libvterm/
 
-# fetch from github mirror as launchpad regenerates the tarball for every
-# download with new checksums
-master_sites        https://github.com/neovim/libvterm/archive/
-distname            ${git_rev}
-worksrcdir          ${name}-${git_rev}
+master_sites        ${homepage}
 
-checksums           rmd160  97d6212bb52b64cfb282c947e053e5e07418c790 \
-                    sha256  3704b7e151579c12909d87f11b7f5dc99f8b02a1d2d32cd341becd5fba71c547
+checksums           rmd160  827234390d2ac60377786c896808736827cbfbee \
+                    sha256  bc70349e95559c667672fc8c55b9527d9db9ada0fb80a3beda533418d782d3dd \
+                    size    69122
+
+compiler.c_standard 1999
 
 depends_build       port:libtool \
                     port:pkgconfig
 
+patchfiles-append   patch-disable-silent-rules.diff
+
 use_configure no
 
 build.args          PREFIX=${prefix}
-if {[vercmp [macports_version] 2.5.99] >= 0} {
 build.env-append    CC=${configure.cc} \
                     "CFLAGS=${configure.cflags} [get_canonical_archflags cc]" \
-                    "LDFLAGS=${configure.ldflags} [get_canonical_archflags ld]"
-} else {
-build.env-append    CC=${configure.cc} \
-                    CFLAGS="${configure.cflags} [get_canonical_archflags cc]" \
-                    LDFLAGS="${configure.ldflags} [get_canonical_archflags ld]"
-}
+                    "LDFLAGS=${configure.ldflags} [get_canonical_archflags ld]" \
+                    VERBOSE=1
 
 destroot.args       ${build.args}
-
-# this port tracks development snapshots, there are no releases to follow
-livecheck.type      none

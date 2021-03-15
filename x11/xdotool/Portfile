@@ -4,9 +4,10 @@ PortSystem                  1.0
 PortGroup                   github 1.0
 
 github.setup                jordansissel xdotool 3.20160805.1 v
+revision                    1
 categories                  x11 devel
 platforms                   darwin
-maintainers                 {ryandesign @ryandesign}
+maintainers                 {ryandesign @ryandesign} openmaintainer
 license                     BSD
 
 description                 X11 keyboard and mouse simulation utility
@@ -39,23 +40,22 @@ depends_lib                 port:libxkbcommon \
                             port:xorg-libXinerama \
                             port:xorg-libXtst
 
+platform darwin {
+    # error: implicit declaration of function 'strdup' is invalid in C99 [-Werror,-Wimplicit-function-declaration]
+    configure.cflags-append -D_XOPEN_SOURCE=600
+}
+
 patchfiles                  patch-Makefile.diff
+patchfiles-append           cflags.sh.patch
 
 use_configure               no
 
 variant universal {}
 
-if {[vercmp [macports_version] 2.5.99] >= 0} {
 build.env                   PREFIX=${prefix} \
                             CC=${configure.cc} \
                             "CFLAGS=${configure.cflags} [get_canonical_archflags cc]" \
                             "LDFLAGS=${configure.ldflags} [get_canonical_archflags ld]"
-} else {
-build.env                   PREFIX=${prefix} \
-                            CC=${configure.cc} \
-                            CFLAGS="${configure.cflags} [get_canonical_archflags cc]" \
-                            LDFLAGS="${configure.ldflags} [get_canonical_archflags ld]"
-}
 destroot.env                PREFIX=${prefix} \
                             INSTALLMAN=${prefix}/share/man
 

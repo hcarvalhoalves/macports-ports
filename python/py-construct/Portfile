@@ -4,16 +4,21 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-construct
-version             2.8.16
+
+version             2.10.61
+checksums           rmd160  81ad5b3c6a7e00b7882ddfe1c47b72cc6891364c \
+                    sha256  d75384a04cb36ae5417dd34ce230c392e6085d872ab8a99ebd756c34bac0dff5 \
+                    size    55748
 revision            0
+
 categories-append   devel
 platforms           darwin
 license             MIT
 supported_archs     noarch
 
-python.versions     27 34 35 36
+python.versions     27 35 36 37 38 39
 
-maintainers         dckd.nl:macports openmaintainer
+maintainers         {michaelld @michaelld} openmaintainer
 
 description         python module for parsing and building binary or textual data structures
 
@@ -23,18 +28,25 @@ long_description    \
     structures in a declarative manner, rather than procedural code: more \
     complex constructs are composed of a hierarchy of simpler ones.
 
-homepage            http://construct.wikispaces.com/
-master_sites        pypi:c/construct/
-
-distname            construct-${version}
-
-checksums           rmd160  2e2ad50091f2bb194ba6ffb2ffdfda908f863d47 \
-                    sha256  9a5dbd459e26933bd572389d99c26a0db180b3e2f5fd06950a38b1944cff2548
+homepage            https://construct.readthedocs.org
 
 if {${name} ne ${subport}} {
+
+    if { ${python.version} == 27 || ${python.version} == 35} {
+        version         2.10.54
+        checksums       rmd160 8ef31fe45319257ca905e25bee6a108a5f659e2a \
+                        sha256  3c130a67f05610557dd1b27e062a7165f92b517f9ed50db880ebe068696fd712 \
+                        size    55318
+        revision        0
+    }
+
     depends_build-append \
                         port:py${python.version}-setuptools
+
     depends_lib-append  port:py${python.version}-six
 
     livecheck.type      none
 }
+
+master_sites        pypi:c/construct/
+distname            construct-${version}

@@ -1,6 +1,6 @@
---- spyder/utils/programs.py.orig	2019-02-24 13:42:23.000000000 -0500
-+++ spyder/utils/programs.py	2019-02-24 19:09:01.000000000 -0500
-@@ -64,6 +64,11 @@
+--- spyder/utils/programs.py.orig	2021-03-06 12:37:53.000000000 -0500
++++ spyder/utils/programs.py	2021-03-06 18:53:51.000000000 -0500
+@@ -123,6 +123,11 @@
          abspath = osp.join(path, basename)
          if osp.isfile(abspath):
              return abspath

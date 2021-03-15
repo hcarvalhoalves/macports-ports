@@ -5,7 +5,7 @@ PortGroup           meson 1.0
 PortGroup           compiler_blacklist_versions 1.0
 
 name                libdazzle
-version             3.30.0
+version             3.38.0
 license             GPL-3+
 set branch          [join [lrange [split ${version} .] 0 1] .]
 description         ${name} is a companion library to GObject and Gtk+.
@@ -14,8 +14,7 @@ long_description    ${description}  It includes a collection of dazzling Gtk wid
                     desktop integration, and those missing pieces from common libraries \
                     that help you write cleaner and safer code
 
-# {devans @dbevans} -- feel free to add yourself if you wish
-maintainers         {kencu @kencu} openmaintainer
+maintainers         nomaintainer
 categories          gnome
 platforms           darwin
 homepage            https://gitlab.gnome.org/GNOME/${name}
@@ -23,23 +22,24 @@ master_sites        gnome:sources/${name}/${branch}/
 
 use_xz              yes
 
-checksums           rmd160  517425989086370350235d9dfd845f01647ed9f4 \
-                    sha256  f45b7dd27ed798352196813c8e87d386007a939df7aca447f5a5666afc03be43 \
-                    size    432032
+checksums           rmd160  dcef5df588c735a4046b63967ef1597117721561 \
+                    sha256  e18af28217943bcec106585298a91ec3da48aa3ad62fd0992f23f0c70cd1678f \
+                    size    447304
 
 depends_build-append \
                     port:pkgconfig \
-                    port:vala \
-                    port:gobject-introspection
 
-depends_lib-append  port:gtk3
+depends_lib-append  port:gobject-introspection \
+                    port:gtk3 \
+                    port:vala
 
-# error: invalid value 'gnu11' in '-std=gnu11'
-compiler.blacklist-append  *gcc-3.* *gcc-4.* {clang < 212}
+compiler.c_standard 2011
 
-# gobject-introspection uses g-ir-scanner, which uses $CC from env
-if {[vercmp [macports_version] 2.5.99] >= 0} {
-if {[variant_isset universal]} {
+if {![info exists universal_possible]} {
+    set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+}
+# uses g-ir-scanner, which uses $CC from env
+if {${universal_possible} && [variant_isset universal]} {
     foreach arch ${configure.universal_archs} {
         lappend merger_build_env(${arch})  "CC=${configure.cc} -arch ${arch}"
         lappend merger_destroot_env(${arch})  "CC=${configure.cc} -arch ${arch}"
@@ -47,17 +47,6 @@ if {[variant_isset universal]} {
 } else {
     build.env-append       "CC=${configure.cc} ${configure.cc_archflags}"
     destroot.env-append    "CC=${configure.cc} ${configure.cc_archflags}"
-}
-} else {
-if {[variant_isset universal]} {
-    foreach arch ${configure.universal_archs} {
-        lappend merger_build_env(${arch})  CC='${configure.cc} -arch ${arch}'
-        lappend merger_destroot_env(${arch})  CC='${configure.cc} -arch ${arch}'
-    }
-} else {
-    build.env-append       CC="${configure.cc} ${configure.cc_archflags}"
-    destroot.env-append    CC="${configure.cc} ${configure.cc_archflags}"
-}
 }
 
 livecheck.type      gnome

@@ -3,11 +3,11 @@
 PortSystem          1.0
 PortGroup           github 1.0
 
-github.setup        vapier ncompress 4.2.4.5 v
+github.setup        vapier ncompress 5.0 v
 revision            0
-checksums           rmd160  6a7a2a0859577b5acc07b80226b2f906b85298cb \
-                    sha256  11446bc7d3e27a9f2094321c17a9b120351fdbe3378a19bba1088d9f801229bd \
-                    size    35586
+checksums           rmd160  19f846873b8be9151cae062ca1ade9e10dbbd41b \
+                    sha256  96ec931d06ab827fccad377839bfb91955274568392ddecf809e443443aead46 \
+                    size    34185
 
 categories          archivers
 platforms           darwin
@@ -22,7 +22,7 @@ long_description    Compress is a ${description}. Compress does not have the \
                     programs to compress data. Compress is the de facto \
                     standard in the UNIX community for compressing files.
 
-patchfiles          test.patch
+github.tarball_from archive
 
 use_configure       no
 

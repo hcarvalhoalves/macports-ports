@@ -2,15 +2,21 @@
 
 PortSystem          1.0
 PortGroup           github 1.0
-PortGroup           cxx11 1.1
 PortGroup           muniversal 1.0
 PortGroup           mpi 1.0
 PortGroup           active_variants   1.1
 PortGroup           compiler_blacklist_versions 1.0
+PortGroup           legacysupport 1.0
+PortGroup           conflicts_build 1.0
+PortGroup           debug 1.0
 mpi.setup
 
-github.setup        OSGeo gdal 2.3.2 v
-revision            5
+github.setup        OSGeo gdal 3.2.2 v
+revision            1
+checksums           rmd160  d58c88f673c0e529436f87d2f1329d9743920a8d \
+                    sha256  a7e1e414e5c405af48982bf4724a3da64a05770254f2ce8affb5f58a7604ca57 \
+                    size    12251728
+
 categories          gis
 license             MIT BSD
 platforms           darwin
@@ -27,35 +33,16 @@ long_description    GDAL is a translator library for raster geospatial \
                     (which lives within the GDAL source tree) provides a \
                     similar capability for simple features vector data.
 
-homepage            http://www.gdal.org/
+homepage            https://www.gdal.org/
+master_sites        https://download.osgeo.org/gdal/${version}/
+use_xz              yes
 
-checksums           rmd160  50fe790adb52523a525cbae99d5b1790bcb5cdc8 \
-                    sha256  9f0f61fedb7880d26947e2bb3c54885639c603edd53421aed0a7eeb150c6728f \
-                    size    21577147
+# error: call to 'abs' is ambiguous
+compiler.blacklist-append {clang < 900}
 
-worksrcdir          ${worksrcpath}/gdal
-patchfiles          patch-gdalwarpkernel_opencl_cpp.diff \
-                    patch-gdalwarpkernel_opencl_h.diff \
-                    patch-apps_GNUmakefile.diff \
-                    patch-ogr_p_h.diff \
-                    patch-ogr_api_cpp.diff \
-                    patch-scripts-GNUmakefile.diff \
-                    patch-poppler.diff
-
-platform darwin {
-    # see https://trac.macports.org/ticket/55752
-    if {${os.major} < 12} {
-        patchfiles-append   MacTypes.diff
-    }
-
-    # see https://trac.macports.org/ticket/56517
-    if {[string match *clang* ${configure.cxx}]} {
-        configure.ldflags-append -stdlib=${configure.cxx_stdlib}
-    }
-}
-
-# As suggested by Ryan in #56908
-compiler.blacklist-append {clang < 800}
+compiler.cxx_standard     2014
+# See https://trac.macports.org/ticket/56908
+compiler.thread_local_storage yes
 
 depends_build-append \
                     port:bash-completion \
@@ -64,8 +51,10 @@ depends_build-append \
 depends_lib-append  port:zlib \
                     port:zstd \
                     port:libpng \
+                    port:expat \
+                    port:libxml2 \
+                    port:webp \
                     port:giflib \
-                    port:proj \
                     port:qhull \
                     port:sqlite3 \
                     port:spatialite \
@@ -73,58 +62,206 @@ depends_lib-append  port:zlib \
                     port:charls
 
 set PYINST          ""
-set OPENCLBASE      "/System/Library/Frameworks/OpenCL.framework/"
 
 configure.universal_args-delete --disable-dependency-tracking
 
-configure.args-append \
-                    --with-local=yes \
-                    --with-libz=yes \
-                    --with-zstd=yes \
-                    --without-liblzma \
-                    --with-png=yes \
-                    --with-libtiff=internal \
-                    --with-geotiff=internal \
-                    --with-jpeg=internal\
-                    --with-charls=yes \
-                    --with-gif=yes \
-                    --with-proj=${prefix}/lib/proj5 \
-                    --with-qhull=yes \
-                    --with-pam \
-                    --with-sqlite3=${prefix} \
-                    --with-spatialite=${prefix} \
+# By default, disable all drivers
+configure.args-append                                   \
+                    --disable-all-optional-drivers
+
+# Enable all built-in raster drivers
+configure.args-append                                   \
+					--enable-driver-adrg                \
+					--enable-driver-aigrid              \
+					--enable-driver-airsar              \
+					--enable-driver-arg                 \
+					--enable-driver-blx                 \
+					--enable-driver-bmp                 \
+					--enable-driver-bsb                 \
+					--enable-driver-cals                \
+					--enable-driver-ceos                \
+					--enable-driver-ceos2               \
+					--enable-driver-coasp               \
+					--enable-driver-cosar               \
+					--enable-driver-ctg                 \
+					--enable-driver-dimap               \
+					--enable-driver-dted                \
+					--enable-driver-e00grid             \
+					--enable-driver-elas                \
+					--enable-driver-envisat             \
+					--enable-driver-ers                 \
+					--enable-driver-esric               \
+					--enable-driver-fit                 \
+					--enable-driver-gff                 \
+					--enable-driver-gsg                 \
+					--enable-driver-gxf                 \
+					--enable-driver-hf2                 \
+					--enable-driver-idrisi              \
+					--enable-driver-ignfheightasciigrid \
+					--enable-driver-ilwis               \
+					--enable-driver-ingr                \
+					--enable-driver-iris                \
+					--enable-driver-iso8211             \
+					--enable-driver-jaxapalsar          \
+					--enable-driver-jdem                \
+					--enable-driver-l1b                 \
+					--enable-driver-leveller            \
+					--enable-driver-map                 \
+					--enable-driver-mrf                 \
+					--enable-driver-msgn                \
+					--enable-driver-ngsgeoid            \
+					--enable-driver-nitf                \
+					--enable-driver-northwood           \
+					--enable-driver-pds                 \
+					--enable-driver-prf                 \
+					--enable-driver-r                   \
+					--enable-driver-raw                 \
+					--enable-driver-rmf                 \
+					--enable-driver-rs2                 \
+					--enable-driver-safe                \
+					--enable-driver-saga                \
+					--enable-driver-sdts                \
+					--enable-driver-sentinel2           \
+					--enable-driver-sgi                 \
+					--enable-driver-sigdem              \
+					--enable-driver-srtmhgt             \
+					--enable-driver-terragen            \
+					--enable-driver-tga                 \
+					--enable-driver-til                 \
+					--enable-driver-tsx                 \
+					--enable-driver-usgsdem             \
+					--enable-driver-xpm                 \
+					--enable-driver-xyz                 \
+					--enable-driver-zmap
+
+# Same with built-in vector drivers
+configure.args-append                                   \
+					--enable-driver-arcgen              \
+					--enable-driver-avc                 \
+					--enable-driver-bna                 \
+					--enable-driver-cad                 \
+					--enable-driver-csv                 \
+					--enable-driver-dgn                 \
+					--enable-driver-dxf                 \
+					--enable-driver-edigeo              \
+					--enable-driver-flatgeobuf          \
+					--enable-driver-geoconcept          \
+					--enable-driver-georss              \
+					--enable-driver-gml                 \
+					--enable-driver-gmt                 \
+					--enable-driver-gpsbabel            \
+					--enable-driver-gpx                 \
+					--enable-driver-gtm                 \
+					--enable-driver-htf                 \
+					--enable-driver-jml                 \
+					--enable-driver-mapml               \
+					--enable-driver-mvt                 \
+					--enable-driver-ntf                 \
+					--enable-driver-openair             \
+					--enable-driver-openfilegdb         \
+					--enable-driver-pgdump              \
+					--enable-driver-rec                 \
+					--enable-driver-s57                 \
+					--enable-driver-segukooa            \
+					--enable-driver-segy                \
+					--enable-driver-selafin             \
+					--enable-driver-shape               \
+					--enable-driver-sua                 \
+					--enable-driver-svg                 \
+					--enable-driver-sxf                 \
+					--enable-driver-tiger               \
+					--enable-driver-vdv                 \
+					--enable-driver-wasp                \
+					--enable-driver-xplane              
+
+# These drivers require curl
+configure.args-append                                   \
+					--enable-driver-eeda                \
+					--enable-driver-plmosaic            \
+					--enable-driver-rda                 \
+					--enable-driver-wcs                 \
+					--enable-driver-wms                 \
+					--enable-driver-wmts                \
+					--enable-driver-daas                \
+					--enable-driver-ogcapi              \
+					--enable-driver-amigocloud          \
+					--enable-driver-carto               \
+					--enable-driver-cloudant            \
+					--enable-driver-couchdb             \
+					--enable-driver-csw                 \
+					--enable-driver-elastic             \
+					--enable-driver-ngw                 \
+					--enable-driver-plscenes            \
+					--enable-driver-wfs                 
+
+# These drivers require sqlite3
+configure.args-append                                   \
+					--enable-driver-rasterlite          \
+					--enable-driver-mbtiles             \
+					--enable-driver-gpkg                \
+					--enable-driver-vfk                 \
+					--enable-driver-osm
+
+# These drivers require expat
+configure.args-append                                   \
+					--enable-driver-ods                 \
+					--enable-driver-xlsx                \
+					--enable-driver-lvbag  
+
+# Miscellaneous drivers
+configure.args-append                                   \
+                    --with-local=yes                    \
+                    --with-libz=yes                     \
+                    --with-zstd=yes                     \
+                    --without-liblzma                   \
+                    --with-png=yes                      \
+                    --with-libtiff=internal             \
+                    --with-geotiff=internal             \
+                    --with-jpeg=internal                \
+                    --with-charls=yes                   \
+                    --with-gif=yes                      \
+                    --with-qhull=yes                    \
+                    --with-pam                          \
+                    --with-sqlite3=${prefix}            \
+                    --with-spatialite=dlopen            \
+                    --with-spatialite-soname=${prefix}/lib/libspatialite.dylib \
                     --with-curl=${prefix}/bin/curl-config \
                     --with-geos=${prefix}/bin/geos-config \
-                    --with-expat=${prefix} \
-                    --without-pg \
-                    --without-grass \
-                    --without-libgrass \
-                    --without-cfitsio \
-                    --without-netcdf \
-                    --without-ogdi \
-                    --without-fme \
-                    --without-hdf4 \
-                    --without-hdf5 \
-                    --without-jasper \
-                    --without-openjpeg \
-                    --without-ecw \
-                    --without-kakadu \
-                    --without-mrsid \
-                    --without-jp2mrsid \
-                    --without-msg \
-                    --without-bsb \
-                    --without-oci \
-                    --without-grib \
-                    --without-mysql \
-                    --without-ingres \
-                    --without-xerces \
-                    --without-odbc \
-                    --without-idb \
-                    --without-sde \
-                    --without-opencl \
-                    --without-perl \
-                    --without-python \
-                    --without-poppler \
+                    --with-expat=${prefix}              \
+                    --with-webp=${prefix}               \
+                    --with-xml2=yes                     \
+                    --without-pg                        \
+                    --without-grass                     \
+                    --without-libgrass                  \
+                    --without-cfitsio                   \
+                    --without-netcdf                    \
+                    --without-ogdi                      \
+                    --without-exr                       \
+                    --without-mongocxx                  \
+                    --without-mongocxxv3                \
+                    --without-fme                       \
+                    --without-libkml                    \
+                    --without-hdf4                      \
+                    --without-hdf5                      \
+                    --without-jasper                    \
+                    --without-openjpeg                  \
+                    --without-ecw                       \
+                    --without-kakadu                    \
+                    --without-mrsid                     \
+                    --without-jp2mrsid                  \
+                    --without-msg                       \
+                    --without-bsb                       \
+                    --without-oci                       \
+                    --without-mysql                     \
+                    --without-ingres                    \
+                    --without-xerces                    \
+                    --without-odbc                      \
+                    --without-idb                       \
+                    --without-sde                       \
+                    --without-opencl                    \
+                    --without-perl                      \
+                    --without-python                    \
+                    --without-poppler                   \
                     --mandir=${prefix}/share/man
 
 # Always choose internal libjson code (#44098)
@@ -137,8 +274,13 @@ if {${configure.cxx_stdlib} eq "libc++"} {
 }
 
 pre-configure {
+    # see https://trac.macports.org/ticket/56517
+    if {[string match *clang* ${configure.cxx}]} {
+        configure.ldflags-append -stdlib=${configure.cxx_stdlib}
+    }
+
     global worksrcpath_dirs
-    if { ![variant_isset universal] } {
+    if {![variant_exists universal] || ![variant_isset universal]} {
         set worksrcpath_dirs ${worksrcpath}
     } else {
         foreach arch ${universal_archs_to_use} {
@@ -157,6 +299,11 @@ post-configure {
 # Set target to none
 build.target
 
+variant grib description {Builds with grib2 support} {
+    depends_lib-append      port:wgrib2
+    configure.args-append   --enable-driver-grib
+}
+
 variant lto description {Enable Link Time Optimization} {
     configure.args-append   --enable-lto
 }
@@ -168,16 +315,26 @@ variant lzma \
     configure.args-append   --with-liblzma=yes
 }
 
+variant libkml \
+    description {Enable libkml} {
+    depends_lib-append      port:libkml
+    configure.args-delete   --without-libkml
+    configure.args-append   --enable-driver-kmlsuperoverlay
+    configure.args-append   --with-libkml=${prefix}
+    configure.args-append   --with-libkml-inc=${prefix}/include
+    configure.args-append   --with-libkml-lib=${prefix}/lib
+}
+
 variant grass description {Enable GRASS 7 GIS I/O} {
     if {[catch {lindex [registry_active grass7] 0}]} {
         ui_error "The grass variant requires grass 7 to be installed."
         ui_error "Since grass7 depends on gdal, please first install gdal WITHOUT the grass variant."
         ui_error "Then install grass7, then reinstall gdal with the grass variant."
-        #return -code error "Missing GRASS 7." 
-    } 
+        #return -code error "Missing GRASS 7."
+    }
 
     configure.args-delete   --without-grass
-    configure.args-append   --with-grass=${prefix}/share/grass76
+    configure.args-append   --with-grass=${prefix}/share/grass78
 }
 
 variant mrsid description {Enable MrSID file format} {
@@ -274,9 +431,9 @@ variant hdf5 description {Enable HDF5 file format} {
 
     if {[variant_isset mpich] || [variant_isset mpich-devel] || \
         [variant_isset openmpi] || [variant_isset openmpi_devel]} {
-        
+
         mpi.enforce_variant     hdf5
-    }   
+    }
 
     depends_lib-append      port:hdf5
     configure.args-delete   --without-hdf5
@@ -286,17 +443,13 @@ variant hdf5 description {Enable HDF5 file format} {
 variant netcdf description {Enable NetCDF file format} {
     if {[variant_isset mpich] || [variant_isset mpich-devel] || \
         [variant_isset openmpi] || [variant_isset openmpi_devel]} {
-    
+
         mpi.enforce_variant     netcdf
     }
 
     depends_lib-append      port:netcdf
     configure.args-delete   --without-netcdf
     configure.args-append   --with-netcdf=${prefix}
-}
-
-variant grib description {Enable GRIB (weather) file format} {
-    configure.args-delete   --without-grib
 }
 
 #JPEG-2K
@@ -318,15 +471,27 @@ variant xerces description {Enable xerces XML support for GML file format} {
     depends_lib-append      path:include/xercesc/util/XercesVersion.hpp:xercesc3
     configure.args-delete   --without-xerces
     configure.args-append   --with-xerces=${prefix}
+
+    # These drivers need xerces-c
+    configure.args-append   --enable-driver-nas 
+	configure.args-append	--enable-driver-ili 
+	configure.args-append	--enable-driver-gmlas
 }
 
 # Database variants
-set postgresql_suffixes {95 96 10 11}
+set postgresql_suffixes {95 96 10 11 12 13}
 
 set portsgresql_variants {}
+set postgresql_default_variant "if {"
+
 foreach s ${postgresql_suffixes} {
     lappend portsgresql_variants postgresql${s}
+    set postgresql_default_variant "${postgresql_default_variant}!\[variant_isset postgresql${s}] && "
 }
+
+set postgresql_default_variant [string range ${postgresql_default_variant} 0 end-4]
+set postgresql_default_variant "${postgresql_default_variant}} {default_variants +postgresql${s}}"
+eval $postgresql_default_variant
 
 foreach s ${postgresql_suffixes} {
     set p postgresql${s}
@@ -336,32 +501,50 @@ foreach s ${postgresql_suffixes} {
     variant ${p} description "Enable PostgreSQL ${v} support" conflicts {*}${c} "
         depends_lib-append      port:${p}
         configure.args-delete   --without-pg
-        configure.args-append   --with-pg=${prefix}/lib/postgresql${s}/bin/pg_config
+        configure.args-append   --with-pg=yes
+        configure.pkg_config_path-append \
+                                ${prefix}/lib/postgresql${s}/pkgconfig \
+                                ${prefix}/lib/pkgconfig
     "
 }
 
-variant mysql5 conflicts mysql57 description {Enable MySQL 5 support} {
+variant mysql5 conflicts mysql57 mysql8 description {Enable MySQL 5 support} {
     depends_lib-append      path:bin/mysql_config5:mysql5
     configure.args-delete   --without-mysql
     configure.args-append   --with-mysql=${prefix}/lib/mysql5/bin/mysql_config
 }
 
-variant mysql57 conflicts mysql5 description {Enable MySQL 5.7 support} {
+variant mysql57 conflicts mysql5 mysql8 description {Enable MySQL 5.7 support} {
     depends_lib-append      port:mysql57
     configure.args-delete   --without-mysql
     configure.args-append   --with-mysql=${prefix}/lib/mysql57/bin/mysql_config
+}
+
+variant mysql8 conflicts mysql5 mysql57 description {Enable MySQL 8 support} {
+    depends_lib-append      port:mysql8
+    configure.args-replace  --without-mysql \
+                            --with-mysql=${prefix}/lib/mysql8/bin/mysql_config
 }
 
 variant odbc description {Enable ODBC support} {
     depends_lib-append      port:unixODBC
     configure.args-delete   --without-odbc
     configure.args-append   --with-odbc=${prefix}
+
+    # These drivers depend on odbc
+	configure.args-append	--enable-driver-odbc
+	configure.args-append	--enable-driver-pgeo 
+	configure.args-append	--enable-driver-mssqlspatial
+	configure.args-append	--enable-driver-geomedia
+	configure.args-append	--enable-driver-walk   disable walk driver support (enabled by default,
 }
 
 variant poppler description {Enable poppler support} {
     depends_lib-append      port:poppler
     configure.args-delete   --without-poppler
-    configure.args-append   --with-poppler=${prefix}
+    configure.args-append   --with-poppler=${prefix} \
+                            --enable-driver-pdf \
+                            --enable-pdf-plugin
 }
 
 variant cfitsio description {Enable fits support} {
@@ -369,30 +552,30 @@ variant cfitsio description {Enable fits support} {
     configure.args-delete   --without-cfitsio
     configure.args-append   --with-cfitsio
 }
-# OpenCL
-variant opencl description {Use OpenCL for parallel computations} {
-    configure.args-delete   --without-opencl
-    configure.args-append   --with-opencl
-    configure.args-append   --with-opencl-include=${OPENCLBASE}/Headers
-    configure.args-append   --with-opencl-lib='-framework OpenCL'
-}
 
 configure.optflags  -DGDAL_COMPILATION
 
 # Proj version
-variant proj4 description {Use Proj4 4.9 instead of Proj4 5+} {
-
-    depends_lib-delete      port:proj
-    depends_lib-append      port:proj4
-    configure.args-delete   --with-proj=${prefix}/lib/proj5
-    configure.args-append   --with-static-proj4=${prefix}/lib/proj49
+variant proj6 conflicts proj7 description {Use proj 6} {
+    depends_lib-append      port:proj6
+    configure.args-append   --with-proj=${prefix}/lib/proj6
 }
 
-# Perf variant to optimize code
-variant perf description {Optimize for speed} {
+variant proj7 conflicts proj6 description {Use proj 7} {
+    depends_lib-append      port:proj7
+    configure.args-append   --with-proj=${prefix}/lib/proj7
+}
+
+if {![variant_isset proj6] && ![variant_isset proj7]} {
+    default_variants +proj7
+}
+
+# Can be removed after June 2021.
+variant perf requires native description {Legacy compatibility variant} {}
+
+variant native description {Optimize for speed} {
     configure.optflags      -O3 -pipe -march=native -DGDAL_COMPILATION
 }
-
 
 set jpeg2k 0
 foreach jpeg2kVariant {jasper openjpeg ecw} {
@@ -445,7 +628,7 @@ post-destroot {
             bin/ogrlineref \
             bin/ogrtindex \
             bin/testepsg \
-            lib/libgdal.20.dylib] \
+            lib/libgdal.27.dylib] \
             {
                 if {${configure.cxx_stdlib} eq "libc++"} {
                     system "install_name_tool -change \
@@ -462,5 +645,5 @@ post-destroot {
 }
 
 livecheck.type  regex
-livecheck.url   http://download.osgeo.org/gdal/CURRENT
+livecheck.url   https://download.osgeo.org/gdal/CURRENT
 livecheck.regex ${name}-(\\d+(?:\\.\\d+)*)\\.tar

@@ -1,0 +1,36 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:et:sw=4:ts=4:sts=4
+
+PortSystem      1.0
+PortGroup       github 1.0
+PortGroup       xcode 1.0
+
+github.setup    acidanthera MaciASL 1.5.9
+revision        0
+categories      devel aqua
+maintainers     {i0ntempest @i0ntempest} openmaintainer
+license         GPL-3
+
+description     A native AML compiler and IDE for macOS
+long_description \
+                ${description}, with syntax coloring, tree navigation, automated patching, \
+                online patch file repositories, and iASL binary updates. Written entirely \
+                in Cocoa, conforms to macOS guidelines.
+
+checksums       rmd160  278d6a29ca89aa66396c1ed76010ba89eb08be88 \
+                sha256  1803f3d8a82b45a2acee37a3e813f86b2e985d9a0b5ca7d7fd8593a89ea98488 \
+                size    3807248
+
+platforms       macosx
+
+depends_run-append \
+                port:acpica
+
+xcode.target            MaciASL
+xcode.configuration     Release
+patchfiles-append \
+                patch-codesign.patch
+
+destroot {
+    file copy ${worksrcpath}/build/${xcode.configuration}/MaciASL.app ${destroot}${applications_dir}
+    ln -fs ${prefix}/bin/iasl ${destroot}${applications_dir}/MaciASL.app/Contents/MacOS/iasl-dev
+}

@@ -11,6 +11,11 @@
 options crossbinutils.target
 
 array set crossbinutils.versions_info {
+    2.26 {bzip2 {
+        rmd160  ce0400ffcc1200280854fefb29f97b63507bad14 \
+        sha256  c2ace41809542f5237afc7e3b8f32bb92bc7bc53c6232a84463c423b0714ecd9 \
+        size    25543552
+    }}
     2.30 {xz {
         rmd160  7f439bd642e514e89075a47758414ea65c50c3b3 \
         sha256  6e46b8aeae2f727a36f0bd9505e405768a72218f1796f0d09757d45209871ae6 \
@@ -30,6 +35,36 @@ array set crossbinutils.versions_info {
         rmd160  cfff50aae6534512a51fbb720e30f37484f8193e \
         sha256  0ab6c55dd86a92ed561972ba15b9b70a8b9f75557f896446c82e8b36e473ee04 \
         size    20774880
+    }}
+    2.33.1 {xz {
+        rmd160  f621e04d98d257acbc1f82a4043e565cf91207b4 \
+        sha256  ab66fc2d1c3ec0359b8e08843c9f33b63e8707efdff5e4cc5c200eae24722cbf \
+        size    21490848
+    }}
+    2.34 {xz {
+        rmd160  8ee249f7c98c925ef650eaca3b4d1710d75be4e7 \
+        sha256  f00b0e8803dc9bab1e2165bd568528135be734df3fabf8d0161828cd56028952 \
+        size    21637796
+    }}
+    2.35 {xz {
+        rmd160  3825ec98bfd8b00009a616e20976c4296aac69bf \
+        sha256  1b11659fb49e20e18db460d44485f09442c8c56d5df165de9461eb09c8302f85 \
+        size    22042160
+    }}
+    2.35.1 {xz {
+        rmd160  75614738ce319177ab4f66d6d68618343c5a3184 \
+        sha256  3ced91db9bf01182b7e420eab68039f2083aed0a214c0424e257eae3ddee8607 \
+        size    22031720
+    }}
+    2.36 {xz {
+        rmd160  3b9c7a8546771796e405645ed713008e79243868 \
+        sha256  5788292cc5bbcca0848545af05986f6b17058b105be59e99ba7d0f9eb5336fb8 \
+        size    22760136
+    }}
+    2.36.1 {xz {
+        rmd160  65047a9edd726380fa1e117514513c86b77cf3a0 \
+        sha256  e81d9edf373f193af428a0f256674aea62a9d74dfe93f65192d4eae030b0f3b0 \
+        size    22772248
     }}
 }
 
@@ -60,7 +95,7 @@ proc crossbinutils.setup {target version} {
     if {[info exists crossbinutils.versions_info($version)]} {
         use_[lindex [set crossbinutils.versions_info($version)] 0] yes
 
-        checksums   {*}[lindex [set crossbinutils.versions_info($version)] 1]
+        checksums   binutils-${version}${extract.suffix} {*}[lindex [set crossbinutils.versions_info($version)] 1]
     } else {
         # the old default
         use_bzip2   yes
@@ -113,6 +148,9 @@ proc crossbinutils.setup {target version} {
             ${worksrcpath}/bfd/configure                                             \
             ${worksrcpath}/opcodes/configure
 
+        reinplace -q "s|\$(libdir)/bfd-plugins|\"${prefix}/${crossbinutils.target}/host/lib/bfd-plugins\"|g" \
+            ${worksrcpath}/ld/Makefile.in
+
         reinplace -q "s|\$(libdir)|\"${prefix}/${crossbinutils.target}/host/lib\"|g" \
             ${worksrcpath}/libiberty/Makefile.in
         reinplace -q "s|/\$(MULTIOSDIR)||g" \
@@ -132,8 +170,7 @@ proc crossbinutils.setup {target version} {
     configure.args \
         --target=${target} \
         --program-prefix=${target}- \
-        --enable-install-libiberty=${prefix}/${crossbinutils.target}/host  \
-        --enable-install-libbfd
+        --enable-install-libiberty=${prefix}/${crossbinutils.target}/host
 
     build.dir ${workpath}/build
 

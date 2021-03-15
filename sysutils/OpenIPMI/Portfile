@@ -1,15 +1,14 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 PortSystem          1.0
 PortGroup           conflicts_build 1.0
+PortGroup           legacysupport 1.0
+
+# requires clock_gettime()
+legacysupport.newest_darwin_requires_legacy 15
 
 name                OpenIPMI
-if {${os.platform} eq "darwin" && ${os.major} <= 15} {
-    version             2.0.19
-    revision            6
-} else {
-    version             2.0.26
-    revision            0
-}
+version             2.0.30
+revision            0
 set branch          [join [lrange [split ${version} .] 0 1] .]
 license             {GPL-2 LGPL-2}
 categories          sysutils
@@ -29,33 +28,24 @@ master_sites        sourceforge:project/openipmi/OpenIPMI%20${branch}%20Library
 universal_variant   no
 use_parallel_build  no
 
-if {${os.platform} eq "darwin" && ${os.major} <= 15} {
-    checksums \
-        rmd160  ca624701659416da55a6b96abbec6aef4d323a26 \
-        sha256  5b0de4741f07e350bf53b7d31bb20dd1109c2dc005dfb13969d8a9ff290f3a4e
-
-    patchfiles          weak_symbols.patch \
-                        configure.in.patch
-} else {
-    checksums \
-        rmd160  2ee3c26183e0765af83a13ed0eea0c7cd90c16f9 \
-        sha256  83986368c30a1158303435ad5a2b1bd3c6a39664b46d10fc0b8f9d2a78e2f524 \
-        size    3124706
-    patchfiles          disable-lanserv.patch \
-                        unix_posix_thread_os_hnd.c.patch \
-                        unix_selector.c.patch
-}
+checksums           rmd160  3e7e1576d141243f5b8b248908b3589913ba6550 \
+                    sha256  237a9be2a30bde85a88c4ec2759b54eb5b21fede554ffabf8fef1ffac2b42ade \
+                    size    3123871
+patchfiles          disable-lanserv.patch \
+                    unix_posix_thread_os_hnd.c.patch \
+                    unix_selector.c.patch \
+                    include_OpenIPMI_selector.h.patch
 
 # Grabs old headers from installed version during build...
 conflicts_build     ${name}
 
 depends_build       port:gsed
 
-depends_lib         port:popt \
-                    path:lib/pkgconfig/glib-2.0.pc:glib2 \
+depends_lib         path:lib/pkgconfig/glib-2.0.pc:glib2 \
                     port:net-snmp \
-                    port:tcl
-                        
+                    port:popt \
+                    path:lib/libssl.dylib:openssl
+
 configure.args      --with-poptlibs=-lpopt \
                     --with-swig=no \
                     --with-python=no \

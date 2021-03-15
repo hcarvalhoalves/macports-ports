@@ -2,12 +2,13 @@
 
 PortSystem 1.0
 PortGroup select 1.0
+PortGroup compilers 1.0
 PortGroup compiler_blacklist_versions 1.0
 PortGroup muniversal 1.0
 
 #remember to update the -doc and -server as well
 name                postgresql12
-version             12beta1
+version             12.6
 revision            0
 
 categories          databases
@@ -26,9 +27,9 @@ master_sites        http://ftp3.de.postgresql.org/pub/Mirrors/ftp.postgresql.org
             postgresql:source/v${version}/
 distname            postgresql-${version}
 
-checksums           rmd160  aa895a075724306c8c38b5667b148ab6e7de71a9 \
-                    sha256  203e2d0151d75e3328a6b6b85eae88e50168ae27423b39787cea595365da9fad \
-                    size    20589423
+checksums           rmd160  034ced8da6d4b56ea6e5450dc32156f41a3f2f98 \
+                    sha256  df7dd98d5ccaf1f693c7e1d0d084e9fed7017ee248bba5be0167c42ad2d70a09 \
+                    size    20771172
 
 use_bzip2           yes
 
@@ -67,10 +68,15 @@ configure.ldflags-append    -headerpad_max_install_names
 configure.universal_args-delete --disable-dependency-tracking
 
 # building psql with clang from Xcode prior to 4.4 causes segfault on query; see #31717
-compiler.blacklist-append   {clang < 421}
+compiler.blacklist-append {clang < 421}
+compilers.choose          cc cxx
+compilers.setup           -gcc -fortran -clang33 -clang34 -clang37
 notes "To use the postgresql server, install the ${name}-server port"
 
-if {[variant_isset universal]} {
+if {![info exists universal_possible]} {
+    set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+}
+if {${universal_possible} && [variant_isset universal]} {
     configure.cflags-append    -DAC_APPLE_UNIVERSAL_BUILD
 }
 
@@ -85,8 +91,8 @@ test.target         check
 # remember to change livecheck with first proper release
 livecheck.type      regex
 #livecheck.regex    (12\\.\[.0-9\]*\[a-z\]+\[0-9\])
-livecheck.regex    (12\[a-z\]+\[0-9\])
-#livecheck.regex    (12\\.\[.0-9\]+)
+#livecheck.regex    (12\[a-z\]+\[0-9\])
+livecheck.regex    (12\\.\[.0-9\]+)
 livecheck.url       ${homepage}/ftp/source/
 
 post-destroot {
@@ -99,7 +105,7 @@ post-destroot {
         ${destroot}${prefix}/lib/${name}/pgxs/src/Makefile.global
 }
 
-if {![variant_isset universal]} {
+if {!${universal_possible} || ![variant_isset universal]} {
     post-destroot {
         reinplace -E "s#-arch\[\[:space:\]\]+\[\[:alnum:\]_\]+##g" \
             ${destroot}${prefix}/lib/${name}/pgxs/src/Makefile.global
@@ -129,9 +135,9 @@ variant python27 conflicts python3 description {add support for python 2.7} {
 }
 
 variant python3 conflicts python27 description {add support for python 3.x} {
-    depends_lib-append      port:python37
+    depends_lib-append      port:python38
     configure.args-append   --with-python
-    configure.python        ${prefix}/bin/python3.7
+    configure.python        ${prefix}/bin/python3.8
 }
 
 variant perl description {add Perl support} {
@@ -146,7 +152,17 @@ variant tcl description {add Tcl support} {
 }
 
 variant llvm description {add support for JIT compilation} {
-    depends_lib-append      port:llvm-6.0
+    set llvm_ver 9.0
+
+    foreach clang ${compilers.clang_variants} {
+        if { [variant_exists ${clang}] && [variant_isset ${clang}] } {
+            set llvm_ver [string index ${clang} end-1].[string index ${clang} end]
+        }
+    }
+
+    depends_lib-append      port:llvm-${llvm_ver}
     configure.args-append   --with-llvm
-    configure.env-append    LLVM_CONFIG=${prefix}/libexec/llvm-6.0/bin/llvm-config
+    configure.env-append    LLVM_CONFIG=${prefix}/libexec/llvm-${llvm_ver}/bin/llvm-config \
+                            CLANG=${configure.cc}
 }
+

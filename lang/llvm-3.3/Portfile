@@ -9,15 +9,15 @@ PortGroup select        1.0
 
 set llvm_version        3.3
 name                    llvm-${llvm_version}
-revision                10
-subport                 clang-${llvm_version} { revision 11 }
+revision                11
+subport                 clang-${llvm_version} { revision 12 }
 set suffix              mp-${llvm_version}
 set sub_prefix          ${prefix}/libexec/llvm-${llvm_version}
 dist_subdir             llvm
 categories              lang
 platforms               darwin
 license                 NCSA
-maintainers             {jeremyhu @jeremyhu} {larryv @larryv}
+maintainers             {jeremyhu @jeremyhu} {larryv @larryv} {kencu @kencu}
 
 if {${subport} == "llvm-${llvm_version}"} {
     homepage            https://llvm.org/
@@ -144,22 +144,16 @@ if {${subport} == "llvm-${llvm_version}"} {
 # Intel looks ok, but I prefer using gcc-4.2 for consistency
 compiler.blacklist gcc-4.0
 
+# avoid dependency cycles
+compiler.blacklist-append   macports-clang-*
+
 variant universal {
-    if {[vercmp [macports_version] 2.5.99] >= 0} {
     build.env-append \
         UNIVERSAL=1 \
         UNIVERSAL_ARCH=[get_canonical_archs]
     destroot.env-append \
         UNIVERSAL=1 \
         UNIVERSAL_ARCH=[get_canonical_archs]
-    } else {
-    build.env-append \
-        UNIVERSAL=1 \
-        UNIVERSAL_ARCH="[get_canonical_archs]"
-    destroot.env-append \
-        UNIVERSAL=1 \
-        UNIVERSAL_ARCH="[get_canonical_archs]"
-    }
 
     post-extract {
         # workaround a bug in Apple's shipped gcc driver-driver, patched in
@@ -175,14 +169,6 @@ variant universal {
 variant assertions description "Enable assertions for error detection (has performance impacts, especially on JIT)" {
     configure.args-delete --disable-assertions
     configure.args-append --enable-assertions
-}
-
-# blacklist current and future versions if they're not available in order to
-# help break potential dependency cycles.
-foreach ver {3.3 3.4 3.7 3.8 3.9 4.0 5.0 6.0 7.0 8.0 devel} {
-    if {![file exists ${prefix}/bin/clang-mp-${ver}]} {
-        compiler.blacklist-append macports-clang-${ver}
-    }
 }
 
 platform darwin {
@@ -309,6 +295,14 @@ if {${subport} == "llvm-${llvm_version}"} {
 
         destroot.args-append  OVERRIDE_libdir=${sub_prefix}/lib
     }
+
+    # the system python on Tiger is too old to build llvm-3.3
+    # https://trac.macports.org/ticket/42051
+    if {${os.major} < 9} {
+        depends_build-append port:python27
+        configure.args-append --with-python=${prefix}/bin/python2.7
+    }
+
 } elseif {${subport} == "clang-${llvm_version}"} {
     variant arm_runtime description {Build and install the arm runtime for iOS development (requires iOS SDK)} {}
 
@@ -373,6 +367,7 @@ if {${subport} == "llvm-${llvm_version}"} {
         depends_lib
         depends_run
         archive_sites
+        known_fail yes
         pre-fetch {
             ui_error "${subport} is not supported on macOS Sierra or newer."
             return -code error {unsupported platform}

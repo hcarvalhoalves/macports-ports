@@ -1,10 +1,14 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
+PortGroup           legacysupport 1.1
 
 name                haproxy
-version             1.9.6
+version             2.2.6
+revision            0
+
 set branch          [join [lrange [split ${version} .] 0 1] .]
+
 categories          net
 platforms           darwin
 maintainers         {gmail.com:jeremy.mcmillan @aphor} openmaintainer
@@ -22,17 +26,16 @@ long_description    HAproxy is a high-performance and highly-robust TCP/HTTP \
                     hardware, even with thousands simultaneous connections.
 
 homepage            https://www.haproxy.org/
-master_sites        ${homepage}download/${branch}/src/
+master_sites        ${homepage}download/${branch}/src/ \
+                    https://sources.openwrt.org/
 
-checksums           rmd160  e6e3e94fcf26055adf111948fee92c357e435030 \
-                    sha256  0837c35e2914d40f685740487886e86b1b16132b81ecb60a3be66cf9a6f19bef \
-                    size    2363063
+checksums           rmd160  b25ae5caf161dbfa63b670fa91a0356e4c9d751a \
+                    sha256  be1c6754cbaceafc4837e0c6036c7f81027a3992516435cbbbc5dc749bf5a087 \
+                    size    2890554
 
 depends_lib         path:lib/libssl.dylib:openssl \
                     port:pcre \
                     port:zlib
-
-patchfiles          patch-Makefile.diff
 
 use_configure       no
 
@@ -47,6 +50,11 @@ build.args          CC="${configure.cc} [get_canonical_archflags]" \
                     USE_THREAD=1 \
                     USE_ZLIB=1
 
+variant lua description {Build with Lua support} {
+    depends_lib-append  port:lua
+    build.args-append   USE_LUA=1
+}
+
 if {${os.platform} eq "darwin" && ${os.major} < 11} {
     build.args-delete   USE_THREAD=1
 }
@@ -57,6 +65,18 @@ destroot.args       DOCDIR=${prefix}/share/doc/${name} \
 platform i386 {
     build.args-append USE_REGPARM=1
 }
+
+destroot.keepdirs       ${destroot}${prefix}/etc/haproxy
+
+startupitem.create      yes
+startupitem.executable  ${prefix}/sbin/haproxy -f ${prefix}/etc/haproxy
+
+notes "
+The configuration files (and only files) in ${prefix}/etc/haproxy are loaded in\
+lexical order; only non hidden files with .cfg extension are added.
+
+Adjust these files to your needs before starting haproxy with the startup item.
+"
 
 livecheck.type      regex
 livecheck.regex     ${name}-(\[0-9.\]+)${extract.suffix}

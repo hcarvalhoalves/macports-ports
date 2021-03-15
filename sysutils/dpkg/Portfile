@@ -4,7 +4,9 @@ PortSystem          1.0
 PortGroup           perl5 1.0
 
 name                dpkg
-version             1.19.4
+version             1.20.7.1
+revision            0
+
 platforms           darwin
 categories          sysutils archivers
 license             GPL-2+
@@ -18,13 +20,14 @@ distname            ${name}_${version}
 worksrcdir          ${name}-${version}
 
 use_xz              yes
-extract.asroot      yes
 
-checksums           rmd160  4628134b3fc6d731c7397ef752a0af9ec5c3db63 \
-                    sha256  c15234e98655689586bff2d517a6fdc6135d139c54d52ae9cfa6a90007fee0ae \
-                    size    4645784
+checksums           rmd160  72c1867a8bf5378011bc80f0800664a14cfaab63 \
+                    sha256  0aad2de687f797ef8ebdabc7bafd16dc1497f1ce23bd9146f9aa73f396a5636f \
+                    size    4952736
 
-perl5.branches      5.28
+perl5.branches          5.28 5.30 5.32
+perl5.default_branch    5.32
+perl5.create_variants   ${perl5.branches}
 
 depends_build-append \
                     port:pkgconfig \
@@ -39,7 +42,6 @@ depends_lib-append  port:bzip2 \
                     port:gpatch \
                     port:libiconv \
                     port:ncurses \
-                    port:perl${perl5.major} \
                     port:xz \
                     port:zlib
 
@@ -60,7 +62,8 @@ configure.args-append \
                     --disable-linker-optimizations \
                     --disable-silent-rules \
                     --disable-start-stop-daemon \
-                    --disable-dselect
+                    --disable-dselect \
+                    --disable-update-alternatives
 
 compiler.blacklist-append cc gcc-3.3 gcc-4.0 apple-gcc-4.0
 

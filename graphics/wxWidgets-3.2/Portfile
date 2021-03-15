@@ -5,11 +5,9 @@ PortGroup           github          1.0
 PortGroup           select          1.0
 PortGroup           wxWidgets       1.0
 
-# Instead of backports a huge number of patches to support the newer macOS versions,
-# simply fetch a newer version from git (master) until 3.1.1 comes out.
-# This is a development port anyway and generally not used as dependency.
-
-github.setup        wxWidgets wxWidgets 3.1.2 v
+# remember to bump version of wxWidgets-common
+github.setup        wxWidgets wxWidgets 3.1.4 v
+revision            1
 name                wxWidgets-3.2
 wxWidgets.use       wxWidgets-3.2
 
@@ -28,19 +26,25 @@ long_description    wxWidgets ${branch} is an open-source cross-platform C++ \
 
 homepage            http://www.wxwidgets.org/
 
-checksums           rmd160  f359c3c076d872b70d49055b5b86eaec7f1750c1 \
-                    sha256  79bdda90d672b098d37f2dcb494d2a62e9c95d94a8f7aaed60e245716a5eba8c \
-                    size    20111698
+checksums           rmd160  ae7895b1a706247400caa840c13c1d1102a03581 \
+                    sha256  2e4e12d44b111b72899f60bb0f9d1534f5253fef13a77e6cd8f857284971f084 \
+                    size    20702399
 
 dist_subdir         wxWidgets/${version}
 worksrcdir          ${distname}/build
 patch.dir           ${worksrcpath}/..
 
+# https://trac.macports.org/ticket/61672
+patchfiles-append   fix-implicit-decl.diff
+
 set selectdir       ${workpath}/select
 select.group        wxWidgets
 select.file         ${selectdir}/${subport}
 
-depends_lib-append  port:jpeg \
+compiler.c_standard   2011
+compiler.cxx_standard 2011
+
+depends_lib-append  path:include/turbojpeg.h:libjpeg-turbo \
                     port:tiff \
                     port:libpng \
                     port:zlib \
@@ -50,11 +54,7 @@ depends_lib-append  port:jpeg \
 depends_run         port:wxWidgets-common \
                     port:wxWidgets_select
 
-patchfiles          patch-configure.diff
-
 post-patch {
-    reinplace "s|@@PREFIX@@|${prefix}|g" ${patch.dir}/configure
-
     file mkdir ${selectdir}
     system "echo \"${wxWidgets.wxdir}/wx-config\n${wxWidgets.wxdir}/wxrc-${branch}\" > ${select.file}"
 }
@@ -76,7 +76,9 @@ configure.args      --prefix=${wxWidgets.prefix} \
                     --enable-graphics_ctx \
                     --with-macosx-sdk=no \
                     --with-macosx-version-min=no \
-                    --disable-compat30
+                    --disable-compat30 \
+                    --enable-cxx11 \
+                    --disable-tests
 
 if { ${os.platform} eq "darwin" && ${os.major} == 11 } {
     # https://trac.macports.org/ticket/58040
@@ -84,6 +86,11 @@ if { ${os.platform} eq "darwin" && ${os.major} == 11 } {
                            --with-macosx-sdk=${developer_dir}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk
     configure.args-replace --with-macosx-version-min=no \
                            --with-macosx-version-min=${macosx_deployment_target}
+}
+
+post-destroot {
+    set confscript ${wxWidgets.prefix}/lib/wx/config/${wxtype}-unicode-${branch}
+    ln -sf ${confscript} ${destroot}${wxWidgets.prefix}/bin/wx-config
 }
 
 # during the test period we could afford to disable compatibility to 3.0
@@ -94,20 +101,6 @@ variant compat30 description {enable wxWidgets 3.0 compatibility (will become de
     configure.args-replace \
                     --disable-compat30 \
                     --enable-compat30
-}
-
-# notes:
-#   --enable-unicode (already default)
-#   --enable-cxx11   (figure out how to use this switch)
-
-if {[string match *clang* ${configure.cxx}]} {
-    configure.ldflags-append \
-                    -stdlib=${configure.cxx_stdlib}
-}
-
-post-destroot {
-    set confscript ${wxWidgets.prefix}/lib/wx/config/${wxtype}-unicode-${branch}
-    ln -sf ${confscript} ${destroot}${wxWidgets.prefix}/bin/wx-config
 }
 
 # TODO: --disable-precomp-headers should hopefully no longer be needed (try building wxGTK with universal)

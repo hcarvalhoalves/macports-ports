@@ -3,47 +3,35 @@
 PortSystem          1.0
 PortGroup           python 1.0
 
-set _name           responses
-set _n              [string index ${_name} 0]
+name                py-responses
+version             0.12.1
+revision            0
 
-name                py-${_name}
-version             0.5.1
 categories-append   devel
 platforms           darwin
 supported_archs     noarch
 license             Apache-2
-
 maintainers         {petr @petrrr} openmaintainer
 
 description         A utility library for mocking out the requests library
+long_description    ${description}
 
-long_description    ${description}.
+homepage            https://github.com/getsentry/responses
 
-homepage            https://pypi.python.org/pypi/responses
+checksums           rmd160  112ed62b36add6c44d697b739445e693eeadb38c \
+                    sha256  2e5764325c6b624e42b428688f2111fea166af46623cb0127c05f6afb14d3457 \
+                    size    27123
 
-distname            ${_name}-${version}
-master_sites        pypi:${_n}/${_name}/
-
-checksums           md5     f1962b295b18128c522e83901556deac \
-                    rmd160  381e17e5ffc7675f27c366cb7537e0436157d8d6 \
-                    sha256  8cad64c45959a651ceaf0023484bd26180c927fea64a81e63d334ddf6377ecea
-
-python.versions     27 34 35 36
+python.versions     37 38 39
 
 if {${name} ne ${subport}} {
-    depends_build-append    port:py${python.version}-setuptools
+    depends_build-append \
+                    port:py${python.version}-setuptools
 
-    depends_lib-append      port:py${python.version}-cookies \
-                            port:py${python.version}-requests \
-                            port:py${python.version}-six
-
-    if { ${python.version} < 30 } {
-        depends_lib-append  port:py${python.version}-mock
-    }
+    depends_lib-append \
+                    port:py${python.version}-requests \
+                    port:py${python.version}-urllib3 \
+                    port:py${python.version}-six
 
     livecheck.type  none
-} else {
-    livecheck.type  regex
-    livecheck.url   https://pypi.python.org/pypi/${_name}/json
-    livecheck.regex "\"${_name}-(\[.\\d\]+)\\${extract.suffix}\""
 }

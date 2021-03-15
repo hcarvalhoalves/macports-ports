@@ -12,8 +12,8 @@ set shorthash       8238e839
 set majorversion    .28
 set minorversion    .2
 set lastcommit      20180201
-set corerev         6
-set pluginsrev      1
+set corerev         9
+set pluginsrev      3
 set metarev         0
 github.setup        MythTV mythtv ${shorthash}
 checksums           rmd160  0f468b5e0502afe2672f2e41df5f40cbdb2d43d4 \
@@ -48,7 +48,7 @@ set pythonbranch    2.7
 set pythonver       python${pythonbranch}
 set pythonbin       ${prefix}/bin/${pythonver}
 set pymodver        py27
-perl5.branches      5.26
+perl5.branches      5.28
 # change to 1 to print reinplace warnings
 set maintainer_mode 0
 if {!$maintainer_mode} {
@@ -181,17 +181,17 @@ if {$subport eq "mythtv-core${majorversion}"} {
         reinplace -locale C "s#\${BRANCH}#${mythbranch}#g" ${sedPath}version.sh
     
         ui_info "Make Myth scripts use MacPorts Python  <<<<"
-        # Hack to install Python bindings in ${prefix}/Library/Frameworks/Python.framework/Versions/2.7
+        # Hack to install Python bindings in ${frameworks_dir}/Python.framework/Versions/2.7
         reinplace -locale C "s|\$(ROOT_FLAGS) \$(PREFIX_FLAGS)|\$(ROOT_FLAGS) \--prefix=\"${frameworks_dir}/Python.framework/Versions/${pythonbranch}\"|" \
             ${sedPath}/bindings/python/Makefile
         reinplace -locale C "s|/usr/local|${prefix}|" ${worksrcpath}/mythtv/bindings/python/MythTV/static.py
         fs-traverse f ${sedPath}/bindings/python/ {
-            if [string equal [ file extension ${f} ] ".py" ] {
+            if {[string equal [ file extension ${f} ] ".py" ]} {
                 reinplace {*}$qflag -locale C "s|^#! */usr/bin/env python\$|#!${pythonbin}|" ${f}
             }
         }
         fs-traverse f ${sedPath}/programs/scripts/ {
-            if [string equal [ file extension ${f} ] ".py" ] {
+            if {[string equal [ file extension ${f} ] ".py" ]} {
                 reinplace {*}$qflag -locale C "s|^#! */usr/bin/env python\$|#!${pythonbin}|" ${f}
             }
         }
@@ -487,7 +487,7 @@ if {$subport eq "mythtv-core${majorversion}"} {
             file copy ${destroot}logrotate.conf ${prefix}/etc/logrotate.conf
         }
         # delete leftover file, if any
-        if [file exists /Library/LaunchDaemons/${plistfile}] {
+        if {[file exists /Library/LaunchDaemons/${plistfile}]} {
             file delete -force /Library/LaunchDaemons/${plistfile}
         }
         # If "startupitem.install" is set to "no" in macports.conf then do not link.
@@ -639,6 +639,7 @@ if {$subport eq "mythtv-plugins${majorversion}"} {
 
 if {$subport eq "mythtv${majorversion}"} {
     version             0${majorversion}${minorversion}-Fixes-${lastcommit}
+    revision            1
     revision            ${metarev}
     description         installs complete MythTV system
     long_description    \

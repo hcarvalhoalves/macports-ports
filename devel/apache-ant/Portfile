@@ -4,10 +4,10 @@ PortSystem 1.0
 PortGroup               java 1.0
 
 name                    apache-ant
-version                 1.10.5
+version                 1.10.9
 categories              devel java
 license                 Apache-2 W3C
-maintainers             openmaintainer {blair @blair}
+maintainers             nomaintainer
 supported_archs         noarch
 
 description             Java opensource build system
@@ -16,7 +16,7 @@ long_description        Ant is a Java based build tool.  In theory it is \
                         uses XML build files that define a set of targets.  \
                         Each target has dependencies (other targets) and \
                         contains a set of tasks to perform.
-homepage                http://ant.apache.org/
+homepage                https://ant.apache.org/
 
 platforms               darwin freebsd
 
@@ -24,17 +24,19 @@ distname                ${name}-${version}-bin
 master_sites            apache:ant/
 master_sites.mirror_subdir        binaries
 # Remember also to update the checksums in the source variant below.
-checksums               rmd160  bc2823d7ce5a83ff3078f6997c147efe33872643 \
-                        sha256  3f762e16c4b5446e64869d146efe76be865a1d83062eede2d0a8fc11d1e20b2d \
-                        size    4730768
+checksums               rmd160  164c8c9a7de7891301c90a17a2eeac95cba3f3e4 \
+                        sha256  42f12ea7dc854b69aac0bd05c5767252dddd297888503e69b8aae0a1dc791cf5 \
+                        size    5022448
 
 worksrcdir              ${name}-${version}
 set workTarget          ""
 
-use_bzip2               yes
+use_xz                  yes
 use_configure           no
 
-build.cmd               true
+conflicts               apache-ant-1.9
+
+build {}
 
 # Ant is installed from the binary (jar) distribution by default. Due to
 # bootstrapping issues, the source variant generally doesn't build a very
@@ -42,16 +44,22 @@ build.cmd               true
 # dependent support isn't available when ant is built, due to circular
 # dependencies back to ant.
 variant source description "build from source; not recommended" {
+        java.version                    1.8+
         distname                        ${name}-${version}-src
         master_sites.mirror_subdir      source
-        checksums                       rmd160  3f03bfeed5c95136b2aa5a5df87680c9803fe002 \
-                                        sha256  71a5cdd45a54901b6321d5a140d882f7580c38f766a4e4959bcc36555da9f3ac \
-                                        size    4465063
+        checksums                       rmd160  ec563c3c137b22718064be5a1f7ae2f0d4e3b96e \
+                                        sha256  4b2008cc60fefd424b05567e9d43a071302865d5fd8b01a807e15e381b557ec2 \
+                                        size    4333648
         set workTarget                  /${name}
 
         build.cmd                       ./build.sh
         build.args                      -Dchmod.fail=false -Ddist.name=${name}
         build.target                    dist
+
+        post-patch {
+            # Don't fail on Javadoc errors
+            reinplace "s|failonerror=\"true\"||g" ${worksrcpath}/build.xml
+        }
 }
 
 pre-destroot {
@@ -88,5 +96,5 @@ destroot        {
 universal_variant       no
 
 livecheck.type          regex
-livecheck.url           http://www.apache.org/dist/ant/binaries/
+livecheck.url           https://www.apache.org/dist/ant/binaries/
 livecheck.regex         {apache-ant-(\d+(?:\.\d+)*)-bin\.tar\.bz2}

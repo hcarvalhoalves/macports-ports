@@ -4,7 +4,7 @@ PortSystem          1.0
 PortGroup           github 1.0
 PortGroup           python 1.0
 
-github.setup        crsmithdev arrow 0.13.1
+github.setup        crsmithdev arrow 0.17.0
 revision            0
 name                py-arrow
 platforms           darwin
@@ -12,13 +12,13 @@ license             Apache-2
 maintainers         nomaintainer
 
 description         Better dates and times for Python
-long_description    ${description}
+long_description    {*}${description}
 
-checksums           rmd160  4a19d9c8792ac47646cb7603502b3bb9a53e1fa7 \
-                    sha256  543cc4a4f4e10c20412dd1d5d0c1d10d351b9874b404303b3dd82a88d1a8138e \
-                    size    68029
+checksums           rmd160  66860bb00d58a0e9a1a90b82e4e3e07da44092d0 \
+                    sha256  b8df5c61a6bff9266376c10d52154bc1ea0eeb91d6da6b522418b08dba388a84 \
+                    size    97452
 
-python.versions     27 36 37
+python.versions     36 37 38 39
 
 if {${name} ne ${subport}} {
     depends_build-append \
@@ -27,15 +27,10 @@ if {${name} ne ${subport}} {
     depends_lib-append \
                     port:py${python.version}-dateutil
 
-    if {${python.version} eq 27} {
-        depends_lib-append \
-                    port:py${python.version}-backports-functools_lru_cache
-    }
-
     post-destroot {
-        xinstall -m 0755 -d ${destroot}${prefix}/share/doc/${subport}
-        xinstall -m 0644 -W ${worksrcpath} README.rst LICENSE HISTORY.md \
-            ${destroot}${prefix}/share/doc/${subport}
+        xinstall -d ${destroot}${prefix}/share/doc/${subport}
+        xinstall -m 0644 -W ${worksrcpath} CHANGELOG.rst LICENSE \
+            README.rst ${destroot}${prefix}/share/doc/${subport}
     }
 
     livecheck.type      none

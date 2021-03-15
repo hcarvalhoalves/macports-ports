@@ -13,7 +13,8 @@
 #                   rmd160 fedcba654321... \
 #                   sha256 bdface246135... \
 #                   size   1234 \
-#               example.com/dep2/bar \
+#               vanity_domain.com/dep2_bar \
+#                   repo   example.com/dep2/bar \
 #                   lock   fedcba654321... \
 #                   rmd160 abcdef123456... \
 #                   sha256 fedcba654321... \
@@ -35,15 +36,20 @@
 # The go.vendors option expects a list of package IDs, each followed by these
 # labeled values:
 #
-# - lock: the version of the package in git SHA-1 format. This must
-#   come before any checksums.
+# - repo: Packages are sometimes hosted on domains that merely redirect to
+#   well-known hosts such as GitHub. In that case, specify the resolved package
+#   name with the `repo` keyword. Example: coolbiz.io/coolpackage might resolve
+#   to github.com/coolbiz/package. This must come before the `lock` keyword.
+#
+# - lock: the version of the package in git reference format. This must come
+#   before any checksums.
 #
 # - rmd160, sha256, size, etc.: checksums of the package. All checksums
 #   supported by the checksums keyword are supported.
 #
-# The list of vendors can be found in the Gopkg.lock, glide.lock, etc. file in
-# the upstream source code. The go2port tool (install via MacPorts) can be used
-# to generate a skeleton portfile with precomputed go.vendors.
+# The list of vendors can be found in the go.sum, Gopkg.lock, glide.lock,
+# etc. file in the upstream source code. The go2port tool (install via MacPorts)
+# can be used to generate a skeleton portfile with precomputed go.vendors.
 
 options go.package go.domain go.author go.project go.version go.tag_prefix go.tag_suffix
 
@@ -120,10 +126,11 @@ default go.bin          {${prefix}/bin/go}
 default go.vendors      {}
 
 platforms               darwin freebsd linux
-supported_archs         i386 x86_64
+supported_archs         arm64 i386 x86_64
 set goos                ${os.platform}
 
-switch ${build_arch} {
+switch ${configure.build_arch} {
+    arm64   { set goarch arm64 }
     i386    { set goarch 386 }
     x86_64  { set goarch amd64 }
     default { set goarch {} }
@@ -137,36 +144,20 @@ default dist_subdir     go
 default depends_build   port:go
 
 set gopath              ${workpath}/gopath
-default worksrcdir      {${gopath}/src/${go.package}}
+default worksrcdir      {gopath/src/${go.package}}
 
-if {[vercmp [macports_version] 2.5.3] <= 0} {
-    default build.cmd   {"${go.bin} build"}
-} else {
-    default build.cmd   {${go.bin} build}
-}
+default build.cmd   {${go.bin} build}
 default build.args      ""
 default build.target    ""
-if {[vercmp [macports_version] 2.5.3] <= 0} {
-    default build.env   {"GOPATH=${gopath} GOARCH=${goarch} GOOS=${goos} CC=${configure.cc}"}
-} else {
-    default build.env   {GOPATH=${gopath} GOARCH=${goarch} GOOS=${goos} CC=${configure.cc}}
-}
+default build.env   {GOPATH=${gopath} GOARCH=${goarch} GOOS=${goos} CC=${configure.cc} GOPROXY=off GO111MODULE=off}
 
-if {[vercmp [macports_version] 2.5.3] <= 0} {
-    default test.cmd    {"${go.bin} test"}
-} else {
-    default test.cmd    {${go.bin} test}
-}
+default test.cmd    {${go.bin} test}
 default test.args       ""
 default test.target     ""
-if {[vercmp [macports_version] 2.5.3] <= 0} {
-    default test.env    {"GOPATH=${gopath} GOARCH=${goarch} GOOS=${goos} CC=${configure.cc}"}
-} else {
-    default test.env    {GOPATH=${gopath} GOARCH=${goarch} GOOS=${goos} CC=${configure.cc}}
-}
+default test.env    {GOPATH=${gopath} GOARCH=${goarch} GOOS=${goos} CC=${configure.cc} GOPROXY=off GO111MODULE=off}
 
 # go.vendors name1 ver1 name2 ver2...
-# When a Gopkg.lock, glide.lock, etc. is present use go2port to generate values
+# When a go.sum, Gopkg.lock, glide.lock, etc. is present use go2port to generate values
 set go.vendors_internal {}
 option_proc go.vendors handle_go_vendors
 proc handle_go_vendors {option action {vendors_str ""}} {
@@ -190,25 +181,39 @@ proc handle_set_go_vendors {vendors_str} {
         # Get the Go package ID
         set vpackage [lindex ${vendors_str} ${ix}]
 
-        # Split up the package ID
-        lassign [go._translate_package_id ${vpackage}] vdomain vauthor vproject
+        # Package resolves to itself by default; only overridden in case of
+        # redirects, etc.
+        set vresolved ${vpackage}
 
         # Handle the remaining values for this package
         incr ix
         while {1} {
             set token [lindex ${vendors_str} ${ix}]
-            if {${token} eq "lock"} {
+            if {${token} eq "repo"} {
+                # Handle the package's resolved name. See discussion of this in
+                # header comments.
+                incr ix
+                set vresolved [lindex ${vendors_str} ${ix}]
+                incr ix
+            } elseif {${token} eq "lock"} {
                 # Handle the package version ("lock" as in "lockfile")
                 incr ix
                 set vversion [lindex ${vendors_str} ${ix}]
                 incr ix
 
-                # The vauthor may be wrong (the project has been renamed/changed
-                # ownership) so we need to use the SHA-1 suffix later to identify
-                # the package when moving into the GOPATH. GitHub uses 7 digits;
-                # Bitbucket uses 12. We take 7 and use globbing.
-                set sha1_short [string range ${vversion} 0 6]
-                lappend go.vendors_internal [list ${sha1_short} ${vpackage} ${vversion}]
+                # Split up the package ID
+                lassign [go._translate_package_id ${vresolved}] vdomain vauthor vproject
+
+                if {[string match v* ${vversion}]} {
+                    set sha1_short {}
+                } else {
+                    # The vauthor may be wrong (the project has been renamed/changed
+                    # ownership) so we need to use the SHA-1 suffix later to identify
+                    # the package when moving into the GOPATH. GitHub uses 7 digits;
+                    # Bitbucket uses 12. We take 7 and use globbing.
+                    set sha1_short [string range ${vversion} 0 6]
+                }
+                lappend go.vendors_internal [list ${sha1_short} ${vpackage} ${vresolved} ${vversion}]
 
                 switch ${vdomain} {
                     github.com {
@@ -219,12 +224,17 @@ proc handle_set_go_vendors {vendors_str} {
                         set distfile ${vversion}.tar.gz
                         set master_site https://bitbucket.org/${vauthor}/${vproject}/get
                     }
+                    gitlab.com -
+                    salsa.debian.org {
+                        set distfile ${vproject}-${vversion}.tar.gz
+                        set master_site https://${vdomain}/${vauthor}/${vproject}/-/archive/${vversion}
+                    }
                     default {
                         ui_error "go.vendors can't handle dependencies from ${vdomain}"
                         error "unsupported dependency domain"
                     }
                 }
-                set tag ${vauthor}-${vproject}
+                set tag [regsub -all {[^[:alpha:][:digit:]]} ${vpackage}-${vversion} -]
                 master_sites-append ${master_site}:${tag}
                 distfiles-append    ${distfile}:${tag}
             } elseif {${token} in ${checksum_types}} {
@@ -268,7 +278,7 @@ post-extract {
         # as the result will not be accurate when go.package has been
         # customized.
         file mkdir [file dirname ${worksrcpath}]
-        if [file exists [glob -nocomplain ${workpath}/${go.author}-${go.project}-*]] {
+        if {[file exists [glob -nocomplain ${workpath}/${go.author}-${go.project}-*]]} {
             # GitHub and Bitbucket follow this path
             move [glob ${workpath}/${go.author}-${go.project}-*] ${worksrcpath}
         } else {
@@ -279,10 +289,15 @@ post-extract {
     }
 
     foreach vlist ${go.vendors_internal} {
-        set sha1_short [lindex ${vlist} 0]
-        set vpackage [lindex ${vlist} 1]
+        lassign ${vlist} sha1_short vpackage vresolved
+
         file mkdir ${gopath}/src/[file dirname ${vpackage}]
-        move [glob ${workpath}/*-${sha1_short}*] ${gopath}/src/${vpackage}
+        if {${sha1_short} ne ""} {
+            move [glob ${workpath}/*-${sha1_short}*] ${gopath}/src/${vpackage}
+        } else {
+            lassign [go._translate_package_id ${vresolved}] _ vauthor vproject
+            move [glob ${workpath}/${vauthor}-${vproject}-*] ${gopath}/src/${vpackage}
+        }
     }
 }
 

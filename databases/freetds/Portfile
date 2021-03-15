@@ -1,14 +1,15 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
+PortGroup           compiler_blacklist_versions 1.0
 
 name                freetds
 epoch               1
-version             1.1.6
+version             1.2.18
 revision            0
-checksums           rmd160  77f0d7e9060b394809d6699ead95948d55715368 \
-                    sha256  c23e00359d747a5e4c654d9595f520f2534bff597150b0e4bf1dae6b53f139a3 \
-                    size    2253644
+checksums           rmd160  d5dd33717125779931adb1f61b929702af54cc75 \
+                    sha256  10d47e60986cfc51f8170fa9eaba43114eebdde0ba6e6b1c4813d86f021aaadd \
+                    size    2249206
 
 categories          databases
 platforms           darwin
@@ -32,15 +33,26 @@ homepage            http://www.freetds.org/
 master_sites        ftp://ftp.freetds.org/pub/${name}/stable/
 use_bzip2           yes
 
-depends_lib         port:libiconv \
+depends_build       port:pkgconfig
+
+# Use gnutls to avoid openssl license conflict.
+depends_lib         port:gnutls \
+                    port:kerberos5 \
+                    port:libiconv \
                     port:ncurses \
-                    path:lib/libssl.dylib:openssl \
                     port:readline
 
-configure.args      --disable-silent-rules \
+# error: use of unknown builtin '__builtin_bswap16' [-Wimplicit-function-declaration]
+compiler.blacklist  {clang < 500}
+
+configure.args      --disable-odbc \
+                    --disable-silent-rules \
+                    --enable-krb5 \
                     --includedir=${prefix}/include/${name} \
                     --sysconfdir=${prefix}/etc/${name} \
-                    --with-libiconv-prefix=${prefix}
+                    --with-gnutls \
+                    --with-libiconv-prefix=${prefix} \
+                    ac_cv_prog_DOXYGEN=
 
 use_parallel_build  yes
 
@@ -66,15 +78,15 @@ post-activate {
 }
 
 variant mssql description {Use MS style dblib} {
-    configure.args-append --enable-msdblib --with-tdsver=7.4
+    configure.args-append   --enable-msdblib --with-tdsver=7.4
 }
 
-variant odbc conflicts iodbc description {Build odbc driver against unixODBC} {
-    depends_lib-append port:unixODBC
-    configure.args-append --with-unixodbc=${prefix}
+variant odbc conflicts iodbc description {Build ODBC driver against unixODBC} {
+    depends_lib-append      port:unixODBC
+    configure.args-replace  --disable-odbc --with-unixodbc=${prefix}
 }
 
-variant iodbc conflicts odbc description {Build odbc driver against iODBC} {
-    depends_lib-append port:libiodbc
-    configure.args-append --with-iodbc=${prefix}
+variant iodbc conflicts odbc description {Build ODBC driver against iODBC} {
+    depends_lib-append      port:libiodbc
+    configure.args-replace  --disable-odbc --with-iodbc=${prefix}
 }

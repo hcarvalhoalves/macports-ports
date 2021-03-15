@@ -4,20 +4,33 @@ PortSystem          1.0
 PortGroup           github 1.0
 PortGroup           xcodeversion 1.0
 
-if {[vercmp ${os.version} 17.0.0] < 0} {
-    version             3.2.0
-    checksums \
-        rmd160  07915ff5db0545c0c059f47e7f71761e023a26e1 \
-        sha256  017aff348352369abcc994caaca0f6112e1f17c4d65041acdb9f19830b2b96bd \
-        size    11969144
-    patchfiles          patch-Makefile.diff
+
+if {${os.major} > 17} {
+    version             3.4.4
+    revision            0
+    checksums           rmd160  fc41da88152cad5771c3d88cf41934b7e35bc6e0 \
+                        sha256  1873b56e64b67790ceda42f191f6e384096f979d6a724906ca990d15ee5b5a0b \
+                        size    23256578
+    patchfiles          patch-Makefile-XC10.diff \
+                        patch-remove-sparkle-3.4.diff \
+                        patch-nsur.diff
+} elseif {${os.major} > 16} {
+    version             3.3.12
+    revision            1
+    checksums           rmd160  37d4204f97ac42431c5774a943ca0ab8f9a4c669 \
+                        sha256  6eeeb3215d6725aa789d39108a8ebedbe1aa9f6d058dd33056d72471ecd02e14 \
+                        size    20602868
+    patchfiles          patch-Makefile-XC10.diff \
+                        patch-remove-sparkle.diff \
+                        patch-nsur.diff
 } else {
-    version             3.2.9
-    checksums \
-        rmd160  cf2e314a168a7d06214580dfb52433b1780cafab \
-        sha256  57f7910182a60e2c25827191e37a0db71f62732f51b42deae9efeb27e01847e1 \
-        size    11865387
-    patchfiles          patch-Makefile-XC10.diff
+    version             3.2.0
+    revision            0
+    checksums           rmd160  07915ff5db0545c0c059f47e7f71761e023a26e1 \
+                        sha256  017aff348352369abcc994caaca0f6112e1f17c4d65041acdb9f19830b2b96bd \
+                        size    11969144
+    patchfiles          patch-Makefile.diff \
+                        patch-nsur.diff
 }
 
 github.setup        gnachman iTerm2 ${version} v
@@ -26,6 +39,7 @@ platforms           darwin
 maintainers         {mark @markemer} openmaintainer
 license             GPL-2+
 supported_archs     x86_64
+use_xcode           yes
 
 description         Enhanced terminal emulator program, successor to iTerm
 long_description    \
@@ -62,8 +76,9 @@ post-destroot {
 minimum_xcodeversions {16 9.0 17 10.0}
 
 if {${os.platform} eq "darwin" && ${os.major} < 16} {
+    known_fail      yes
     pre-fetch {
-        ui_error "${subport} @${version} requires OS X 10.12 or newer"
-        return -code error "unsupported Mac OS X version"
+        ui_error "${subport} @${version} requires macOS 10.12 or newer"
+        return -code error "unsupported OS X version"
     }
 }

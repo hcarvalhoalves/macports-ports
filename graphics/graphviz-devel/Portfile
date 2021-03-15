@@ -13,7 +13,7 @@ set otherbranch                 [expr {${thisbranch} eq {} ? {-devel} : {}}]
 categories                      graphics
 maintainers                     {ryandesign @ryandesign}
 license                         EPL-1
-homepage                        http://www.graphviz.org/
+homepage                        https://www.graphviz.org/
 master_sites                    ${homepage}pub/graphviz/development/SOURCES/
 platforms                       darwin
 use_parallel_build              yes
@@ -39,13 +39,13 @@ checksums                       rmd160  f5680f1d6b1e67af9e874732cd0c60465b23d587
 minimum_xcodeversions           {9 3.1.2}
 
 if {${name} eq ${subport}} {
-revision                        0
+revision                        3
 
 conflicts                       graphviz${otherbranch}
 
 depends_build                   port:pkgconfig
 
-depends_lib                     port:jpeg \
+depends_lib                     path:include/turbojpeg.h:libjpeg-turbo \
                                 port:libpng \
                                 port:webp \
                                 port:fontconfig \
@@ -58,6 +58,8 @@ depends_lib                     port:jpeg \
                                 port:gettext
 
 depends_run                     port:urw-fonts
+
+patchfiles                      implicit.patch
 
 configure.args                  --disable-silent-rules \
                                 --with-codegens \
@@ -162,19 +164,22 @@ variant perl description {Include PERL 5 language bindings} {
     configure.perl              ${prefix}/bin/perl
 }
 
-variant php description {Include PHP language bindings} {
-    depends_lib-append          path:bin/php:php5
-    depends_build-append        port:swig-php5
+# TODO: support current PHP versions
+# https://trac.macports.org/ticket/45149
 
-    configure.args-replace      --disable-swig --enable-swig
-    configure.args-replace      --disable-php --enable-php
-
-    post-patch {
-        reinplace "s|/usr/include/php|${prefix}/include/php|g" ${worksrcpath}/configure
-        reinplace "s|/usr/lib\${LIBPOSTFIX}/php|${prefix}/lib\${LIBPOSTFIX}/php|g" ${worksrcpath}/configure
-        reinplace "s|/usr/share/php|${prefix}/share/php|g" ${worksrcpath}/configure
-    }
-}
+#variant php description {Include PHP language bindings} {
+#    depends_lib-append          path:bin/php:php5
+#    depends_build-append        port:swig-php5
+#
+#    configure.args-replace      --disable-swig --enable-swig
+#    configure.args-replace      --disable-php --enable-php
+#
+#    post-patch {
+#        reinplace "s|/usr/include/php|${prefix}/include/php|g" ${worksrcpath}/configure
+#        reinplace "s|/usr/lib\${LIBPOSTFIX}/php|${prefix}/lib\${LIBPOSTFIX}/php|g" ${worksrcpath}/configure
+#        reinplace "s|/usr/share/php|${prefix}/share/php|g" ${worksrcpath}/configure
+#    }
+#}
 
 variant python27 description {Include Python 2.7 language bindings} {
     depends_lib-append          port:python27
@@ -282,7 +287,7 @@ post-destroot {
 }
 
 livecheck.type                  regex
-livecheck.url                   ${homepage}Download_source.php
+livecheck.url                   https://www2.graphviz.org/Packages/development/portable_source/
 livecheck.regex                 ${my_name}-(\[0-9\]+\\.\[0-9\]*\[13579\](\\.\[0-9\]+)*)\\.tar
 } else {
     livecheck.type              none
@@ -291,34 +296,41 @@ livecheck.regex                 ${my_name}-(\[0-9\]+\\.\[0-9\]*\[13579\](\\.\[0-
 subport graphviz-gui${thisbranch} {
     PortGroup                   xcode 1.0
     
-    revision                    0
-    
+    revision                    2
+
     conflicts                   graphviz-gui${otherbranch} graphviz-oldgui
     
     categories-append           aqua
     
-    description                 OS X Aqua GUI for viewing and exporting \
+    description                 macOS Aqua GUI for viewing and exporting \
                                 Graphviz graphs
     
     long_description            ${description}.
     
     depends_lib                 port:graphviz${thisbranch}
     
-    pre-fetch {
-        if {${os.platform} ne "darwin"} {
-            ui_error "${subport} requires OS X."
-            return -code error "incompatible operating system"
-        }
-        if {${os.major} < 9} {
-            ui_error "${subport} requires OS X 10.5 or greater. Try graphviz-oldgui instead."
-            return -code error "incompatible OS X version"
+    if {${os.major} < 9} {
+        known_fail              yes
+        pre-fetch {
+            ui_error "${subport} requires Mac OS X 10.5 or greater. Try graphviz-oldgui instead."
+            return -code error "incompatible Mac OS X version"
         }
     }
     
     extract.post_args-append    ${worksrcdir}/macosx ${worksrcdir}/doc
     
     patchfiles                  patch-project.pbxproj.diff
+    patchfiles-append           super-dealloc.patch
     
+    if {[vercmp ${xcodeversion} 10.0] >= 0} {
+        # Xcode 10+ will not build against an IBDocument.SystemTarget of 10.5
+        patchfiles-append       patch-xib-target.diff
+
+        # This port does not build with the new Xcode build system at present
+        build.pre_args          -UseNewBuildSystem=NO
+        destroot.pre_args       -UseNewBuildSystem=NO
+    }
+
     xcode.configuration         Release
     
     build.dir                   ${worksrcpath}/macosx
@@ -331,8 +343,8 @@ subport gvedit${thisbranch} {
     PortGroup                   app 1.0
     PortGroup                   qt4 1.0
     
-    revision                    0
-    
+    revision                    1
+
     conflicts                   gvedit${otherbranch}
     
     description                 Qt-based GUI for Graphviz

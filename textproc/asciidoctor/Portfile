@@ -3,7 +3,7 @@
 PortSystem          1.0
 PortGroup           ruby 1.0
 
-ruby.setup          asciidoctor 2.0.7 gem {} rubygems ruby24
+ruby.setup          asciidoctor 2.0.12 gem {} rubygems ruby26
 name                asciidoctor
 
 # Prevent addition of the ruby interpreter version number as suffix to command line tools
@@ -11,6 +11,7 @@ ruby.link_binaries_suffix
 
 categories          textproc
 platforms           darwin
+supported_archs     noarch
 
 license             MIT
 maintainers         nomaintainer
@@ -25,6 +26,6 @@ long_description    Asciidoctor is a fast text processor and publishing \
                     and released under the MIT license.
 homepage            https://asciidoctor.org/
 
-checksums           rmd160  8a9eec54ab50e301c478d6da5e1de3d374fc970e \
-                    sha256  9027efd3ba6084c84e9d1eb645b23b4b0a1c5df7516fd7c7ebd1055009b4ec1b \
-                    size    266240
+checksums           rmd160  6965832f43f3b500d59e17104bde0f64122faeb0 \
+                    sha256  494eed109fd2160f0f974cd96d2ad34fa71f86e016e30e3af917f03dd04e53be \
+                    size    272896

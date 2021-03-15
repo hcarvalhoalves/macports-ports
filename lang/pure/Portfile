@@ -40,7 +40,7 @@ set llvm_prefix         ${prefix}/libexec/llvm-${llvm_version}
 configure.env           PATH=${llvm_prefix}/bin:$env(PATH)
 
 if {${name} eq ${subport}} {
-    revision                    2
+    revision                    3
     
     depends_lib                 port:gmp \
                                 port:libiconv \
@@ -64,6 +64,10 @@ if {${name} eq ${subport}} {
     # Prevent build failure when old llvm port is installed
     configure.cppflags          -I${llvm_prefix}/include ${configure.cppflags}
     configure.ldflags           -L${llvm_prefix}/lib ${configure.ldflags}
+
+    if {[string match *clang* ${configure.cxx}]} {
+        configure.ldflags-append -stdlib=${configure.cxx_stdlib}
+    }
     
     platform powerpc {
         configure.args-append   --disable-fastcc
@@ -72,7 +76,7 @@ if {${name} eq ${subport}} {
     post-destroot {
         set docdir ${destroot}${prefix}/share/doc/${name}
         xinstall -d ${docdir} ${destroot}${prefix}/share/examples
-        xinstall -W ${destroot.dir} -m 644 \
+        xinstall -W ${destroot.dir} -m 0644 \
             COPYING \
             COPYING.LESSER \
             ChangeLog \
@@ -110,6 +114,8 @@ subport pure-mode.el {
     
     extract.post_args-append    ${worksrcdir}/etc
     
+    patchfiles-append           pure-mode.el-emacs-26.1.patch
+
     build.dir                   ${worksrcpath}/etc
     
     post-extract {
@@ -127,6 +133,6 @@ subport pure-mode.el {
     destroot {
         set lispdir ${destroot}${prefix}/share/emacs/site-lisp
         xinstall -d ${lispdir}
-        xinstall -m 644 -W ${destroot.dir} pure-mode.el pure-mode.elc flycheck-pure.el ${lispdir}
+        xinstall -m 0644 -W ${destroot.dir} pure-mode.el pure-mode.elc flycheck-pure.el ${lispdir}
     }
 }

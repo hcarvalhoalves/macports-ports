@@ -4,7 +4,7 @@ PortSystem          1.0
 PortGroup           perl5 1.0
 PortGroup           active_variants 1.1
 
-perl5.branches      5.26 5.28
+perl5.branches      5.26 5.28 5.30
 perl5.setup         libapreq2 2.13 Apache2
 revision            6
 license             Apache-2
@@ -31,13 +31,8 @@ depends_lib-append  port:apache2 \
                     port:mod_perl2 \
                     port:p${perl5.major}-extutils-xsbuilder
 
-variant apache22 description "use apache22 instead of apache2" {
-    # remove after 2020-05-02
-    ui_error "Please do not install this variant since Apache 2.2 is obsolete."
-    return -code error
-}
-
-patchfiles-append   patch-apache24-use-mutex-not-lockfile.diff
+patchfiles-append   patch-apache24-use-mutex-not-lockfile.diff \
+                    dynamic_lookup-11.patch
 
 set required_variant [string map {. _} "perl${perl5.major}"]
 

@@ -4,30 +4,30 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-absl
-version             0.2.0
-revision            1
+version             0.11.0
+revision            0
+python.rootname     absl-py
 platforms           darwin
 supported_archs     noarch
 license             Apache-2.0
 maintainers         {emcrisostomo @emcrisostomo} openmaintainer
 
 description         Abseil Python Common Libraries
-long_description    ${description}
+long_description    ${python.rootname} is a collection of Python \
+                    library code for building Python applications. The \
+                    code is collected from Google's own Python code \
+                    base, and has been extensively tested and used in \
+                    production.
 
 homepage            https://github.com/abseil/abseil-py
-master_sites        pypi:a/absl-py
-distname            absl-py-${version}
 
-checksums           rmd160 784b5305f0f1893cfed0ca31ac18ad23fd876114 \
-                    sha256 73d7d88454b97d54d95946685030962a7226c7a327f1ae925afe977098ef37ec \
-                    size   82900
+checksums           rmd160  273c9431f2642ffdf6ad5cbf8025e98f3a3d3eac \
+                    sha256  673cccb88d810e5627d0c1c818158485d106f65a583880e2f730c997399bcfa7 \
+                    size    110452
 
-python.versions     27 35 36 37
-
-livecheck.name      ${python.rootname}-py
+python.versions     27 36 37 38 39
 
 if {${name} ne ${subport}} {
-
     depends_build-append \
         port:py${python.version}-setuptools \
         port:py${python.version}-setuptools_scm
@@ -35,10 +35,9 @@ if {${name} ne ${subport}} {
     depends_lib-append \
         port:py${python.version}-six
 
-    post-extract  {
-        file attributes ${worksrcpath}/PKG-INFO -permissions a+r
-        file attributes ${worksrcpath}/absl_py.egg-info/PKG-INFO -permissions a+r
+    if {${python.version} == 27} {
+        depends_lib-append port:py${python.version}-enum34
     }
 
-    livecheck.type      none
+    livecheck.type  none
 }

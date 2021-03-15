@@ -1,6 +1,6 @@
 PortSystem 1.0
 name             epic4
-version          2.10.7
+version          2.10.9
 categories       irc
 maintainers      {toby @tobypeterson} openmaintainer
 description      The (E)nhanced (P)rogrammable (I)RC-II (C)lient
@@ -20,9 +20,9 @@ master_sites     http://ftp.epicsol.org/pub/epic/EPIC4-PRODUCTION/ \
                  ftp://ftp.epicsol.org/pub/epic/EPIC4-PRODUCTION/
 use_xz           yes
 
-checksums        rmd160 1acfc79fcd5cfaae6e2432d8e2bb1f9d701af916 \
-                 sha256 5e981e2a301e8ab8c16236f6698fe3f10941b81a66f5f7249b3cd4763eae85b4 \
-                 size   586152
+checksums        rmd160 4f0e25f6eca700fcdf7c4377b475001c429d73e7 \
+                 sha256 3e24b778b748bd2ccde1c2ed5640c5daf10b90a6450523d9cf96d1d7b92efbce \
+                 size   586436
 
 configure.args   --mandir=${prefix}/share/man
 

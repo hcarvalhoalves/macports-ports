@@ -4,7 +4,7 @@ PortSystem          1.0
 PortGroup           github 1.0
 PortGroup           cmake 1.1
 
-github.setup        CNugteren CLBlast 1.5.0
+github.setup        CNugteren CLBlast 1.5.2
 
 name                clblast
 categories          math
@@ -16,9 +16,9 @@ maintainers         {stromnov @stromnov} openmaintainer
 description         Tuned OpenCL BLAS
 long_description    ${description}
 
-checksums           rmd160  d2b43a8b98289c6e6b7b6e6c1a6c47f3c1451b9d \
-                    sha256  da4edc9dda4675695390134d3148dc0fa6898deae80dda8e179c0ae27d213825 \
-                    size    408614
+checksums           rmd160  1496b35baf7f14cb3e09e31fb773f6359a126a1f \
+                    sha256  429d985110d057913b966274b7ee634fb2a7306976aa43b61c48a6119f22ddb1 \
+                    size    419782
 
 configure.args-append \
                     -DBUILD_SHARED_LIBS=ON \

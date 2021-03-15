@@ -3,8 +3,8 @@
 PortSystem          1.0
 PortGroup           perl5 1.0
 
-perl5.branches      5.26 5.28
-perl5.setup         Cairo 1.106 ../../authors/id/X/XA/XAOC
+perl5.branches      5.26 5.28 5.30
+perl5.setup         Cairo 1.108 ../../authors/id/X/XA/XAOC
 license             LGPL-2.1+
 maintainers         nomaintainer
 description         Perl bindings to the cairo library
@@ -16,13 +16,25 @@ long_description    Perl bindings to the 2.x series of the Gtk+ graphical user i
 
 platforms           darwin
 
-checksums           rmd160  6a6532fff334dfd638de63972c1ffbea4d3eea79 \
-                    sha256  e64803018bc7cba49e73e258547f5378cc4249797beafec524852140f49c45c4
+checksums           rmd160  324f373d72e7d69ce4166e29ffe01b250e8b356a \
+                    sha256  6042cb7dc51675ab23437059c6384713c5fbbce844c4c60017d2e061948f05da \
+                    size    116922
 
 if {${perl5.major} != ""} {
     depends_lib-append \
                     path:lib/pkgconfig/cairo.pc:cairo \
                     port:p${perl5.major}-extutils-depends \
                     port:p${perl5.major}-extutils-pkgconfig \
+                    port:p${perl5.major}-font-freetype \
                     port:p${perl5.major}-glib
+
+    depends_test-append \
+                    port:bitstream-vera \
+                    port:dejavu-fonts
+
+    patchfiles      patch-CairoFT-test-fonts.diff
+
+    post-patch {
+        reinplace "s|@@MP_PREFIX@@|${prefix}|" ${worksrcpath}/t/CairoFt.t
+    }
 }

@@ -1,0 +1,36 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim: fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+
+PortSystem          1.0
+PortGroup           github 1.0
+PortGroup           cmake 1.1
+PortGroup           legacysupport 1.0
+
+github.setup        cwida duckdb 0.2.3 v
+
+homepage            https://www.duckdb.org
+
+description         DuckDB is an embeddable SQL OLAP Database Management System
+
+long_description    DuckDB is an embedded database designed to execute \
+                    analytical SQL queries fast while embedded in another \
+                    process. It is designed to be easy to install and easy to \
+                    use. DuckDB has no external dependencies. DuckDB has \
+                    bindings for C/C++, Python and R. DuckDB is developed by \
+                    the Database Architectures group of the CWI.
+
+maintainers         {gmail.com:herby.gillot @herbygillot} \
+                    openmaintainer
+
+categories          databases
+platforms           darwin
+license             MIT
+
+checksums           rmd160  bbf9038080b4c8f002a16759e0a887ca8074c2d3 \
+                    sha256  18a3fdbc5e09da5f3fb8fba1557550a0ab4dd9b6146f364503e688c2729d7fdb \
+                    size    19946783
+
+compiler.cxx_standard 2011
+
+depends_build-append \
+                    port:pkgconfig \
+                    port:zstd

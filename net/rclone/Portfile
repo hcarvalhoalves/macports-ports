@@ -1,11 +1,13 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
-PortGroup           github 1.0
+PortGroup           golang 1.0
 
-github.setup        ncw rclone 1.46.0 v
+go.setup            github.com/ncw/rclone 1.54.0 v
+revision            0
 
 homepage            http://rclone.org
+
 categories          net
 maintainers         {eborisch @eborisch} openmaintainer
 description         Rclone is a command line cloud-service sync program
@@ -17,30 +19,19 @@ long_description \
 license             MIT
 
 checksums \
-    rmd160  a5c4d49ec8388b0bf9bd55a97173cbdcfc0a5bbc \
-    sha256  6570dc4b167b16661ee8a1d7154f651c346f20367c5611827181e5e05c126c6b \
-    size    16770737
+    rmd160  3e999acb2beaf38768dfb4459ecb297615a36625 \
+    sha256  914948948e8f1914d9292ebdc18b3cd876bc6acc9177eedbd8908a03d12c73aa \
+    size    14940914
 
-set goproj          github.com/${github.author}/${github.project}
-
-depends_lib         port:go
 platforms           darwin
-use_configure       no
-worksrcdir          src/${goproj}
 
-post-extract {
-    xinstall -d ${workpath}/src/github.com/${github.author}
-    move ${workpath}/${name}-${github.version} \
-        ${worksrcpath}
-}
-
-build {
-    system -W ${worksrcpath} "GOPATH=${workpath} \
-      ${prefix}/bin/go build -v -o ${workpath}/${github.project}"
-}
+# FIXME: This port currently can't be built without allowing go mod to fetch
+# dependencies during the build phase. See
+# https://trac.macports.org/ticket/61192
+build.env-delete    GOPROXY=off GO111MODULE=off
 
 destroot {
-    xinstall ${workpath}/${github.project} ${destroot}${prefix}/bin
+    xinstall -m 0755 ${worksrcpath}/${name} ${destroot}${prefix}/bin/
 
     set docdir ${prefix}/share/doc/${name}
     xinstall -d ${destroot}${docdir}

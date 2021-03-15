@@ -5,32 +5,32 @@
 #   1. use ruby.setup and ruby.branches
 #
 #     PortGroup        ruby 1.0
-#     ruby.branches    2.3 2.2
+#     ruby.branches    3.0 2.7
 #     ruby.setup       module version type
-#     # - adds subport "rb23-module" and "rb22-module"
+#     # - adds subport "rb30-module" and "rb27-module"
 #
 #   2. use ruby.branch
 #
 #     PortGroup        ruby 1.0
-#     ruby.branch      2.3
+#     ruby.branch      3.0
 #     depends_lib      port:ruby${ruby.suffix}
 #     build.cmd        ${ruby.bin}
 
 # options:
 #   ruby.branches: the ruby versions supported by this module.
-#        this introduces subports such as rb23-, rb22-, ...
-#   ruby.branch: select ruby version. 2.5, ... 2.0, 1.9 or 1.8.
+#        this introduces subports such as rb30-, rb27-, ...
+#   ruby.branch: select ruby version. 3.0, 2.7, ... 2.0, 1.9 or 1.8.
 #   ruby.link_binaries: whether generate suffixed symlink under ${prefix}/bin
 #        or not.
 #   ruby.link_binaries_suffix: suffix of commands from rb-foo under
-#        ${prefix}/bin. such as "-2.2" or "-2.1".
+#        ${prefix}/bin. such as "-3.0" or "-2.7".
 # values:
 #   ruby.bin, ruby.rdoc, ruby.gem ruby.rake: fullpath to commands for ${ruby.branch}.
 #   ruby.suffix: suffix of portname. port:ruby${ruby.suffix} or
 #        port:rb${ruby.suffix}-foo.
 #   ruby.bindir: install location of commands without suffix from rb-foo.
 #   ruby.gemdir: install location of rubygems.
-#        such as "${prefix}/lib/ruby2.2/gems/2.2.0".
+#        such as "${prefix}/lib/ruby3.0/gems/3.0.0".
 #   (obsoleted values)
 #   ruby.prog_suffix: use ruby.branch.
 #   ruby.version: use ruby.api_version.
@@ -53,7 +53,7 @@ options ruby.api_version ruby.lib ruby.archlib
 options ruby.version
 option_proc ruby.branch ruby_set_branch
 proc ruby_set_branch {option action args} {
-    if {$action != "set"} {
+    if {$action ne "set"} {
         return
     }
     global prefix ruby.branch \
@@ -185,6 +185,9 @@ proc ruby.setup {module vers {type "install.rb"} {docs {}} {source "custom"} {im
         }
     } else {
         switch ${implementation} {
+            ruby30 { ruby.branch 3.0 }
+            ruby27 { ruby.branch 2.7 }
+            ruby26 { ruby.branch 2.6 }
             ruby25 { ruby.branch 2.5 }
             ruby24 { ruby.branch 2.4 }
             ruby23 { ruby.branch 2.3 }
@@ -194,7 +197,7 @@ proc ruby.setup {module vers {type "install.rb"} {docs {}} {source "custom"} {im
             ruby19 { ruby.branch 1.9 }
             ruby   { ruby.branch 1.8 }
             default {
-                ui_error "ruby.setup: unknown implementation '${implementation}' specified (ruby24, ruby23, ruby22, ruby21, ruby20, ruby19 or ruby possible)"
+                ui_error "ruby.setup: unknown implementation '${implementation}' specified (ruby30, ruby27, ruby26, ruby25, ruby24, ruby23, ruby22, ruby21, ruby20, ruby19 or ruby possible)"
                 return -code error "ruby.setup failed"
             }
         }
@@ -339,7 +342,7 @@ proc ruby.setup {module vers {type "install.rb"} {docs {}} {source "custom"} {im
             destroot.target     install
             destroot.destdir
             # extconf.rb|mkmf.rb of ruby-1.8 does not support universal binary.
-            # to build universal extentions, write "Portgrourp muniversal 1.0" in the Portfile.
+            # to build universal extensions, write "PortGroup muniversal 1.0" in the Portfile.
             if {[variant_isset universal] && (${ruby.branch} eq "1.8") && [info exists universal_archs_supported]} {
                 # generate wrapper for --rubyprog option
                 pre-configure {
@@ -379,7 +382,7 @@ proc ruby.setup {module vers {type "install.rb"} {docs {}} {source "custom"} {im
             destroot.args       RUBY="${ruby.bin}"
 
             # extconf.rb|mkmf.rb of ruby-1.8 does not support universal binary.
-            # to build universal extentions, write "Portgrourp muniversal 1.0" in the Portfile.
+            # to build universal extensions, write "PortGroup muniversal 1.0" in the Portfile.
             if {[variant_isset universal] && (${ruby.branch} eq "1.8") && [info exists universal_archs_supported]} {
                 foreach arch ${universal_archs_supported} {
                     lappend merger_configure_env(${arch}) \
@@ -456,7 +459,7 @@ proc ruby.setup {module vers {type "install.rb"} {docs {}} {source "custom"} {im
         }
     }
 
-    if {$type != "gnu"} {
+    if {$type ne "gnu"} {
         configure.universal_args-delete  --disable-dependency-tracking
     }
 

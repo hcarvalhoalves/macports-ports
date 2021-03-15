@@ -26,6 +26,8 @@ checksums           md5     08c7f078fc351196c21db3a8206d482d \
 
 depends_build       port:pkgconfig port:xorg-libX11
 
+patchfiles-append   apple-silicon.diff
+
 configure.args      --mandir=${prefix}/share/man
 
 post-destroot {
@@ -34,4 +36,4 @@ post-destroot {
 
 livecheck.type      regex
 livecheck.regex     ${my_name}-(\[\\d.\]+)${extract.suffix}
-livecheck.url       http://xorg.freedesktop.org/archive/individual/app/?C=M&O=D
+livecheck.url       https://xorg.freedesktop.org/archive/individual/app/?C=M&O=D

@@ -1,10 +1,10 @@
-# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8::et:sw=4:ts=4:sts=4
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
 PortGroup           python 1.0
 PortGroup           github 1.0
 
-github.setup        pipxproject pipx 0.13.1.1
+github.setup        pipxproject pipx 0.15.5.1
 categories          python sysutils
 license             MIT
 maintainers         {lbschenkel @lbschenkel} openmaintainer
@@ -14,10 +14,30 @@ platforms           darwin
 description         Execute binaries from Python packages in isolated environments
 long_description    ${description}
 
-checksums           rmd160  9d4d3f7898e5484adecf3ae661d0815fa097302b \
-                    sha256  d3ea7e0f0c1f7bf833956699140fa4b6f6cf971b5927f3e402bbcb1242ba54e0 \
-                    size    363233
+checksums           rmd160  c786be7c7375055d69d89cbdb7e36672917bf00c \
+                    sha256  8163804cbcd4f09b400e8c6f0d4ba85d368573bc8eb65535d90b9988959842a2 \
+                    size    357524
 
-python.default_version 37
-python.versions     36 37
-depends_lib         port:py${python.version}-setuptools
+github.livecheck.regex  {([\d.]+)}
+
+if {![variant_isset python36] && ![variant_isset python37] && ![variant_isset python38]} {
+    default_variants +python38
+}
+
+variant python36 conflicts python37 python38 description {Use Python 3.6} {}
+variant python37 conflicts python36 python38 description {Use Python 3.7} {}
+variant python38 conflicts python36 python37 description {Use Python 3.8} {}
+
+if {[variant_isset python38]} {
+    python.default_version 38
+} elseif {[variant_isset python37]} {
+    python.default_version 37
+} elseif {[variant_isset python36]} {
+    python.default_version 36
+}
+
+depends_lib-append \
+                    port:py${python.version}-argcomplete \
+                    port:py${python.version}-setuptools \
+                    port:py${python.version}-packaging \
+                    port:py${python.version}-userpath

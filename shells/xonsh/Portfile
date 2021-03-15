@@ -4,7 +4,7 @@ PortSystem          1.0
 PortGroup           github 1.0
 PortGroup           python 1.0
 
-github.setup        xonsh xonsh 0.9.6
+github.setup        xonsh xonsh 0.9.27
 revision            0
 categories          shells
 platforms           darwin
@@ -14,43 +14,33 @@ license             Permissive
 description         Xonsh is a Python-ish, BASHwards-looking shell language \
                     and command prompt.
 
-long_description    ${description} \
+long_description    {*}${description} \
                     The language is a superset of Python 3.4+ with additional \
                     shell primitives that you are used to from Bash and \
                     IPython. It works on all major systems including Linux, \
                     macOS, and Windows. Xonsh is meant for the daily use of \
                     experts and novices alike.
 
-checksums           rmd160  5504b1fec15c4853a8c98bd6765bebcd1c2fd615 \
-                    sha256  a804f1c8d8860c17d0da294983a7d1325fe90f7ddb0444389da6ace76b2f0c9b \
-                    size    2030912
+checksums           rmd160  0c5632e25fbf488c68e578ee9cf15886bbcdca7a \
+                    sha256  80116063bfa732a8649aa9d202324c039002cf3bfba77a445ba8ab0575a22825 \
+                    size    12729166
 
-python.versions     34 35 36 37
+variant python36 conflicts python37 python38 python39 description {Use Python 3.6} {}
+variant python37 conflicts python36 python38 python39 description {Use Python 3.7} {}
+variant python38 conflicts python36 python37 python39 description {Use Python 3.8} {}
+variant python39 conflicts python36 python37 python38 description {Use Python 3.9} {}
+
+if {![variant_isset python36] && ![variant_isset python37] && ![variant_isset python39]} {
+    default_variants +python38
+}
+
+foreach pv {39 38 37 36} {
+    if {[variant_isset python${pv}]} {
+        python.default_version ${pv}
+        break
+    }
+}
 
 depends_lib-append  port:py${python.version}-prompt_toolkit \
                     port:py${python.version}-pygments \
                     port:py${python.version}-gnureadline
-
-variant python34 conflicts python35 python36 python37 description {Use Python 3.4} {
-    # remove after November 1, 2019
-    ui_error "Please do not install this variant since it has been replaced by the python37 variant."
-    return -code error
-}
-
-variant python35 conflicts python34 python36 python37 description {Use Python 3.5} {
-    # remove after November 1, 2019
-    ui_error "Please do not install this variant since it has been replaced by the python37 variant."
-    return -code error
-}
-
-variant python36 conflicts python34 python35 python37 description {Use Python 3.6} {
-    python.default_version 36
-}
-
-variant python37 conflicts python34 python35 python36 description {Use Python 3.7} {
-    python.default_version 37
-}
-
-if {![variant_isset python34] && ![variant_isset python35] && ![variant_isset python36]} {
-    default_variants +python37
-}

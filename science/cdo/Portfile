@@ -2,21 +2,20 @@
 
 PortSystem                  1.0
 PortGroup                   mpi 1.0
-PortGroup                   cxx11 1.1
 
 name                        cdo
-version                     1.9.6
-revision                    3
+version                     1.9.9
+revision                    1
 platforms                   darwin
 maintainers                 {takeshi @tenomoto} openmaintainer
 license                     GPL-2
 categories                  science
 description                 Climate Data Operators
 homepage                    https://code.mpimet.mpg.de/projects/cdo
-master_sites                https://code.mpimet.mpg.de/attachments/download/19299
-checksums           rmd160  82a66d99bbe026254f8dea15ca078e3acaed29f0 \
-                    sha256  b31474c94548d21393758caa33f35cf7f423d5dfc84562ad80a2bdcb725b5585 \
-                    size    10463349
+master_sites                https://code.mpimet.mpg.de/attachments/download/23323
+checksums           rmd160  ea735aa29ca46cca3ea47456236f313ffdac2460 \
+                    sha256  959b5b58f495d521a7fd1daa84644888ec87d6a0df43f22ad950d17aee5ba98d \
+                    size    11511630
 
 long_description \
     CDO is a collection of command line Operators               \
@@ -26,6 +25,7 @@ long_description \
 
 fetch.ignore_sslcert        yes
 
+compiler.cxx_standard       2011
 compilers.choose            cc cxx
 mpi.setup
 mpi.enforce_variant         hdf5
@@ -36,6 +36,8 @@ depends_lib                 port:netcdf \
                             port:udunits2 \
                             port:proj \
                             port:fftw-3
+
+patchfiles                  patch-skip-nc4-test.diff
 
 configure.args              --with-netcdf=${prefix} \
                             --disable-dependency-tracking \
@@ -48,6 +50,11 @@ configure.args              --with-netcdf=${prefix} \
                             --with-zlib=${prefix}
 configure.cppflags-append   -I${prefix}/include/udunits2
 configure.ldflags-append    -lhdf5
+
+test.run                    yes
+test.dir                    ${worksrcpath}/test
+test.args                   -j1
+test.target                 check
 
 # Setting configure.cc h5pcc has been removed because it causes error
 # because -Wl,-headerpad_max_install_names does not work with -pthread.
@@ -80,8 +87,7 @@ variant grib_api description {obsoleted by eccodes variant} {
 
 variant eccodes description {enable grib2 support} {
     depends_lib-append      port:ecCodes
-    configure.args-append   --with-jasper=${prefix} \
-                            --with-eccodes=${prefix} \
+    configure.args-append   --with-eccodes=${prefix} \
                             --disable-cgribex
     configure.ldflags-append    -lpng -lopenjpeg
 }

@@ -3,35 +3,35 @@
 PortSystem          1.0
 PortGroup           python 1.0
 
-set real_name       flaky
-name                py-${real_name}
-version             3.5.3
-worksrcdir          ${real_name}-${version}
-distfiles           ${real_name}-${version}${extract.suffix}
-license             Apache-2
-maintainers         {yan12125 @yan12125} openmaintainer
-description         Plugin for nose or py.test that automatically reruns flaky tests.
-long_description    ${description}
+name                py-flaky
+version             3.7.0
+revision            0
+
 platforms           darwin
+supported_archs     noarch
+license             Apache-2
+maintainers         nomaintainer
+
+description         Plugin for nose or py.test that automatically \
+                    reruns flaky tests.
+long_description    ${description}
+
 homepage            https://github.com/box/flaky
-master_sites        pypi:f/flaky
 
-python.versions     27 36 37
+checksums           rmd160  f3a222e088b387b4e7d11866da1bdd34ae1db5ae \
+                    sha256  3ad100780721a1911f57a165809b7ea265a7863305acb66708220820caf8aa0d \
+                    size    29591
 
-checksums           rmd160  94736b4773b85082fa1f6cce30aee020b1f21283 \
-                    sha256  12bd5e41f372b2190e8d754b6e5829c2f11dbc764e10b30f57e59f829c9ca1da \
-                    size    29320
+python.versions     27 35 36 37 38 39
 
 if {${name} ne ${subport}} {
-    depends_test-append port:py${python.version}-tox
-
     depends_build-append \
-                        port:py${python.version}-setuptools
+                    port:py${python.version}-setuptools
 
-    test.run            yes
+    depends_test-append \
+                    port:py${python.version}-tox
+
+    test.run        yes
     test.target
-    test.cmd            tox-${python.branch}
-} else {
-    livecheck.type      regex
-    livecheck.regex     ${real_name}-(\[0-9.\]+)${extract.suffix}
+    test.cmd        tox-${python.branch}
 }

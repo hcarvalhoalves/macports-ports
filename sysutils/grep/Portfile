@@ -1,9 +1,11 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem 1.0
+PortGroup       compiler_blacklist_versions 1.0
 
 name            grep
-version         3.3
+version         3.6
+revision        0
 platforms       darwin
 categories      sysutils
 license         GPL-3+
@@ -18,14 +20,21 @@ platforms       darwin
 master_sites    gnu
 use_xz          yes
 
-checksums       rmd160  dd32e6f23b55fd7bde6adec25c4d2666b9d4daf1 \
-                sha256  b960541c499619efd6afe1fa795402e4733c8e11ebf9fafccc0bb4bccdc5b514 \
-                size    1473056
+checksums       rmd160  fde111b6def6f56287565c055591f6b689390764 \
+                sha256  667e15e8afe189e93f9f21a7cd3a7b3f776202f417330b248c2ad4f997d9373e \
+                size    1589412
+
+# error: type name requires a specifier or qualifier
+# error: expected member name or ';' after declaration specifiers
+# error: expected ';' at end of declaration list
+compiler.blacklist {clang < 500}
 
 # Ensure system version of grep is used instead of a possibly broken MacPorts version.
 configure.env   PATH=/usr/bin:$env(PATH)
 
-configure.args --program-prefix=g
+configure.args  --disable-silent-rules \
+                --program-prefix=g \
+                ac_cv_libsigsegv=no
 
 depends_lib     port:pcre port:gettext
 
@@ -48,13 +57,21 @@ post-destroot {
     }
 }
 
+variant libsigsegv description {Use libsigsegv} {
+    depends_lib-append \
+                port:libsigsegv
+
+    configure.args-delete \
+                ac_cv_libsigsegv=no
+}
+
 notes "
-This port previously installed itself without a g* prefix, thus overshadowing
-system binaries such as grep, fgrep, and egrep. The port is now changed so that
-it does install with a g* prefix, like other GNU ports. This means that you'll
-now find GNU grep at ${prefix}/bin/ggrep. If you dislike typing ggrep, you can
-create a shell alias or you can add ${prefix}/libexec/gnubin to your PATH,
-wherein non-g* prefixed symlinks are installed. In other words,
-${prefix}/libexec/gnubin contains GNU binaries without any prefix to the file-
+This port previously installed itself without a g* prefix, thus overshadowing\
+system binaries such as grep, fgrep, and egrep. The port is now changed so that\
+it does install with a g* prefix, like other GNU ports. This means that you'll\
+now find GNU grep at ${prefix}/bin/ggrep. If you dislike typing ggrep, you can\
+create a shell alias or you can add ${prefix}/libexec/gnubin to your PATH,\
+wherein non-g* prefixed symlinks are installed. In other words,\
+${prefix}/libexec/gnubin contains GNU binaries without any prefix to the file\
 names, so you can type grep and get GNU grep just as before.
 "

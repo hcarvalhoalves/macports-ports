@@ -2,13 +2,14 @@
 
 PortSystem 1.0
 PortGroup select 1.0
+PortGroup compilers 1.0
 PortGroup compiler_blacklist_versions 1.0
 PortGroup muniversal 1.0
 
 #remember to update the -doc and -server as well
 name                postgresql11
-version             11.3
-revision            1
+version             11.11
+revision            0
 
 categories          databases
 platforms           darwin
@@ -26,9 +27,9 @@ master_sites        http://ftp3.de.postgresql.org/pub/Mirrors/ftp.postgresql.org
             postgresql:source/v${version}/
 distname            postgresql-${version}
 
-checksums           rmd160  ea1ca7da67da585ad22c87fa9bd7d40f962978e1 \
-                    sha256  2a85e082fc225944821dfd23990e32dfcd2284c19060864b0ad4ca537d30522d \
-                    size    19718775
+checksums           rmd160  44d9bcd81fc6a89d8e2bcbcbc7353e37e951cfbc \
+                    sha256  40607b7fa15b7d63f5075a7277daf7b3412486aa5db3aedffdb7768b9298186c \
+                    size    20054359
 
 use_bzip2           yes
 
@@ -67,10 +68,15 @@ configure.ldflags-append    -headerpad_max_install_names
 configure.universal_args-delete --disable-dependency-tracking
 
 # building psql with clang from Xcode prior to 4.4 causes segfault on query; see #31717
-compiler.blacklist-append   {clang < 421}
+compiler.blacklist-append {clang < 421}
+compilers.choose          cc cxx
+compilers.setup           -gcc -fortran -clang33 -clang34 -clang37
 notes "To use the postgresql server, install the ${name}-server port"
 
-if {[variant_isset universal]} {
+if {![info exists universal_possible]} {
+    set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+}
+if {${universal_possible} && [variant_isset universal]} {
     configure.cflags-append    -DAC_APPLE_UNIVERSAL_BUILD
 }
 
@@ -99,7 +105,7 @@ post-destroot {
         ${destroot}${prefix}/lib/${name}/pgxs/src/Makefile.global
 }
 
-if {![variant_isset universal]} {
+if {!${universal_possible} || ![variant_isset universal]} {
     post-destroot {
         reinplace -E "s#-arch\[\[:space:\]\]+\[\[:alnum:\]_\]+##g" \
             ${destroot}${prefix}/lib/${name}/pgxs/src/Makefile.global
@@ -129,9 +135,9 @@ variant python27 conflicts python3 description {add support for python 2.7} {
 }
 
 variant python3 conflicts python27 description {add support for python 3.x} {
-    depends_lib-append      port:python37
+    depends_lib-append      port:python38
     configure.args-append   --with-python
-    configure.python        ${prefix}/bin/python3.7
+    configure.python        ${prefix}/bin/python3.8
 }
 
 variant perl description {add Perl support} {
@@ -146,7 +152,16 @@ variant tcl description {add Tcl support} {
 }
 
 variant llvm description {add support for JIT compilation} {
-    depends_lib-append      port:llvm-6.0
+    set llvm_ver 9.0
+
+    foreach clang ${compilers.clang_variants} {
+        if { [variant_exists ${clang}] && [variant_isset ${clang}] } {
+            set llvm_ver [string index ${clang} end-1].[string index ${clang} end]
+        }
+    }
+
+    depends_lib-append      port:llvm-${llvm_ver}
     configure.args-append   --with-llvm
-    configure.env-append    LLVM_CONFIG=${prefix}/libexec/llvm-6.0/bin/llvm-config
+    configure.env-append    LLVM_CONFIG=${prefix}/libexec/llvm-${llvm_ver}/bin/llvm-config \
+                            CLANG=${configure.cc}
 }

@@ -2,11 +2,10 @@
 
 PortSystem                      1.0
 PortGroup                       cmake 1.0
-PortGroup                       compiler_blacklist_versions 1.0
 PortGroup                       mpi 1.0
 
 name                            armadillo
-version                         9.500.2
+version                         10.3.0
 revision                        0
 categories                      science
 platforms                       darwin
@@ -28,9 +27,9 @@ master_sites                    sourceforge:project/arma
 
 use_xz                          yes
 
-checksums                       rmd160  d309dbfe20c5875103506a6821327c917569647b \
-                                sha256  0b1a3e07a6ae4d98c69dd3a6a84262574c88e491c9215147236ee5bf957fd79e \
-                                size    4803768
+checksums                       rmd160  7fd60e913f34ec1112fae10f74d5195d3043a7f3 \
+                                sha256  ab1efffa5af90000a11a19a39302fdfbc5c4abf6fab578a9bd0e9c95cf81e4c7 \
+                                size    6214388
 
 depends_build-append            port:pkgconfig
 
@@ -48,8 +47,27 @@ variant arpack description {compile with ARPACK support} {
     configure.args-delete       -DARPACK_LIBRARY=
 }
 
-# Snow Leopard (and older) will fail to build with the error "Need a newer compiler"
-compiler.blacklist-append       *gcc-3.* *gcc-4.0 *gcc-4.2 {clang <= 211.10.1}
+variant openblas description {compile with OpenBLAS support} {
+    depends_lib-append          path:lib/libopenblas.dylib:OpenBLAS
+    configure.args-append       -DALLOW_BLAS_LAPACK_MACOS=TRUE
+}
+
+variant superlu description {compile with SuperLU support} {
+    depends_lib-append          port:superlu
+    configure.args-append       -DARMA_USE_SUPERLU=ON
+}
+
+# Fix https://trac.macports.org/ticket/59173,
+# also see https://trac.macports.org/ticket/56554
+if {[variant_isset gcc44] || [variant_isset gcc45] || [variant_isset gcc46] || \
+    [variant_isset gcc47] || [variant_isset gcc48] || [variant_isset gcc49] || \
+    [variant_isset gcc5] || [variant_isset gcc6] || [variant_isset gcc7] || \
+    [variant_isset gcc8] || [variant_isset gcc9]} {
+    configure.cxx_stdlib        libstdc++
+}
+
+compiler.cxx_standard           2011
+compiler.thread_local_storage   yes
 
 livecheck.type                  regex
 livecheck.url                   ${homepage}download.html

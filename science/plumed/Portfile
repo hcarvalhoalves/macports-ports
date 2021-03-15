@@ -2,15 +2,13 @@
 
 PortSystem          1.0
 PortGroup           github 1.0
-# Notice that this rules out gcc variants.
-# See https://github.com/macports/macports-ports/pull/1252
-PortGroup           cxx11 1.1
 PortGroup           mpi 1.0
 PortGroup           linear_algebra 1.0
 PortGroup           debug 1.0
 
-github.setup        plumed plumed2 2.5.1 v
+github.setup        plumed plumed2 2.7.0 v
 name                plumed
+revision            1
 
 categories          science
 
@@ -28,10 +26,13 @@ platforms           darwin
 
 homepage            http://www.plumed.org/
 
-checksums           rmd160  403aed6e2bfb1d90c97246642f98d1b67e7a31d9 \
-                    sha256  a9d96faab8163d0c876786feebb134befa03a65a5fbf1c7da3aa0332f53f7377 \
-                    size    69102770
+checksums           rmd160  607a3908f8548f88ac14c990e38a6fe99b40c3ea \
+                    sha256  ab61d82cba0b67e7ce7c05be1dc84fbfd686d73ac8747dcbb1f0e550cdbd743b \
+                    size    98830315
 
+# Enable optional features.
+# --enable-asmjit:        Compile internal asmjit. Notice that internal asmjit is protected in
+#                         PLUMED namespace so will not collide with other asmjit implementations.
 # Disable additional features.
 # --disable-doc:          Do not create documentation, and avoid searching for Doxygen.
 # --disable-libsearch:    Avoid searching libraries using their default names.
@@ -49,6 +50,10 @@ configure.args-append \
                     --disable-mpi \
                     --disable-python
 
+if {${configure.build_arch} eq "x86_64"} {
+    configure.args-append --enable-asmjit
+}
+
 # install bash completions
 configure.args-append BASH_COMPLETION_DIR=${prefix}/share/bash-completion/completions
 
@@ -60,6 +65,8 @@ configure.args-append BASH_COMPLETION_DIR=${prefix}/share/bash-completion/comple
 configure.cppflags-append "-D__PLUMED_DEFAULT_KERNEL=${prefix}/lib/libplumedKernel.dylib"
 
 compilers.choose    cc cxx
+compiler.cxx_standard  2011
+
 mpi.setup
 
 # To enable mpi, replace a configure flag
@@ -82,14 +89,15 @@ configure.cxxflags-replace -Os -O3
 # only requested packages are linked.
 configure.ldflags-append \
                     -lxdrfile -lz -lgsl
-depends_lib-append  port:gsl \
+depends_lib-append  port:gawk \
+                    port:gsl \
                     port:xdrfile \
                     port:zlib
 
 # C++ library
 # Required in order to use clang with gcc library on old OSX versions.
 # See https://github.com/macports/macports-ports/pull/1254
-if [string match *clang* ${configure.compiler}] {
+if {[string match *clang* ${configure.compiler}]} {
     configure.ldflags-append -stdlib=${configure.cxx_stdlib}
 }
 
@@ -111,14 +119,14 @@ pre-configure {
 # plumed-devel subport
 # This subport installs the developer version
 subport plumed-devel {
-    github.setup        plumed plumed2 afd6c0dd5f0a8a0ccaa4e1abf8809b2e22e732ae
-    version             2.6-20190401
+    github.setup        plumed plumed2 c280bb02880f0e3cf208aae5928bd0f831cf01d9
+    version             2.8-20201223
     description         ${description} (development version)
     long_description    ${long_description} (development version)
     conflicts plumed
-    checksums           rmd160  d1db3b121ce03efd5a00ebf246571d181f4480a7 \
-                        sha256  46840393daac73a7dc6d0392b7f379bdfb8b26dd6eb5386524ddb84db99af44b \
-                        size    69595932
+    checksums           rmd160  2a19bef89c5e984dbfa792316aec466dadc898b1 \
+                        sha256  985635c741efcfffcdc14ef5b11de9efac87bfe1cadb4c9e554ca3a1676a2847 \
+                        size    99855493
 }
 
 # Allow running tests from MacPorts

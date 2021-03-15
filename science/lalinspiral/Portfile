@@ -3,7 +3,7 @@
 PortSystem    1.0
 
 name          lalinspiral
-version       1.8.0
+version       1.10.1
 revision      1
 
 description   LSC Algorithm Library - Inspiral
@@ -11,9 +11,9 @@ long_description \
   LIGO Scientific Collaboration Algorithm Library - Inspiral, containing \
   routines for compact binary gravitational wave data analysis.
 
-checksums     rmd160 550819ffcb0813d9c8e131387b9e77467b7d5f66 \
-              sha256 c031d878e7c06bf2c0b8ab56f6cf3a29ced4a6e85e3daab42a4101d27999b2ed \
-              size   919300
+checksums     rmd160  57156e869edbf7b5c0adc3606cfda78830df80fd \
+              sha256  c6391d829e96d6cf5f21eb278d192f95a6ddd09150dd77fb659aadd0afe0a088 \
+              size    816680
 
 depends_lib   port:lal \
               port:lalframe \
@@ -29,7 +29,6 @@ if {[string match "py*" ${subport}]} {
     # python, C-library port, and numpy are automatically added below
     depends_lib     port:py${v}-lal port:py${v}-lalmetaio port:py${v}-lalsimulation \
                     port:py${v}-lalframe port:py${v}-lalburst port:py${v}-lscsoft-glue
-    revision        1
 }
 
 # add Octave dependencies for octave subports
@@ -37,7 +36,6 @@ if {[string match "octave-*" ${subport}]} {
     # octave, and C-library port are automatically added below
     depends_lib     port:octave-lal port:octave-lalframe port:octave-lalmetaio \
                     port:octave-lalsimulation
-    revision        2
 }
 
 ###############################################################################
@@ -46,7 +44,7 @@ if {[string match "octave-*" ${subport}]} {
 
 categories    science
 platforms     darwin
-maintainers   {ram @skymoo} {aronnax @lpsinger}
+maintainers   {aronnax @lpsinger}
 license       GPL-2+
 
 # The GPL and OpenSSL licenses conflict with each other, and our build
@@ -58,7 +56,7 @@ license       GPL-2+
 license_noconflict openssl
 
 homepage      https://wiki.ligo.org/Computing/DASWG/LALSuite
-master_sites  http://software.ligo.org/lscsoft/source/lalsuite
+master_sites  https://software.igwn.org/lscsoft/source/lalsuite
 use_xz        yes
 
 depends_build-append \
@@ -66,8 +64,7 @@ depends_build-append \
               port:swig \
 
 # Choose a compiler that supports OpenMP.
-compiler.whitelist macports-clang-6.0 macports-clang-5.0 macports-clang-4.0 macports-clang-7.0 macports-clang-3.9
-compiler.fallback  macports-clang-6.0
+compiler.openmp_version 2.5
 
 configure.args-append \
                --mandir=${prefix}/share/man \
@@ -82,7 +79,7 @@ test.run      yes
 test.target   check
 
 # Create subports for each supported Python version
-foreach v {27 35 36 37} {
+foreach v {27 36 37 38} {
   subport py${v}-${name} {
     set pythonversion     [string range ${v} 0 end-1].[string index ${v} end]
     set pythonhome \
@@ -93,7 +90,6 @@ foreach v {27 35 36 37} {
     description           Python ${pythonversion} bindings for ${description}
     long_description      ${long_description} This package provides Python \
                           ${pythonversion} bindings, modules, and scripts.
-
 
     depends_build-append  port:swig-python
     depends_lib-prepend   port:python${v} port:${name} port:py${v}-numpy

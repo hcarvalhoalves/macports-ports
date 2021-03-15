@@ -3,12 +3,12 @@
 PortSystem          1.0
 PortGroup           golang 1.0
 
-go.setup            github.com/digitalocean/doctl 1.18.0 v
+go.setup            github.com/digitalocean/doctl 1.56.0 v
 revision            0
 
-checksums           rmd160  7d454c8812222227a28f8e4b1c27c9b37d9ef589 \
-                    sha256  5f681494c3a9750e0cf944a140da2e23c117c8b8b06e474c96c73552a7162e5c \
-                    size    15651051
+checksums           rmd160  4fa8f2ac39f2899972520109525ec4d412fdc060 \
+                    sha256  fc5b3b148962f098d4f5bd90b67c06fd9ad3c184d7305b14181aeea1d2bac7c0 \
+                    size    5164863
 
 categories          www devel
 platforms           darwin
@@ -17,9 +17,24 @@ maintainers         {@kritr gmail.com:krdevmail} openmaintainer
 description         A command line interface for the DigitalOcean API
 long_description    ${description}
 
-depends_build-append port:git
+set doctl_ver [split ${version} "."]
+set doctl_major [lindex ${doctl_ver} 0]
+set doctl_minor [lindex ${doctl_ver} 1]
+set doctl_patch [lindex ${doctl_ver} 2]
 
-build.env-append    GO111MODULE=on
+set base_flag       "-X ${go.package}"
+set ld_flags        "${base_flag}.Label=release"
+append ld_flags     " ${base_flag}.Major=${doctl_major}"
+append ld_flags     " ${base_flag}.Minor=${doctl_minor}"
+append ld_flags     " ${base_flag}.Patch=${doctl_patch}"
+
+build.cmd-append    " -ldflags \"${ld_flags}\""
+build.cmd-append    " -o ${name}"
+
+build.env-delete    GO111MODULE=off
+build.env-append    GO111MODULE=on \
+                    CGO_ENABLED=0
+
 build.target        ${worksrcpath}/cmd/${name}
 
 destroot {

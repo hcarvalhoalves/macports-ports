@@ -1,14 +1,14 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:filetype=tcl:et:sw=4:ts=4:sts=4
 
-PortSystem      1.0
+PortSystem          1.0
 
-name            nano
-version         4.2
-categories      editors
-platforms       darwin freebsd
-license         GPL-3
-maintainers     {grimreaper @grimreaper} openmaintainer
-description     Nano is ANOther editor - enhanced free Pico Clone
+name                nano
+version             5.5
+categories          editors
+platforms           darwin freebsd
+license             GPL-3
+maintainers         {grimreaper @grimreaper} openmaintainer
+description         Nano is ANOther editor - enhanced free Pico Clone
 
 long_description \
     GNU nano is a small and friendly text editor. Besides basic text \
@@ -16,26 +16,24 @@ long_description \
     and replace, goto line number, auto-indentation, feature toggles, \
     internationalization support, and filename tab completion.
 
-homepage        https://www.nano-editor.org
-master_sites    ${homepage}/dist/v[strsed ${version} {/\.[0-9]*$//}]/ gnu
+homepage            https://www.nano-editor.org
+master_sites        ${homepage}/dist/v[strsed ${version} {/\.[0-9]*$//}]/ gnu
 
-checksums           rmd160  155bff238ad5a40298c228f2de59ab416eab8463 \
-                    sha256  c06e456890a93e7a61317a938c70caacaa2bfd6161a52b2731df83875ebbcf80 \
-                    size    2928595
+checksums           rmd160  c748d781bf88759f530baff7e83373dbf47a79c0 \
+                    sha256  75a78b71aeae39a0dbf759dd9c973005eb6528f1e3d1c4239ae1f011639fab8a \
+                    size    2943973
 
-depends_lib     port:gettext \
-                port:libiconv \
-                port:libmagic \
-                port:ncurses \
-                port:zlib
+depends_lib         port:gettext \
+                    port:libiconv \
+                    port:libmagic \
+                    port:ncurses \
+                    port:zlib
 
-configure.args  --disable-wrapping-as-root \
-                --enable-nanorc \
-                --enable-utf8
+configure.args      --enable-utf8
 
 use_parallel_build  yes
 
-set docdir      ${prefix}/share/doc/${name}
+set docdir          ${prefix}/share/doc/${name}
 
 post-destroot {
     xinstall -d $destroot$docdir/html
@@ -48,6 +46,6 @@ notes "
 A sample configuration file is available at ${docdir}/sample.nanorc.
 "
 
-livecheck.url   ${homepage}/download.php
-livecheck.type  regex
-livecheck.regex "${name}-(\\d+\\.\\d+(\\.\d+)?)"
+livecheck.url       ${homepage}/download.php
+livecheck.type      regex
+livecheck.regex     "${name}-(\\d+\\.\\d+(\\.\\d+)?)"

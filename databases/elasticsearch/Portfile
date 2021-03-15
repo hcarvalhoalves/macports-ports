@@ -1,9 +1,9 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
-PortGroup           java         1.0
+PortGroup           java 1.0
 
-version             7.0.1
+version             7.10.0
 revision            0
 
 name                elasticsearch
@@ -11,14 +11,15 @@ categories          databases java
 maintainers         @gerardsoleca openmaintainer
 
 description         Distributed RESTful search engine built for the cloud
-long_description    Elasticsearch is a highly scalable open-source full-text \
-                    search and analytics engine. It allows you to store search, \
-                    and analyze big volumes of data quickly and in near \
-                    real time. It is generally used as the underlying \
-                    engine/technology that powers applications that have complex \
-                    search features and requirements. \
-                    Elasticsearch requires Java/OpenJDK 12, which comes installed. \
-                    Other Java versions are not supported.
+long_description    Elasticsearch is a highly scalable open-source \
+                    full-text search and analytics engine. It allows \
+                    you to store search, and analyze big volumes of \
+                    data quickly and in near real time. It is \
+                    generally used as the underlying engine/technology \
+                    that powers applications that have complex search \
+                    features and requirements.  Elasticsearch requires \
+                    Java/OpenJDK 11+, which comes installed.  Other \
+                    Java versions are not supported.
 
 platforms           darwin
 supported_archs     noarch
@@ -29,17 +30,18 @@ master_sites        https://artifacts.elastic.co/downloads/${name}/
 worksrcdir          ${distname}
 distname            ${name}-${version}-darwin-x86_64
 
-checksums           rmd160  c50a7a2e66e53b5df70afde3da2f971d1ac73886 \
-                    sha256  283859570434cd64146c61e5263c2cb3ce537e0dec567c39e0bc41e507eefed1 \
-                    size    338459414
+checksums           rmd160  bb2f9929161355f98413ce52e703b08d4f6019d1 \
+                    sha256  5ca13cb82484828c58b0cf2ded314b18a2ef47b005beb70dab2a28ee5b2c7706 \
+                    size    304887524
 
 use_configure       no
 build {}
 
 # Required java version
-java.version        12
-# JDK port to install if required java not found
-java.fallback       openjdk12
+# see https://www.elastic.co/support/matrix#matrix_jvm
+java.version        9+
+# LTS JDK port to install if required java not found
+java.fallback       openjdk11
 
 patchfiles          patch-elasticsearch-yml.diff \
                     patch-elasticsearch-env.diff \
@@ -105,7 +107,7 @@ post-activate {
     system "chown -R ${user}:${group} ${dbdir}"
 
     ui_msg "###########################################################"
-    ui_msg "# Elasticsearch requires Java/OpenJDK 12, which comes installed."
+    ui_msg "# Elasticsearch requires Java/OpenJDK ${java.version}, which comes installed."
     ui_msg "# Other Java versions are not supported."
     ui_msg "# Use `sudo port load elasticsearch` to start the service"
     ui_msg "###########################################################"
@@ -122,8 +124,8 @@ curl -XPUT \"http://localhost:9200/my_first_index\" \\
 {
     \"settings\" : {
         \"index\" : {
-            \"number_of_shards\" : 5, 
-            \"number_of_replicas\" : 2 
+            \"number_of_shards\" : 5,
+            \"number_of_replicas\" : 2
         }
     }
 }
@@ -138,7 +140,7 @@ curl -XDELETE \"http://localhost:9200/my_first_index\"
 
 Each Elasticsearch shard is a Lucene index; aim for 10-50 GB per shard.
 
-${name} is tested with the JDK provided in port openjdk12. Add these
+${name} is tested with the JDK provided in port ${java.fallback}. Add these
 lines to your ~/.profile to set up your java environment and test with
 'java -version':
 
@@ -153,3 +155,5 @@ startupitem.create  yes
 startupitem.logfile ${logdir}/daemon.log
 startupitem.executable \
     sudo -u elasticsearch ${prefix}/bin/${name}
+
+livecheck.url       https://www.elastic.co/downloads/elasticsearch

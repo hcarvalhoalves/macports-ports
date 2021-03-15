@@ -5,8 +5,9 @@ PortGroup           muniversal 1.0
 PortGroup           github 1.0
 PortGroup           compiler_blacklist_versions 1.0
 
-github.setup        intel tbb 2019_U8
+github.setup        intel tbb 2020.3 v
 revision            0
+
 categories          devel
 platforms           darwin
 maintainers         nomaintainer
@@ -15,24 +16,22 @@ license             Apache-2
 description         Intel Threading Building Blocks offers a rich and complete approach \
                     to parallelism in C++
 
-long_description    ${description} \
+long_description    {*}${description} \
                     It represents a higher-level, task-based parallelism that abstracts \
                     platform details and threading mechanisms for scalability and performance
 
 homepage            https://www.threadingbuildingblocks.org/
 
-checksums           rmd160  511ce5f44dd88548da33246530fd65a58efaaea1 \
-                    sha256  dd134c3786a0438eeaf0284e24f9d9f83082e635f81914d1d9e65f2e7455a63c \
-                    size    2580638
+checksums           rmd160  64fd69e42540ef8968d9a3e36cb23816ca9de647 \
+                    sha256  131d249f3132f643738d71e37162e4ac73f96bdb5064ccd35f03967fdf9b477e \
+                    size    2640358
 
-github.livecheck.regex {(\d+(?:\_U)+(?:\d+)*)}
+github.livecheck.regex  {([0-9.]+)}
 
 use_configure       no
 
 # Force a compatible compiler
-compiler.blacklist-append *gcc* {clang < 602} macports-clang-3.3 macports-clang-3.4 \
-                          macports-clang-3.7
-compiler.whitelist clang macports-clang-5.0
+compiler.blacklist-append *gcc* {clang < 602} {macports-clang-3.[0-7]}
 
 set tbb_arch(i386)      ia32
 set tbb_arch(ppc)       ppc32
@@ -70,7 +69,10 @@ test.run            yes
 test.target         test
 test.args-append    ${build.args}
 
-if {[variant_isset universal]} {
+if {![info exists universal_possible]} {
+    set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+}
+if {${universal_possible} && [variant_isset universal]} {
     foreach arch ${configure.universal_archs} {
         set merger_build_args(${arch}) arch=$tbb_arch(${arch})
         set merger_test_args(${arch}) arch=$tbb_arch(${arch})

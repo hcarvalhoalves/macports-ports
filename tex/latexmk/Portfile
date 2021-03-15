@@ -3,10 +3,11 @@
 PortSystem          1.0
 
 name                latexmk
-version             4.63b
-checksums           rmd160  fea0e3df1fbde57391ac8d64c86a2e0567b16161 \
-                    sha256  7e2862085a7e4fdec526c89753e0e1969acc30cb99bb93c60f63282e04ffa4ba \
-                    size    442972
+version             4.70b
+
+checksums           rmd160  05cc9f11d11a8f3f0deef6c48634b849090a0ff3 \
+                    sha256  efd4029e8f1c3f3cd45811b038af86a83b6f72a3180835e28fc7ed31a0eabec7 \
+                    size    458908
 
 categories          tex print
 platforms           darwin
@@ -24,7 +25,7 @@ long_description \
     continuously with a previewer\; the latex program, etc, are rerun        \
     whenever one of the source files is modified.
 
-homepage            http://www.phys.psu.edu/~collins/software/latexmk-jcc/
+homepage            http://personal.psu.edu/~jcc8/software/latexmk/
 master_sites        ${homepage}
 distname            ${name}-[string map {. ""} $version]
 

@@ -5,13 +5,13 @@ PortGroup       conflicts_build 1.0
 PortGroup       muniversal 1.0
 
 name            libgpg-error
-version         1.36
-revision        1
+version         1.41
+revision        0
 categories      devel
 platforms       darwin
 license         LGPL-2.1+
 maintainers     {mps @Schamschula} openmaintainer
-homepage        http://www.gnupg.org/
+homepage        https://www.gnupg.org/
 description     Common error values for all GnuPG components
 
 long_description \
@@ -23,9 +23,9 @@ master_sites    gnupg
 
 use_bzip2       yes
 
-checksums       rmd160  13a9405bcb8ef179fff58e72f47a54889ddd287f \
-                sha256  babd98437208c163175c29453f8681094bcaf92968a15cafb1a276076b33c97c \
-                size    920542
+checksums       rmd160  c33c299f324e7eaafbf537056156d721bda491d5 \
+                sha256  64b078b45ac3c3003d7e352a5e05318880a5778c42331ce1ef33d1a0d9922742 \
+                size    967117
 
 depends_lib     port:libiconv \
                 port:gettext
@@ -38,7 +38,10 @@ platform darwin 8 {
     configure.cppflags-append -D__DARWIN_UNIX03
 }
 
-if {[variant_isset universal]} {
+if {![info exists universal_possible]} {
+    set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+}
+if {${universal_possible} && [variant_isset universal]} {
     # muniversal's *.h merger does not handle \-continued lines properly
     merger_must_run_binaries    yes
     patchfiles-append           patch-gen-posix-lock-obj_c.diff

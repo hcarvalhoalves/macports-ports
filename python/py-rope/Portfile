@@ -4,10 +4,12 @@ PortSystem          1.0
 PortGroup           github 1.0
 PortGroup           python 1.0
 
-github.setup        python-rope rope 0.14.0
+github.setup        python-rope rope 0.18.0
 name                py-rope
 revision            0
+
 platforms           darwin
+supported_archs     noarch
 license             LGPL-3+
 maintainers         {reneeotten @reneeotten} openmaintainer
 
@@ -18,24 +20,23 @@ long_description    Rope is a Python refactoring library that can be used \
                     assistance like auto-completion and access to \
                     documentation.
 
-supported_archs     noarch
+checksums           rmd160  caf6b6779f0eb1c5c63bcc836b6402c671fd2fc8 \
+                    sha256  5dea333329e0737b7d443bc5b9f88b25b847ea8fe2f03ab243ff1d76ae4ef6ca \
+                    size    246096
 
-checksums           rmd160  3352e635c6c40703c44b812f3e7c6b0bc16cc4b4 \
-                    sha256  408cd9b1e75e1b95a646d0abe5aa0ba78903c9ae78c431a728f2a6d6b08628a6 \
-                    size    243907
-
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 
 if {${name} ne ${subport}} {
     depends_build-append \
                     port:py${python.version}-setuptools
 
-    if {${python.version} < 35} {
-        depends_test-append \
-                    port:py${python.version}-unittest2
-    }
+    depends_test-append \
+                    port:py${python.version}-pytest
+
     test.run        yes
-    test.cmd        ${python.bin} setup.py
+    test.cmd        py.test-${python.branch}
+    test.target
+    test.env        PYTHONPATH=${worksrcpath}/build/lib
 
     post-destroot {
         set docdir ${prefix}/share/doc/${subport}

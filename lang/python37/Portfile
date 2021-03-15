@@ -6,14 +6,15 @@ PortGroup select 1.0
 name                python37
 
 # Remember to keep py37-tkinter and py37-gdbm's versions sync'd with this
-version             3.7.3
+version             3.7.10
+revision            1
 
 set major           [lindex [split $version .] 0]
 set branch          [join [lrange [split ${version} .] 0 1] .]
 categories          lang
 license             PSF
 platforms           darwin
-maintainers         {jmr @jmroot} openmaintainer
+maintainers         {jmr @jmroot}
 
 description         An interpreted, object-oriented programming language
 long_description    Python is an interpreted, interactive, object-oriented \
@@ -24,16 +25,18 @@ master_sites        ${homepage}ftp/python/${version}/
 
 distname            Python-${version}
 use_xz              yes
-checksums           md5 93df27aec0cd18d6d42173e601ffbbfd \
-                    rmd160 0095f3072e17edb789656442290f8abd0ec1bc58 \
-                    sha256 da60b54064d4cfcd9c26576f6df2690e62085123826cff2e667e72a91952d318
+checksums           md5 9e34914bc804ab2e7d955b49c5e1e391 \
+                    rmd160 ae83786be55bf99889d9fe25826e7b4333dd8a52 \
+                    sha256 f8d82e7572c86ec9d55c8627aae5040124fd2203af400c383c821b980306ee6b
 
 patchfiles          patch-setup.py.diff \
                     patch-Lib-cgi.py.diff \
                     patch-configure.diff \
                     patch-Lib-ctypes-macholib-dyld.py.diff \
                     patch-libedit.diff \
-                    patch-configure-xcode4bug.diff
+                    patch-configure-xcode4bug.diff \
+                    implicit.patch \
+                    sysconfig.py.diff
 
 depends_build       port:pkgconfig
 depends_lib         port:bzip2 \
@@ -49,8 +52,20 @@ depends_lib         port:bzip2 \
 depends_run         port:python_select \
                     port:python3_select
 
+platform darwin arm {
+    known_fail  yes
+    if {$build_arch ne "x86_64"} {
+        pre-fetch {
+            error "${name} cannot yet be built for Apple Silicon"
+        }
+        depends_build
+        depends_lib
+        depends_run
+    }
+}
+
 # blacklist llvm-gcc-4.2 compiler known to produce bad code
-compiler.blacklist  *llvm-gcc-4.2
+compiler.blacklist-append *llvm-gcc-4.2
 
 # ensurepip arg may be removed later, now conflicts with pip and setuptools
 # packages
@@ -93,23 +108,27 @@ platform darwin {
     set confdir     config-${branch}m-darwin
 
     post-configure {
+        # poll() misbehaves on 10.8 and older
         # See https://trac.macports.org/ticket/18376
-        system -W ${worksrcpath} "ed - pyconfig.h < ${filespath}/pyconfig.ed"
+        if {${os.major} <= 12} {
+            system -W ${worksrcpath} "ed - pyconfig.h < ${filespath}/pyconfig.ed"
+        }
     }
 
     post-build {
         set buildlibdir [lindex [glob -directory ${worksrcpath}/build lib.*-*-*-${branch}] 0]
+        # preserve mtime of sysconfig data file to avoid rebuilding things after changing it
+        set oldmtime [file mtime ${buildlibdir}/_sysconfigdata_m_darwin_darwin.py]
+
         # Without this, LINKFORSHARED is set to
         # ... $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)
         # (this becomes Python.framework/Versions/3.7/Python) which doesn't
         # work for dependents that incorrectly use this variable to find out
         # how to link against python (see ticket #15099); instead we mirror
         # the behavior of `python-config --ldflags` here.
-        system -W ${buildlibdir} "awk -F : \
-            \"/'LINKFORSHARED'/ {printf \\\"%s: '-L${framewdir}/lib/python${branch}/${confdir}\
-            -lpython${branch}m -ldl -framework CoreFoundation',\\n\\\", \\\$1; getline; next} {print}\"\
-            _sysconfigdata_m_darwin_darwin.py > _sysconfigdata_m_darwin_darwin.py.new"
-        file rename -force ${buildlibdir}/_sysconfigdata_m_darwin_darwin.py.new \
+        set lfs_pattern {^([[:space:]]*'LINKFORSHARED':).*}
+        set lfs_replacement "\\1 '-L${framewdir}/lib/python${branch}/${confdir} -lpython${branch}m -ldl -framework CoreFoundation',"
+        reinplace -E s|${lfs_pattern}|${lfs_replacement}| \
             ${buildlibdir}/_sysconfigdata_m_darwin_darwin.py
 
         # remove -arch flags from the config
@@ -119,6 +138,8 @@ platform darwin {
         # also remove gettext overlinking
         reinplace "s|-lintl||" \
             ${buildlibdir}/_sysconfigdata_m_darwin_darwin.py
+
+        file mtime ${buildlibdir}/_sysconfigdata_m_darwin_darwin.py $oldmtime
     }
 
     post-destroot {
@@ -193,6 +214,10 @@ variant universal {
 
 variant optimizations description {Compile with LTO and PGO. Build time greatly increased} {
     configure.args-append   --enable-optimizations
+}
+
+variant dtrace description {enable DTrace support} {
+    configure.args-append   --with-dtrace
 }
 
 livecheck.type      regex

@@ -12,15 +12,16 @@ set llvm_version_no_dot 60
 set clang_executable_version 6.0
 set lldb_executable_version 6.0.1
 name                    llvm-${llvm_version}
-subport                 clang-${llvm_version} { revision 2 }
-subport                 lldb-${llvm_version} {}
+revision                2
+subport                 clang-${llvm_version} { revision 3 }
+subport                 lldb-${llvm_version} { revision 1 }
 set suffix              mp-${llvm_version}
 set sub_prefix          ${prefix}/libexec/llvm-${llvm_version}
 dist_subdir             llvm
 categories              lang
 platforms               darwin
 license                 NCSA
-maintainers             {jeremyhu @jeremyhu} {larryv @larryv}
+maintainers             {jeremyhu @jeremyhu} {larryv @larryv} {kencu @kencu}
 
 if {${subport} eq "llvm-${llvm_version}"} {
     homepage            https://llvm.org/
@@ -48,14 +49,9 @@ if {${subport} eq "llvm-${llvm_version}"} {
                         that can be built using the Clang frontend as a \
                         library to parse C/C++ code.
 
-    depends_lib         port:libxml2 port:libomp port:llvm-${llvm_version} port:python27
+    depends_lib         port:libxml2 port:libomp port:llvm-${llvm_version}
     depends_run         port:clang_select port:ld64
     depends_skip_archcheck-append ld64 subversion
-
-    # Clang doesn't actually use any of these, but the LLVM makefile
-    # system overlinks its binaries. Remove (or convert to build deps?)
-    # after #46040 is resolved.
-    depends_lib-append  port:libedit port:libffi port:ncurses port:zlib
 
     # Older Xcode's lipo doesn't support x86_64h slices
     # https://trac.macports.org/ticket/53159
@@ -67,14 +63,17 @@ if {${subport} eq "llvm-${llvm_version}"} {
         depends_skip_archcheck-append cctools
     }
 
-    default_variants    +analyzer
+    # Avoid requiring a bootstrap version of perl5 on 10.6.
+    if {${os.major} >= 11} {
+        default_variants    +analyzer
+    }
+
 } elseif {${subport} eq "lldb-${llvm_version}"} {
     homepage            https://lldb.llvm.org/
     description         the LLVM debugger
     long_description    Lldb is the "LLVM native" debugger.
 
-    depends_lib         port:libxml2 port:libomp port:llvm-${llvm_version} port:python27 \
-                        port:ncurses
+    depends_lib         port:libxml2 port:libomp port:llvm-${llvm_version} port:ncurses
     depends_build-append port:swig-python port:doxygen
 
     # Clang doesn't actually use any of these, but the LLVM makefile
@@ -98,6 +97,9 @@ if {${subport} eq "llvm-${llvm_version}"} {
 #svn.url                 https://llvm.org/svn/llvm-project/llvm/branches/release_${llvm_version_no_dot}
 #default_variants-append +assertions
 #default_variants-append +debug
+
+# the backtik pkgconfig setting in the ffi config line requires pkg-config
+depends_build-append    port:pkgconfig
 
 version                 ${llvm_version}.1
 epoch                   1
@@ -219,14 +221,14 @@ default build.dir           {${workpath}/build}
 
 cmake.install_prefix ${sub_prefix}
 
-# Adjust this once cmake-1.0.tcl is fixed:
-#     https://github.com/macports/macports-ports/pull/103
-# Also see:
+# clang shared libraries are not all installed in ${cmake.install_prefix}/lib
+# so we have to let the llvm/clang cmake scripts handle the @rpath setting
+# See:
 #     https://llvm.org/bugs/show_bug.cgi?id=31425
 #     https://trac.macports.org/ticket/53299
 configure.args-delete \
-    -DCMAKE_INSTALL_NAME_DIR=${prefix}/lib \
-    -DCMAKE_INSTALL_RPATH=${prefix}/lib \
+    -DCMAKE_INSTALL_NAME_DIR=${cmake.install_prefix}/lib \
+    -DCMAKE_INSTALL_RPATH=${cmake.install_prefix}/lib \
     -DCMAKE_SYSTEM_PREFIX_PATH="${prefix}\;/usr"
 configure.args-append \
     -DCMAKE_SYSTEM_PREFIX_PATH="${cmake.install_prefix}\;${prefix}\;/usr"
@@ -254,6 +256,7 @@ if {${subport} eq "llvm-${llvm_version}"} {
         -DCMAKE_LINKER=${prefix}/bin/ld \
         -DCLANG_INCLUDE_TESTS=OFF \
         -DCLANG_ENABLE_STATIC_ANALYZER=OFF \
+        -DCLANG_ENABLE_ARCMT=OFF \
         -DDARWIN_PREFER_PUBLIC_SDK=ON \
         -DLLVM_BUILD_RUNTIME=ON \
         -DLIBCXX_ENABLE_SHARED=OFF \
@@ -291,9 +294,7 @@ if {${subport} eq "llvm-${llvm_version}"} {
         -DCLANG_ENABLE_STATIC_ANALYZER=OFF \
         -DLLVM_BUILD_RUNTIME=ON \
         -DLIBCXX_ENABLE_SHARED=OFF \
-        -DLIBCXX_INSTALL_LIBRARY=OFF \
-        -DPYTHON_EXECUTABLE=${prefix}/bin/python2.7 \
-        -DPYTHON_INCLUDE_DIR=${prefix}/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7
+        -DLIBCXX_INSTALL_LIBRARY=OFF
 }
 
 # llvm-3.5 and later requires a C++11 runtime
@@ -308,6 +309,13 @@ compiler.blacklist *gcc* {clang < 602}
 # clang older than 3.5 fail due to https://llvm.org/bugs/show_bug.cgi?id=25753
 # llvm-6.0 builds with clang-3.4 but has codegen issues resulting compiler crashes
 compiler.blacklist-append macports-clang-3.3 macports-clang-3.4
+
+# Override the normal compiler fallback list entirely since we have
+# such specific requirements.
+compiler.fallback   clang
+
+# 3.7 is already needed to bootstrap cmake, so is a good last resort
+# when the system clang is too old.
 if {${os.platform} eq "darwin" && ${os.major} < 18} {
     compiler.fallback-append macports-clang-3.7
 }
@@ -315,14 +323,6 @@ if {${os.platform} eq "darwin" && ${os.major} < 18} {
 if {${subport} eq "lldb-${llvm_version}"} {
     # Xcode 6.4's clang (602.0.53) fails to build lldb with 'thread-local storage is not supported for the current target'
     compiler.blacklist-append {clang < 700}
-}
-
-# blacklist current and future versions if they're not available in order to
-# help break potential dependency cycles.
-foreach ver {6.0 7.0 8.0 devel} {
-    if {![file exists ${prefix}/bin/clang-mp-${ver}]} {
-        compiler.blacklist-append macports-clang-${ver}
-    }
 }
 
 # I'm not sure the exact version of Xcode that has a good enough libtool, but 3.2.6 seems to get past this when 3.1.4 doesn't:
@@ -340,6 +340,15 @@ if {[lsearch -exact $PortInfo(depends_build) port:cctools] != -1} {
         -DCMAKE_LIBTOOL=${prefix}/bin/libtool
 }
 
+# use the system python27 if present
+if {${os.platform} eq "darwin" && ${os.major} >= 11} {
+	set pythonfullpath   /usr/bin/python2.7
+} else {
+	set pythonfullpath   ${prefix}/bin/python2.7
+	depends_lib-append   port:python27
+}
+configure.args-append   -DPYTHON_EXECUTABLE=${pythonfullpath}
+
 platform darwin {
     # Note that we are forcing this choice.  This means that anything linking
     # against llvm-3.5 needs to also be using libc++.  This is possibly
@@ -350,9 +359,11 @@ platform darwin {
     supported_archs i386 x86_64
 
     pre-fetch {
-        if {![file exists /usr/lib/libc++.dylib]} {
-            ui_error "$name requires a C++11 runtime, which your configuration does not allow"
-            error "unsupported configuration"
+        if {${os.major} < 11} {
+            if {![file exists /usr/lib/libc++.dylib]} {
+                ui_error "$name requires a C++11 runtime, which your configuration does not allow"
+                error "unsupported configuration"
+            }
         }
     }
 }
@@ -403,17 +414,16 @@ platform darwin {
     configure.cxxflags-append -std=c++11
 }
 
-pre-fetch {
-    if {${subport} eq "lldb-${llvm_version}"} {
-        if {${os.platform} eq "darwin" && ${os.major} < 11} {
-            depends_build
-            depends_lib
-            depends_run
-            archive_sites
-            pre-fetch {
-                ui_error "${subport} is not supported on OS X Snow Leopard and earlier.  It requires libxpc."
-                return -code error {unsupported platform}
-            }
+if {${subport} eq "lldb-${llvm_version}"} {
+    if {${os.platform} eq "darwin" && ${os.major} < 12} {
+        depends_build
+        depends_lib
+        depends_run
+        archive_sites
+        known_fail yes
+        pre-fetch {
+            ui_error "${subport} is not supported on this os version at present."
+            return -code error {unsupported platform}
         }
     }
 }
@@ -567,10 +577,11 @@ if {${subport} eq "llvm-${llvm_version}"} {
     }
 
     variant analyzer description {Install clang static analyzer} {
-        configure.args-delete \
-            -DCLANG_ENABLE_STATIC_ANALYZER=OFF
-        configure.args-append \
-            -DCLANG_ENABLE_STATIC_ANALYZER=ON
+        # these have to be switched on or off together
+        configure.args-replace -DCLANG_ENABLE_STATIC_ANALYZER=OFF \
+                               -DCLANG_ENABLE_STATIC_ANALYZER=ON
+        configure.args-replace -DCLANG_ENABLE_ARCMT=OFF \
+                               -DCLANG_ENABLE_ARCMT=ON
 
         depends_run-append port:perl5
 
@@ -579,7 +590,7 @@ if {${subport} eq "llvm-${llvm_version}"} {
                 ${worksrcpath}/tools/clang/tools/scan-build/libexec/ccc-analyzer \
                 ${worksrcpath}/tools/clang/tools/scan-build/libexec/c++-analyzer \
                 ${worksrcpath}/tools/clang/tools/scan-build/bin/scan-build
-            reinplace "s|/usr/bin/env python|${prefix}/bin/python2.7|g" \
+            reinplace "s|/usr/bin/env python|${pythonfullpath}|g" \
                 ${worksrcpath}/tools/clang/tools/scan-build/bin/set-xcode-analyzer \
                 ${worksrcpath}/tools/clang/tools/scan-view/bin/scan-view
         }

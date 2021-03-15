@@ -3,64 +3,66 @@
 PortSystem      1.0
 
 name            xorg-xcb-proto
-version         1.13
-revision        1
+version         1.14.1
+revision        0
 categories      x11 devel
 license         X11
 maintainers     {jeremyhu @jeremyhu} openmaintainer
 description     X.org xcb-proto
-homepage        http://xcb.freedesktop.org
+homepage        https://xcb.freedesktop.org
 platforms       darwin macosx
 supported_archs noarch
 long_description XML-XCB protocol descriptions
-master_sites     ${homepage}/dist/
+master_sites     xorg:individual/proto
 
 distname        xcb-proto-${version}
 
-checksums       rmd160  d085d1be1844009f08442113a83b7fdffeae8325 \
-                sha256  7b98721e669be80284e9bbfeab02d2d0d54cd11172b72271e47a2fe875e2bde1 \
-                size    151981
+checksums       rmd160  b62360ed1de93297984d0a80ac598eef59512614 \
+                sha256  f04add9a972ac334ea11d9d7eb4fc7f8883835da3e4859c9afa971efdf57fcc3 \
+                size    143588
 
-use_bzip2       yes
+use_xz          yes
 
+# https://trac.macports.org/ticket/57329
 use_autoreconf  yes
 
 depends_run     port:libxml2
 
-variant python27 conflicts python34 python35 python36 python37 description {Use python 2.7} {
-    depends_lib-append      port:python27
-    configure.python        ${prefix}/bin/python2.7
-    license_noconflict      python27
-}
+# Using depends_build instead of depends_lib for pythonXY even if there is a Python module xcbgen
+# as the xcbgen module is only used to build X bindings like libxcb or xpp [1]. It's intended for
+# neither applications nor end users. In other words, xcbgen is not needed to run applications
+# using XCB.
+#
+# [1] https://github.com/polybar/xpp
 
-variant python34 conflicts python27 python35 python36 python37 description {Use python 3.4} {
-    depends_lib-append      port:python34
-    configure.python        ${prefix}/bin/python3.4
-    license_noconflict      python34
-}
-
-variant python35 conflicts python27 python34 python36 python37 description {Use python 3.5} {
-    depends_lib-append      port:python35
-    configure.python        ${prefix}/bin/python3.5
-    license_noconflict      python35
-}
-
-variant python36 conflicts python27 python34 python35 python37 description {Use python 3.6} {
-    depends_lib-append      port:python36
+variant python36 conflicts python37 python38 python39 description {Use python 3.6} {
+    depends_build-append    port:python36
     configure.python        ${prefix}/bin/python3.6
     license_noconflict      python36
 }
 
-variant python37 conflicts python27 python34 python35 python36 description {Use python 3.7} {
-    depends_lib-append      port:python37
+variant python37 conflicts python36 python38 python39 description {Use python 3.7} {
+    depends_build-append    port:python37
     configure.python        ${prefix}/bin/python3.7
     license_noconflict      python37
 }
 
-if {![variant_isset python34] && ![variant_isset python35] && ![variant_isset python36] && ![variant_isset python37]} {
-    default_variants +python27
+variant python38 conflicts python36 python37 python39 description {Use python 3.8} {
+    depends_build-append    port:python38
+    configure.python        ${prefix}/bin/python3.8
+    license_noconflict      python38
+}
+
+variant python39 conflicts python36 python37 python38 description {Use python 3.9} {
+    depends_build-append    port:python39
+    configure.python        ${prefix}/bin/python3.9
+    license_noconflict      python39
+}
+
+if {![variant_isset python36] && ![variant_isset python37] && ![variant_isset python38]} {
+    default_variants +python39
 }
 
 livecheck.type  regex
-livecheck.url   ${master_sites}?C=M&O=D
+livecheck.url   https://xorg.freedesktop.org/archive/individual/proto/?C=M&O=D
 livecheck.regex xcb-proto-(\\d+(?:\\.\\d+)*)

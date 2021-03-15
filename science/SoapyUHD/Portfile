@@ -3,28 +3,29 @@
 PortSystem          1.0
 PortGroup           github 1.0
 PortGroup           cmake 1.1
-PortGroup           cxx11 1.1
 
 platforms           darwin macosx
 categories          science
 license             GPL-3.0
-maintainers         {@ra1nb0w irh.it:rainbow} {michaelld @michaelld} openmaintainer
+maintainers         {ra1nb0w @ra1nb0w} {michaelld @michaelld} openmaintainer
 
 description         Soapy SDR plugins for UHD devices
 long_description    ${description}
 
-github.setup        pothosware SoapyUHD 0.3.5 soapy-uhd-
-checksums           rmd160  35161c55e199394c6294e080bd627f3a081ae561 \
-                    sha256  3e100e7058d9ada7cd017619d65eec032b1441df335a85b2fa7bda58b0750d4d \
-                    size    32351
-revision            1
+github.setup        pothosware SoapyUHD 0.4.1 soapy-uhd-
+checksums           rmd160 61cb581f09ffd05d9dc0d80565145d1a8380ed80 \
+                    sha256 3b5b49d1c71444ae824d2b1f074002d2bb1a5dcfeec34b2b8bc26e0cf28ce2ef \
+                    size   33855
+revision            0
+
+compiler.cxx_standard 2011
 
 depends_build-append \
     port:pkgconfig
 
 depends_lib-append \
     port:SoapySDR \
-    port:uhd \
+    path:lib/libuhd.dylib:uhd \
     port:boost
 
 configure.args-append \

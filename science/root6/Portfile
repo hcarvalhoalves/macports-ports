@@ -4,16 +4,17 @@ PortSystem          1.0
 
 PortGroup           active_variants               1.1
 PortGroup           cmake                         1.1
+PortGroup           compilers                     1.0
 PortGroup           compiler_blacklist_versions   1.0
 PortGroup           github                        1.0
 PortGroup           select                        1.0
 PortGroup           xcodeversion                  1.0
-PortGroup           cxx11                         1.1
 PortGroup           legacysupport                 1.0
 
-github.setup        root-project root 6-16-00 v
+# Please also check if Gate needs a revbump after root6 update
+github.setup        root-project root 6-22-08 v
 version             [string map {- .} ${github.version}]
-revision            2
+revision            0
 livecheck.version   ${github.version}
 
 # Use git commit
@@ -23,15 +24,18 @@ livecheck.version   ${github.version}
 #livecheck.version   6-14-00
 #revision            0
 
-livecheck.type      regex
-livecheck.url       ${github.homepage}/tags
-livecheck.regex     {v(6[-.]\d[02468][-.]\d{2}).tar.gz}
-
+# extract major version
 set version_major   [lindex [split ${version} .] 0]
 
-checksums           rmd160  2f0a7290099087f29ca4808ad3ed6c3c04729075 \
-                    sha256  fe60cde3f3f909c6840781c4c46f3f040014bd1e65cc56634eccd820f9dbd7bf \
-                    size    164845858
+livecheck.type      regex
+livecheck.url       ${github.homepage}/tags
+# even numbered minor releases are production releases, odd are developmental so skip.
+# Also, skip anything with trailing rcX etc.
+livecheck.regex     {v(6[-.]\d[02468][-.]\d{2}).tar.gz}
+
+checksums           rmd160  4d3a58c71eb006a963f707e9ac6cfd64ffd67388 \
+                    sha256  a27ed6a6c527f41d08b6442e5542f96c659ff410f2357ec80aa95e5a7dc50dac \
+                    size    173100284
 
 name                root${version_major}
 categories          science
@@ -48,52 +52,56 @@ platforms           darwin
 
 dist_subdir         root/${version}_1
 
-# Force a compatible compiler
-set gcc_ver          8
-configure.fc         ${prefix}/bin/gfortran-mp-${gcc_ver}
-configure.f77        ${prefix}/bin/gfortran-mp-${gcc_ver}
-configure.f90        ${prefix}/bin/gfortran-mp-${gcc_ver}
-depends_lib-append   path:lib/libgcc/libgcc_s.1.dylib:libgcc
-depends_build-append port:gcc${gcc_ver}
-compiler.blacklist-append *gcc* {clang < 920} macports-clang-3.3 macports-clang-3.4 \
-                          macports-clang-3.7 macports-clang-4.0 macports-clang-3.9
-compiler.whitelist clang macports-clang-8.0 macports-clang-7.0 macports-clang-6.0 macports-clang-5.0
+# Use compilers PG to pick a fortran compiler
+compilers.choose    f90 fc f77
+compilers.setup     require_fortran -g95 -gcc44 -gcc45 -gcc46 -gcc47 -gcc48 -gcc49 -gcc5 -gcc6 -gcc7 -gcc8
+compiler.blacklist-append *gcc* {clang < 920} {macports-clang-3.[0-9]} {macports-clang-[4-6].0}
+
+# If using Macports clang, make sure its added as a runtime dep as well as cling will need it.
+foreach clang_v { 7.0 8.0 9.0 10 11 } {
+    if { ${configure.compiler} eq "macports-clang-${clang_v}"} {
+        depends_run-append port:clang-${clang_v}
+    }
+}
 
 depends_build-append port:pkgconfig
 
 depends_lib-append  port:expat \
                     port:gmp \
                     port:giflib \
-                    port:jpeg \
+                    path:include/turbojpeg.h:libjpeg-turbo \
                     port:libpng \
                     port:lzma \
                     port:pcre \
                     port:tiff \
-                    port:zlib \
                     port:xz \
                     port:gl2ps \
                     port:lz4 \
                     port:vdt \
                     port:tbb \
                     port:git \
+                    port:xxhashlib \
+                    port:zstd \
                     path:lib/libopenblas.dylib:OpenBLAS \
                     path:lib/libssl.dylib:openssl
-# port:freetype
 
-depends_run         port:root_select
+# Use builtin zlib instead as upstream claims has better performance
+# https://root.cern/content/release-61800
+#                   port:zlib
+
+depends_run-append  port:root_select
 
 cmake.out_of_source yes
+cmake.generator     Ninja
 
 # TODO: the file ${filespath}/${name} would have to be generated on the fly instead
 select.group        root
 select.file         ${filespath}/${name}
 
 # port specific location
-set install_prefix ${prefix}/libexec/root${version_major}
+set install_prefix  ${prefix}/libexec/root${version_major}
 
-patch.pre_args      -p1
-
-#                -DCMAKE_Fortran_COMPILER=${prefix}/bin/gfortran-mp-${configure.f77} \     
+patch.pre_args      -p1   
 
 configure.args-append \
                     -Dgnuinstall=ON \
@@ -106,14 +114,13 @@ configure.args-append \
                     -Dbuiltin_freetype=ON \
                     -Dbuiltin_glew=OFF \
                     -Dbuiltin_pcre=OFF \
-                    -Dbuiltin_zlib=OFF \
+                    -Dbuiltin_zlib=ON \
                     -Dbuiltin_lzma=OFF \
                     -Dbuiltin_tbb=OFF \
                     -Dbuiltin_afterimage=ON \
                     -Ddavix=OFF \
                     -Dfftw3=OFF \
                     -Dkrb5=OFF \
-                    -Dldap=OFF \
                     -Dmysql=OFF \
                     -Dsqlite=OFF \
                     -Dodbc=OFF \
@@ -123,7 +130,7 @@ configure.args-append \
                     -Droofit=OFF \
                     -Dssl=ON \
                     -Dxml=OFF \
-                    -Dpython=OFF \
+                    -Dpyroot=OFF \
                     -Dfitsio=OFF \
                     -Dgsl_shared=OFF \
                     -Dbuiltin_gsl=OFF \
@@ -136,7 +143,6 @@ configure.args-append \
                     -Dtmva=OFF \
                     -Dqt=OFF \
                     -Dqtgsi=OFF \
-                    -Dbonjour=OFF \
                     -Dgviz=OFF \
                     -Dsoversion=ON \
                     -Dcxx11=ON \
@@ -149,52 +155,34 @@ configure.args-append \
                     -Dgenvector=ON \
                     -Dmemstat=ON \
                     -Dunuran=ON \
-                    -Dtable=ON \
                     -Dgdml=ON \
                     -Dhttp=ON \
                     -Dvc=OFF \
                     -Dastiff=ON \
                     -Dgeocad=OFF \
                     -Dr=OFF \
-                    -Droot7=OFF \
+                    -Droot7=ON \
+                    -Dwebgui=ON \
                     -Dbuiltin_veccore=OFF \
                     -DPNG_LIBRARY=${prefix}/lib/libpng.dylib \
                     -DPNG_PNG_INCLUDE_DIR=${prefix}/include
 
-# clad cling plugin fails to build
-# https://root-forum.cern.ch/t/build-failure-with-6-16-00/32434
-configure.args-append -Dclad=OFF
-
-# Enable C++17 on 10.14 (Darwin18)
-#        C++14 on 10.9  (Darwin13)
-if        { ${os.major} >= 18 } {
-    configure.args-replace  -Dcxx17=OFF -Dcxx17=ON
-} elseif  { ${os.major} >= 13 } {
-    configure.args-replace  -Dcxx14=OFF -Dcxx14=ON
-} else {
-    # force use of MP clang 5.0
-    compiler.blacklist-append macports-clang-8.0 macports-clang-7.0 macports-clang-6.0
-    compiler.whitelist macports-clang-5.0
+# Work-around until ROOT supports building for macOS 11.X as deployment target.
+if { ${os.major} >= 20 } {
+    macosx_deployment_target 10.16
 }
 
-# Setup the C++ runtime on OSX10.8 (Darwin 12) and older
-if { ${os.major} <= 12 && ${configure.cxx_stdlib} ne "libc++" } {
-    # Use macports stdc++ on older systems
-    if       { ${configure.compiler} eq "macports-clang-5.0" } {
-        require_active_variants clang-5.0 libstdcxx
-    } elseif { ${configure.compiler} eq "macports-clang-6.0" } {
-        require_active_variants clang-6.0 libstdcxx
-    } elseif { ${configure.compiler} eq "macports-clang-7.0" } {
-        require_active_variants clang-7.0 libstdcxx
-    } elseif { ${configure.compiler} eq "macports-clang-8.0" } {
-        require_active_variants clang-8.0 libstdcxx
-    }
-    default_variants-append +libstdcxx
-    pre-configure {
-        foreach f [ exec find ${worksrcpath} -name "*.cmake" -or -name "*.in" -or -name "Makefile.*" ] {
-            reinplace "s|stdlib=libc++|stdlib=${configure.cxx_stdlib}|g" $f
-        }
-    }
+# https://root-forum.cern.ch/t/v6-22-00-build-error-on-macos/40239
+configure.args-append -Druntime_cxxmodules=OFF
+
+# Enable C++17 on 10.14 and newer (Darwin18+)
+#        C++14 otherwise
+if        { ${os.major} >= 18 } {
+    compiler.cxx_standard 2017
+    configure.args-replace  -Dcxx17=OFF -Dcxx17=ON
+} else {
+    compiler.cxx_standard 2014
+    configure.args-replace  -Dcxx14=OFF -Dcxx14=ON
 }
 
 # Configure the C++ runtime to use
@@ -202,11 +190,15 @@ if { ${configure.cxx_stdlib} ne "libc++" } {
     configure.args-replace -Dlibcxx=ON -Dlibcxx=OFF
 }
 
-# Configure the graphics backend. cocoa on OSX10.8 and newer. X11 otherwise
-if { ${os.major} >= 12 } {
-    default_variants-append +cocoa
+# Configure the graphics backend. cocoa on OSX10.12 and newer. X11 otherwise
+if { ${os.major} >= 16 } {
+    if {![variant_isset x11]} {
+        default_variants-append +cocoa
+    }
 } else {
-    default_variants-append +x11
+    if {![variant_isset cocoa]} {
+        default_variants-append +x11
+    }
 }
 
 # Enable xrootd support by default
@@ -214,13 +206,25 @@ if { ${os.major} >= 12 } {
     default_variants-append +xrootd
 }
 
-# No longer compiles on OSX10.6, due to update to internal LLVM version.
-# Disable build on this platform.
+# No longer compiles on OSX10.6 or older.
 if { ${os.major} <= 10 } {
+    known_fail yes
     pre-fetch {
-        ui_error "${name} is not supported on this OSX release."
+        ui_error "${name} is not supported on this OSX release (Darwin ${os.major})."
         return -code error "Unsupported OSX version"
     }
+}
+
+if { ${os.major} >= 20 } {
+    # Starting with macOS 11 the SDK version changes on incremental OS updates,
+    # e.g. going from 11.0 to 11.1. This causes problems with root as it bakes
+    # the SDK version (sysroot) into a number of places in the installed files
+    # and thus users will run into problems if they try and use a binary built on
+    # one incremental OS version, on a different one with a different SDK available.
+    # This is probably not the only port that will have this problem, and we might
+    # need to come up with a better policy in MacPorts to handle this, but until then
+    # unset the sdk version to use, which causes a fallback to the unversioned SDK path.
+    configure.sdk_version
 }
 
 pre-configure {
@@ -231,6 +235,11 @@ pre-configure {
     foreach f [ exec find ${worksrcpath} -type f -and -not -name "shtest-encoding.py" -and -name "*.py" ] {
         reinplace -q "s|${pystringtoreplace}|/usr/bin/python|g" $f
     }
+    # C++17 does not allow 'register' storage class specifier [-Wregister]
+    # register myuint o,ph,pl,ah,al;
+    # ^~~~~~~~~
+    # To be removed at a later date
+    reinplace "s|register\ myuint|myuint|g" math/mathcore/src/mixmax.icc
 }
 
 post-destroot {
@@ -273,6 +282,8 @@ post-destroot {
     # uncoment some settings
     reinplace "s|#\*\.\*\.Root\.TTFontPath|\*\.\*\.Root\.TTFontPath|g" ${rootsystemrcfile}
     reinplace "s|#Unix\.\*\.Gui.IconPath|Unix\.\*\.Gui\.IconPath|g" ${rootsystemrcfile}
+    # fix libGLEW.dylib install location
+    move ${destroot}${install_prefix}/lib/libGLEW.dylib ${destroot}${install_prefix}/lib/root/
 }
 
 set run_port_select "No"
@@ -303,10 +314,6 @@ variant native description {Build with best native support for local CPU capabil
     configure.cflags-append    -O3 -mtune=native
     configure.cppflags-append  -O3 -mtune=native
     configure.fflags-append    -O3 -mtune=native
-}
-
-variant root7 description {Enable ROOT7 preview} {
-    configure.args-replace  -Droot7=OFF -Droot7=ON
 }
 
 variant qt4 description {Enable QT4 support} {
@@ -348,13 +355,6 @@ variant graphviz description {Build with graphviz support} {
     depends_lib-append      path:bin/dot:graphviz
 }
 
-variant avahi description {Build with avahi support} {
-    configure.args-replace  -Dbonjour=OFF -Dbonjour=ON
-#   configure.args-append   -DAVAHI_INCLUDE_DIR="${prefix}/include" \
-#                           -DAVAHI_client_LIBRARY="${prefix}/lib"
-    depends_lib-append      port:avahi
-}
-
 variant fftw3 description {Build with fftw3 support} {
     configure.args-replace  -Dfftw3=OFF -Dfftw3=ON
     configure.args-append   -DFFTW_INCLUDE_DIR="${prefix}/include" \
@@ -373,8 +373,6 @@ variant gsl description {Build with gsl support} {
 
 variant fitsio description {Build with fitsio support} {
     configure.args-replace  -Dfitsio=OFF -Dfitsio=ON
-    configure.args-append   -DCFITSIO_INCLUDE_DIR="${prefix}/include" \
-                            -DCFITSIO_LIBRARIES="${prefix}/lib"
     depends_lib-append      port:cfitsio
 }
 
@@ -383,11 +381,6 @@ variant odbc description {Build with odbc support} {
     configure.args-append   -DODBC_INCLUDE_DIR="${prefix}/include" \
                             -DODBC_LIBRARY="${prefix}/lib/libiodbc.dylib"
     depends_lib-append      port:libiodbc
-}
-
-variant ldap description {Build with ldap support} {
-    configure.args-replace  -Dldap=OFF -Dldap=ON
-    depends_lib-append      port:openldap
 }
 
 variant roofit description {Build the RooFit advanced fitting package} {
@@ -399,7 +392,7 @@ variant tmva description {Build the TMVA package} {
 }
 
 variant opengl description {Build with opengl support} {
-    configure.args-replace  -Dopengl=OFF -Dopengl=ON 
+    configure.args-replace  -Dopengl=OFF -Dopengl=ON
     configure.args-replace  -Dbuiltin_glew=OFF -Dbuiltin_glew=ON
 }
 
@@ -408,13 +401,13 @@ variant opengl description {Build with opengl support} {
 # ========================================================================================
 
 # List of possible python versions
-set python_versions { 2.7 3.5 3.6 3.7 }
+set python_versions { 2.7 3.5 3.6 3.7 3.8 3.9 }
 # Enable python variant by default on OSX 10.9 and newer.
 # Disabled on older systems due to an issue fetching the source for
 # the various python dependencies due to these systems having out of
 # date SSL versions that are rejected by the upstream server.
 if { ${os.major} >= 13 } {
-    set default_python_variant +python37
+    set default_python_variant +python38
 } else {
     set default_python_variant ""
 }
@@ -463,7 +456,7 @@ foreach py_ver ${python_versions} {
 
         # Setup python
         set mypydir ${frameworks_dir}/Python.framework/Versions/${py_ver}
-        configure.args-replace  -Dpython=OFF -Dpython=ON
+        configure.args-replace  -Dpyroot=OFF  -Dpyroot=ON
         configure.args-append   -DPYTHON_INCLUDE_DIR="${mypydir}/Headers" \
                                 -DPYTHON_EXECUTABLE="${mypydir}/bin/python${py_ver}"
         # Explicitly set python library
@@ -472,30 +465,51 @@ foreach py_ver ${python_versions} {
         } elseif { [ file exists "${prefix}/lib/libpython${py_ver}.dylib" ] } {
             configure.args-append -DPYTHON_LIBRARY="${prefix}/lib/libpython${py_ver}.dylib"
         }
-        depends_lib-append      port:python${py_ver_no_dot} port:py${py_ver_no_dot}-numpy port:py${py_ver_no_dot}-jupyter port:py${py_ver_no_dot}-gnureadline port:py${py_ver_no_dot}-metakernel
-        
+        depends_lib-append      port:python${py_ver_no_dot} \
+                                port:py${py_ver_no_dot}-numpy \
+                                port:py${py_ver_no_dot}-jupyter \
+                                port:py${py_ver_no_dot}-gnureadline \
+                                port:py${py_ver_no_dot}-metakernel
+
         post-destroot {
-            # Install PyROOT lib in the correct place
+            # Install PyROOT in the correct place
+            set mypyincdir  ${frameworks_dir}/Python.framework/Versions/${active_python_version}/include
             set mypylibdir  ${frameworks_dir}/Python.framework/Versions/${active_python_version}/lib/python${active_python_version}
             set mypysitedir ${mypylibdir}/site-packages/
             file mkdir ${destroot}${mypysitedir}
+            # Move X.py files to site-packages
             foreach pyfile [glob ${destroot}${install_prefix}/lib/root/*.py*] { move $pyfile ${destroot}${mypysitedir}/ }
-            ln -sf ${install_prefix}/lib/root/libPyROOT.so ${destroot}${mypylibdir}/
-            ln -sf ${install_prefix}/lib/root/libPyROOT.so ${destroot}${mypysitedir}/
+            # Fix PyROOT....
+            set py_ver_dash [join [split ${py_ver} "."] "_"]
+            foreach f [ exec find ${destroot}${install_prefix}/lib/root/ -name "libcppyy*${py_ver_dash}*" ] {
+                set fname       [file tail ${f}]
+                set fname_nover [string map "${py_ver_dash}. ." ${fname}]
+                ln -s ${fname} ${destroot}${install_prefix}/lib/root/${fname_nover}
+            }
+            # See also https://trac.macports.org/ticket/58942
+            foreach fname { cppyy cppyy_backend JsMVA JupyROOT ROOT } {
+                ln -s ${install_prefix}/lib/root/${fname} ${destroot}${mypysitedir}/
+            }
+            foreach fname [ glob -tails -directory ${destroot}${install_prefix}/lib/root/ lib* ] {
+                ln -s ${install_prefix}/lib/root/${fname} ${destroot}${mypysitedir}/
+            }
+            # Fix cppyy loader imports...
+            set cppyy_lib_dir ${install_prefix}/lib/root/cppyy_backend/lib
+            file mkdir ${destroot}${cppyy_lib_dir}
+            foreach fname [ glob -tails -directory ${destroot}${install_prefix}/lib/root/ libcppyy* ] {
+                ln -s ${install_prefix}/lib/root/${fname} ${destroot}${cppyy_lib_dir}/
+            }
+            file mkdir ${destroot}${mypyincdir}
+            ln -s ${install_prefix}/include/root/CPyCppyy ${destroot}${mypyincdir}/
             # Fix python version in scripts
             set pystringtoreplace "/usr/bin/python"
             foreach f [ exec find ${destroot}${install_prefix} -type f -and -name "*.py" ] {
                 reinplace -q "s|${pystringtoreplace}|${prefix}/bin/python${active_python_version}|g" $f
             }
-            # Support for juypter
-            ln -s ${install_prefix}/lib/root/JupyROOT       ${destroot}${mypysitedir}/
-            ln -s ${install_prefix}/lib/root/JsMVA          ${destroot}${mypysitedir}/
-            ln -s ${install_prefix}/lib/root/libJupyROOT.so ${destroot}${mypysitedir}/
-            ln -s ${install_prefix}/lib/root/libJupyROOT.so ${destroot}${mypylibdir}/
         }
         # patch the command ROOT assumes to run for juypter
         pre-configure {
-            foreach f [ exec find ${worksrcpath} -type f -and -name "nbmain.cxx" ] {
+            foreach f [ exec find ${worksrcpath}/ -type f -and -name "nbmain.cxx" ] {
                 reinplace "s|\"jupyter\"|\"jupyter-${active_python_version}\"|g" $f
             }
         }
@@ -524,7 +538,7 @@ variant sqlite3 description {Build with sqlite3 support} {
     depends_lib-append      port:sqlite3
 }
 
-variant mysql conflicts mysql mariadb percona description {Build with mysql56 support} {
+variant mysql conflicts mariadb percona description {Build with mysql support} {
     set ver 57
     configure.args-replace  -Dmysql=OFF -Dmysql=ON
     configure.args-append   -DMYSQL_CONFIG_EXECUTABLE=${prefix}"/lib/mysql${ver}/bin/mysql_config"

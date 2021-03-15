@@ -4,12 +4,13 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-pandas
-version             0.24.2
+version             1.2.3
+revision            1
 categories-append   science
 license             BSD
 platforms           darwin
 
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 
 maintainers         {stromnov @stromnov} openmaintainer
 
@@ -17,28 +18,54 @@ description         Powerful data structures for data analysis and statistics
 
 long_description    ${description}
 
-homepage            http://pandas.pydata.org
-master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}
+homepage            https://pandas.pydata.org
 
-distname            ${python.rootname}-${version}
-
-checksums           rmd160  a4b18e58b6be7bf13893dbccaf73542918dda1c8 \
-                    sha256  4f919f409c433577a501e023943e582c57355d50a724c589e78bc1d551a535a2 \
-                    size    11837693
+checksums           rmd160  a1e2c680736061b4ad26e0d3cdd9ee0ab0f00be9 \
+                    sha256  df6f10b85aef7a5bb25259ad651ad1cc1d6bb09000595cab47e718cbac250b1d \
+                    size    5466356
 
 if {${name} ne ${subport}} {
+    if {${python.version} eq 27} {
+        version             0.24.2
+        revision            1
+        distname            ${python.rootname}-${version}
+        checksums           rmd160  a4b18e58b6be7bf13893dbccaf73542918dda1c8 \
+                            sha256  4f919f409c433577a501e023943e582c57355d50a724c589e78bc1d551a535a2 \
+                            size    11837693
+
+        # fix implicit declaration of tolower_ascii()
+        patchfiles-append   patch-a3c158dad2.diff
+
+        depends_lib-append  port:py${python.version}-scipy \
+                            port:py${python.version}-tables \
+                            port:py${python.version}-matplotlib \
+                            port:py${python.version}-bottleneck \
+                            port:py${python.version}-numexpr
+    } elseif {${python.version} eq 35} {
+        version             0.25.3
+        revision            0
+        distname            ${python.rootname}-${version}
+        checksums           rmd160  cb526595c8b38bd4973a49ebebb61c165421628b \
+                            sha256  52da74df8a9c9a103af0a72c9d5fdc8e0183a90884278db7f386b5692a2220a4 \
+                            size    12632585
+    } elseif {${python.version} eq 36} {
+        version             1.1.5
+        revision            0
+        distname            ${python.rootname}-${version}
+        checksums           rmd160  593ee2c082df6b4edc85670cd0221dfec5b51b30 \
+                            sha256  f10fc41ee3c75a474d3bdf68d396f10782d013d7f67db99c0efbfd0acb99701b \
+                            size    5229894
+    }
+
+    use_parallel_build  no
+
     depends_build-append \
                         port:py${python.version}-setuptools \
                         port:py${python.version}-cython
 
-    depends_lib-append  port:py${python.version}-numpy \
-                        port:py${python.version}-dateutil \
-                        port:py${python.version}-scipy \
-                        port:py${python.version}-tables \
-                        port:py${python.version}-matplotlib \
-                        port:py${python.version}-bottleneck \
-                        port:py${python.version}-numexpr \
-                        port:py${python.version}-tz
+    depends_lib-append  port:py${python.version}-dateutil \
+                        port:py${python.version}-tz \
+                        port:py${python.version}-numpy
 
     livecheck.type      none
 }

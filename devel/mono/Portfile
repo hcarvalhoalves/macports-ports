@@ -1,12 +1,11 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem              1.0
-PortGroup               cxx11 1.1
 PortGroup               legacysupport 1.0
 
 name                    mono
 # please update msbuild when updating mono
-version                 5.20.1.19
+version                 6.10.0.104
 revision                0
 epoch                   1
 categories              devel lang mono
@@ -19,35 +18,49 @@ long_description        Mono is an effort to create an open source implementatio
 
 homepage                https://www.mono-project.com/
 master_sites            https://download.mono-project.com/sources/mono/
-use_bzip2               yes
+use_xz                  yes
 universal_variant       no
 
-checksums               rmd160  9df6ec7e93f0c6ac19342b87ba4cd9dc7c676669 \
-                        sha256  0574b61efb9bfc3364211d03d87a12c91dc7b03e8d6242cd4d8d953ef145d468 \
-                        size    246790204
+checksums               rmd160  8285b273ddcc00840bba17df4da11b8b668ed804 \
+                        sha256  b8d6eb70a252d2efad8384d66b529883dc59e581565d617fa57f8e79317e332c \
+                        size    292616252
 
-patchfiles-append       patch-aot-compiler.c.diff
+patchfiles-append       patch-aot-compiler.c.diff \
+                        dynamic_lookup-11.patch
 if {!${configure.ccache}} {
     patchfiles-append   patch-no_ccache.diff
 }
 
-depends_build           port:cmake \
+depends_build           path:bin/cmake:cmake \
                         port:ninja \
                         port:pkgconfig \
                         bin:perl:perl5 \
-                        port:cctools
+                        port:cctools \
+                        port:python38
 
 depends_lib             port:zlib \
                         port:libiconv \
-                        port:gettext
+                        port:gettext \
+                        port:kerberos5
 
 configure.args          --enable-nls \
                         --enable-dtrace=no \
                         --with-sigaltstack=no \
                         --with-libgdiplus=${prefix}/lib/libgdiplus.dylib
 
+configure.cflags-append \
+    -Wno-error=implicit-function-declaration
+
 test.run                yes
 test.target             check
+
+compiler.cxx_standard   2011
+
+configure.python        ${prefix}/bin/python3.8
+
+# avoid conflict with port brotli
+configure.cppflags-delete -I${prefix}/include
+configure.ldflags-delete  -L${prefix}/lib
 
 post-patch {
     if {${os.major} < 9} {
@@ -63,7 +76,7 @@ post-patch {
             ${worksrcpath}/mono/utils/mach-support-x86.c
     }
 
-    # Ensure we are UsingTheRightCompiler (https://trac.macports.org/wiki/UsingTheRightCompiler)
+    # ensure we are UsingTheRightCompiler (https://trac.macports.org/wiki/UsingTheRightCompiler)
     reinplace "s:__MACPORTS_CC__:${configure.cc}:g" \
         ${worksrcpath}/mono/mini/aot-compiler.c
 }
@@ -74,10 +87,6 @@ post-destroot {
     xinstall -d ${destroot}${docdir}
     xinstall -m 0644 -W ${worksrcpath} COPYING.LIB NEWS README.md \
         ${destroot}${docdir}
-}
-
-variant unixodbc description {map unixodbc instead of libiodbc to odbc32.dll} {
-    patchfiles-append patch-odbc32.diff
 }
 
 livecheck.url           https://www.mono-project.com/download/stable/

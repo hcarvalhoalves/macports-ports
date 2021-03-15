@@ -4,8 +4,11 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-xdis
-version             3.9.1
+version             5.0.7
+# Note if you update this, make sure it supports the newest versions
+# of pythonXY in magics.py
 platforms           darwin
+supported_archs     noarch
 license             GPL-2
 maintainers         {khindenburg @kurthindenburg} openmaintainer
 
@@ -20,26 +23,30 @@ long_description \
     (NYU) called ACOR that estimates the autocorrelation time \
     of time series data very quickly.
 
-homepage            https://pypi.python.org/pypi/${python.rootname}/
-master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}
-distname            ${python.rootname}-${version}
+homepage            https://github.com/rocky/python-xdis
 
-checksums           rmd160  0a22d9a1fbdf2953f69c135a56a5cfbd76d038ec \
-                    sha256  b95337ee772ade4f8038a100f06aaf5ab9e975170fe9afafc9bd29964bc8cc42 \
-                    size    182610
+checksums           rmd160  d07632db86822b33d447085dfbe8952a933069a5 \
+                    sha256  4de95534c1096609be6950061ea25ffb4ecb89dbaca7469de4f9e2e4ee46a0ca \
+                    size    233290
 
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38
 
 if {${name} ne ${subport}} {
-    depends_build-append    port:py${python.version}-setuptools \
-                            port:py${python.version}-pytest-runner
+    depends_lib-append  port:py${python.version}-click \
+                        port:py${python.version}-setuptools \
+                        port:py${python.version}-six
 
-    depends_lib-append  port:py${python.version}-click
+    post-patch {
+        reinplace "s|PYTHON ?= python|PYTHON ?= ${python.bin}|g" ${worksrcpath}/test/Makefile
+    }
 
-    depends_test-append port:py${python.version}-py \
-                        port:py${python.version}-pytest
-    test.run            yes
-    test.env            PYTHONPATH=${worksrcpath}/build/lib
+    depends_test-append port:py${python.version}-pytest
+
+    test.run        yes
+    test.dir        ${build.dir}/test
+    test.cmd        make
+    test.target     check-full
+    test.env        PYTHONPATH=${worksrcpath}/build/lib
 
     livecheck.type  none
 }

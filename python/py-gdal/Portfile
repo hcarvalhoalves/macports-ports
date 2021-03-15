@@ -2,50 +2,46 @@
 
 PortSystem          1.0
 PortGroup           python 1.0
-PortGroup           cxx11 1.1
-
-set _name           GDAL
-set _n              [string index ${_name} 0]
 
 name                py-gdal
-version             2.3.2
+python.rootname     GDAL
+# keep version in sync with gdal; rebuilt after gdal update
+version             3.2.1
+revision            0
+
 categories-append   gis
 platforms           darwin
 license             MIT
 maintainers         {petr @petrrr} openmaintainer
 
 description         GDAL: Geospatial Data Abstraction Library
-long_description \
-    This Python package and extensions are a number of tools for programming \
-    and manipulating the GDAL Geospatial Data Abstraction Library.
+long_description    This Python package and extensions are a number of tools for programming \
+                    and manipulating the GDAL Geospatial Data Abstraction Library.
 
-homepage            http://www.gdal.org
-master_sites        pypi:${_n}/${_name}/
-distname            ${_name}-${version}
+homepage            https://www.gdal.org
 
-checksums           rmd160  5444e9a39995d11d20ebbfeeb31058cdb2bde154 \
-                    sha256  cffd44249335159402a3d3d39c74c3035b5da091d9097ee93cd99c7a03681b78 \
-                    size    556883
+checksums           rmd160  5b7a2df1517cba4b4bd1a22164271fba6ccd8e25 \
+                    sha256  41e928fbe6880a7b38124b8dff9efe82f3d4e1bc17f771fda46bf222289ab9a4 \
+                    size    604248
 
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 
 if {${name} ne ${subport}} {
-    depends_lib-append     port:gdal \
-                           port:py${python.version}-numpy
-    patch {
+    compiler.cxx_standard   2011
+
+    depends_lib-append \
+                    port:gdal \
+                    port:py${python.version}-numpy
+
+    post-patch {
         reinplace "s|../../apps/|${prefix}/bin/|" ${worksrcpath}/setup.cfg
     }
 
     post-destroot {
-        set dest_doc ${destroot}${prefix}/share/doc/${subport}
-        xinstall -m 755 -d ${dest_doc}
-
-        xinstall ${worksrcpath}/README.txt ${dest_doc}
+        set docdir ${prefix}/share/doc/${subport}
+        xinstall -d ${destroot}${docdir}
+        xinstall -m 0644 -W ${worksrcpath} README.rst ${destroot}${docdir}
     }
 
     livecheck.type  none
-} else {
-    livecheck.type  regex
-    livecheck.url   https://pypi.python.org/pypi/${_name}/json
-    livecheck.regex "\"${_name}-(\[.\\d\]+)\\.tar\\.gz\""
 }

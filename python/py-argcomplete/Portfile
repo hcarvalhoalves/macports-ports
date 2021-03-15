@@ -4,23 +4,21 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-argcomplete
-version             1.9.4
+version             1.12.2
 platforms           darwin
 license             Apache-2
 maintainers         {outlook.com:mohd.akram @mohd-akram} openmaintainer
 
 description         Bash tab completion for argparse
-long_description    ${description}
+long_description    {*}${description}
 
-homepage            https://argcomplete.readthedocs.io
-master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}
-distname            ${python.rootname}-${version}
+homepage            https://kislyuk.github.io/argcomplete
 
-checksums           rmd160  13866fe7923744e726c843da97a807616296d2d2 \
-                    sha256  06c8a54ffaa6bfc9006314498742ec8843601206a3b94212f82657673662ecf1 \
-                    size    47471
+checksums           rmd160  c66a9be107522996df3bd600da541d2dd6e754c7 \
+                    sha256  de0e1282330940d52ea92a80fea2e4b9e0da1932aaa570f84d268939d1897b04 \
+                    size    53861
 
-python.versions     27 37
+python.versions     36 37 38 39
 
 if {${name} ne ${subport}} {
     depends_build   port:py${python.version}-setuptools

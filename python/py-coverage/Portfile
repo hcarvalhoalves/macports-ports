@@ -4,8 +4,11 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-coverage
-version             4.5.3
+version             5.4
+revision            0
+
 categories-append   devel
+platforms           darwin
 maintainers         {petr @petrrr} openmaintainer
 license             Apache-2
 
@@ -16,17 +19,13 @@ long_description    Coverage measures code coverage, typically during test \
                     determine which lines are executable, and which have \
                     been executed.
 
-platforms           darwin
-
 homepage            https://github.com/nedbat/coveragepy
-master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}
-distname            ${python.rootname}-${version}
 
-checksums           rmd160  29ccb06fb2829810952a75b117dd122af94bb1cb \
-                    sha256  9de60893fb447d1e797f6bf08fdf0dbcda0c1e34c1b06c92bd3a363c0ea8c609 \
-                    size    384747
+checksums           rmd160  ee5237d352844a7685a1e54c82bda8d5c570ded7 \
+                    sha256  6d2e262e5e8da6fa56e774fb8e2643417351427604c2b177f8e8c5f75fc928ca \
+                    size    687727
 
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 
 if {${name} ne ${subport}} {
     depends_lib-append \

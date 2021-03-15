@@ -4,12 +4,12 @@ PortSystem      1.0
 PortGroup       active_variants 1.1
 
 name            claws-mail
-version         3.17.3
-revision        1
+version         3.17.6
+revision        2
 categories      mail news
 platforms       darwin
 license         GPL-3+
-maintainers     {pmetzger @pmetzger} openmaintainer
+maintainers     nomaintainer
 
 description     A lightweight and very featureful GTK+ based e-mail and news client
 
@@ -23,9 +23,9 @@ long_description Currently, many features are supported in Claws Mail \
 homepage        http://www.claws-mail.org/
 master_sites    ${homepage}releases/
 
-checksums       rmd160  0c87c33b0e615ddf2c41d9cf87255f7d4725d42d \
-                sha256  504e1f5a6f0880192662826ac07bcd083c3167b3db7143858617d6c51233d2f2 \
-                size    6164392
+checksums       rmd160  ed3e465c3a5f56a5fde21328b4694136d0ec2a84 \
+                sha256  15e4c4344b0c0781d9bb99c71e69dc2d98b8a65c3ce7dde7de1c3f9001c705e8 \
+                size    6400692
 
 use_xz          yes
 
@@ -49,7 +49,7 @@ depends_lib     port:gtk2 \
                 port:poppler \
                 port:ghostscript \
                 port:bogofilter \
-                port:webkit2-gtk
+                port:gumbo-parser
 
 # claws uses gdk/gdkx.h, which is not installed by gtk2 +quartz.
 require_active_variants \
@@ -61,10 +61,20 @@ if {${os.platform} eq "darwin" && ${os.version} < 12} {
     patchfiles  patch-claws-mail-no-export-dynamic-on-older-ld-versions.diff
 }
 
+# as of 3.17.4 litehtml_viewer plugin requires C++11
+compiler.cxx_standard \
+                2011
+
+# override faulty check for C++ compiler
+configure.env-append \
+                REAL_CXX=${configure.cxx}
+
 configure.args  --disable-jpilot \
                 --disable-acpi_notifier-plugin \
                 --disable-bsfilter-plugin \
                 --disable-clamd-plugin \
+                --disable-dbus \
+                --disable-fancy-plugin \
                 --disable-notification-plugin \
                 --disable-perl-plugin \
                 --disable-python-plugin \
@@ -76,4 +86,10 @@ configure.args  --disable-jpilot \
                 --enable-ipv6 \
                 --enable-crash-dialog
 
+variant fancy description {Build fancy plugin using deprecated webkit-gtk-1.0} {
+    depends_lib-append \
+                port:webkit-gtk
+    configure.args-delete \
+                --disable-fancy-plugin
+}
 livecheck.regex ${name}-(\[0-9.\]+)${extract.suffix}

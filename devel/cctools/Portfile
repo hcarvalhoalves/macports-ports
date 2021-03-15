@@ -1,21 +1,24 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem              1.0
+PortGroup               cltversion 1.0
 
 name                    cctools
-# Xcode 10.0
-version                 921
-set ld64_version        409.12
-revision                2
+
+# Xcode 11.3.1
+version                 949.0.1
+set ld64_version        530
+revision                0
+
 categories              devel
 platforms               darwin
-maintainers             {jeremyhu @jeremyhu} openmaintainer
+maintainers             {jeremyhu @jeremyhu} {kencu @kencu} openmaintainer
 license                 {APSL-2 GPL-2+}
 installs_libs           no
 description             Compiler Tools for Mac OS X and Darwin
 long_description        A set of essential tools to support development \
                         on Mac OS X and Darwin. Conceptually similar \
-                        similar to binutils on other platforms.
+                        to binutils on other platforms.
 
 homepage                https://opensource.apple.com/source/${name}/
 master_sites            https://opensource.apple.com/tarballs/${name}:main \
@@ -23,35 +26,52 @@ master_sites            https://opensource.apple.com/tarballs/${name}:main \
 
 distfiles               ld64-${ld64_version}.tar.gz:ld64 ${name}-${version}.tar.gz:main
 
-checksums               ld64-409.12.tar.gz \
-                        rmd160  7d616147f3021872962850b1d5909f84a202d5d3 \
-                        sha256  c34561b44210668c51e49efdb7d1e814a33056051ac7698571605ab968d31d5f \
-                        size    730856 \
-                        cctools-921.tar.gz \
-                        rmd160  fedeb6bae83f0322cd131895cc39c525bf549581 \
-                        sha256  53449a7f2e316c7df5e6b94fd04e12b6d0356f2487d77aad3000134e4c010cc5 \
-                        size    1755929
+checksums               ld64-530.tar.gz \
+                        rmd160  793d012a611de5a044db3f97c6a9ec149072aff6 \
+                        sha256  ee37f0487601c08c7d133bc91cad2e9084d00d02aa4709d228a9a065960aa187 \
+                        size    744871 \
+                        cctools-949.0.1.tar.gz \
+                        rmd160  6412d9c5aea6aadd88cd9abdde6c1383f103b582 \
+                        sha256  830485ac7c563cd55331f643952caab2f0690dfbd01e92eb432c45098b28a5d0 \
+                        size    1968671
 
 patchfiles              cctools-829-lto.patch \
                         PR-37520.patch \
-                        cctools-839-static-dis_info.patch \
                         PR-12400897.patch \
                         cctools-862-prunetrie.patch \
                         cctools-921-noavx512.patch \
-                        as-try-clang.patch
+                        as-try-clang.patch \
+                        cctools-949-libstuff-add-args-c.diff \
+                        cctools-949-redo_prebinding-add-segg-addr-table-header.diff \
+                        cctools-949-build-with-SDKs-older-than-1012.diff \
+                        cctools-949-nm-allow-no-lto-support.diff \
+                        cctools-949-write_object-fix.diff
+
+# small fixes and sdk adjustments made to 949 but
+# there is a bug in cctools as/write_object.c in 949 that needs upstreaming
+# see https://github.com/macports/macports-ports/pull/9796
+
+post-patch {
+    if {![variant_isset xcode]} {
+        system "cd ${workpath}/ld64-${ld64_version} && patch -p0 < ${filespath}/ld64-512-work-around-older-compilers-without-has-include.diff"
+    }
+}
 
 if {${os.major} < 11} {
     patchfiles-append snowleopard-strnlen.patch
 }
 
-set all_llvm_variants {llvm39 llvm40 llvm50 llvm60 llvm70 llvm80 llvmdev}
+set all_llvm_variants {llvm10 llvmdev}
 if {${os.major} < 12} {
     lappend all_llvm_variants llvm34
 }
 if {${os.major} < 14} {
     lappend all_llvm_variants llvm37
 }
-array set llvm_variant_version {llvm34 3.4 llvm37 3.7 llvm39 3.9 llvm40 4.0 llvm50 5.0 llvm60 6.0 llvm70 7.0 llvm80 8.0 llvmdev devel}
+if {${os.major} < 19} {
+    lappend all_llvm_variants llvm50 llvm60 llvm70 llvm80 llvm90
+}
+array set llvm_variant_version {llvm34 3.4 llvm37 3.7 llvm50 5.0 llvm60 6.0 llvm70 7.0 llvm80 8.0 llvm90 9.0 llvm10 10 llvmdev devel}
 set llvm_version {}
 
 foreach variantname $all_llvm_variants {
@@ -73,25 +93,44 @@ proc some_llvm_variant_set {} {
 }
 
 if { ![some_llvm_variant_set] && ![variant_isset xcode] } {
-    if {${os.major} == 12 || ${os.major} == 13} {
+    # Xcode 11 has a newer cctools than the current cctools port
+    # Check if Xcode is 11 or newer, or if not installed if the CLT is 11 or newer
+    # This +xcode cutoff can be moved up as the cctools port is updated
+    set xcode_ok [ expr { ${xcodeversion} ne "none" && [ vercmp ${xcodeversion} "11.0" ] >= 0 } ]
+    set clt_ok   [ expr { ${xcodeversion} eq "none" && ${cltversion} ne "none" && [ vercmp ${cltversion} "11.0" ] >= 0 } ]
+    if { ${xcode_ok} || ${clt_ok} } {
+        default_variants +xcode
+    } elseif {${os.major} >= 14} {
+        # llvm-11 changed the arguments accepted by llvm-objdump
+        # this causes a number of errors in scripts that still use the old arguments
+        # we will default to +llvm11 when xcode changes to require the new arguments
+        # see https://reviews.llvm.org/D92310 and https://trac.macports.org/ticket/61852
+        default_variants +llvm10
+    } elseif {${os.major} >= 12} {
         # Using llvm-3.7 to break a dependency cycle (https://trac.macports.org/ticket/53138)
         default_variants +llvm37
-    } elseif {${os.major} == 10 || ${os.major} == 11} {
+    } elseif {${os.major} >= 10} {
         default_variants +llvm34
     }
 
-    # TODO?: cctools-895 requires llvm-3.4 as a minimum version for LTO support
-    # elseif {${os.major} == 9} {
-    #     # Using llvm-3.3 to break dependency cycle (https://trac.macports.org/ticket/52091)
-    #     default_variants +llvm33
-    # }
+    # we purposefully don't force an llvm variant on cctools for < darwin10
+    # to avoid a dependency loop. Folks who want LTO support on
+    # systems prior to darwin10 can reinstall cctools with an llvm variant manually
+    # see https://trac.macports.org/ticket/52091
 
-    if {![some_llvm_variant_set] && ${os.major} >= 10} {
-        default_variants +llvm70
+    # If a default llvm is still not set, use +llvm10
+    # this fail-safe ensures some cctools variant can build
+    if {![some_llvm_variant_set] && ![variant_isset xcode] && ${os.major} >= 10} {
+        default_variants +llvm10
     }
 }
 
-variant xcode conflicts universal description "Use Xcode supplied cctools" {
+if {[variant_isset llvm34] && ${os.major} < 11} {
+    # This port is used by clang-3.4 to bootstrap libcxx
+    configure.cxx_stdlib    libstdc++
+}
+
+variant xcode description "Use Xcode supplied cctools" {
     supported_archs noarch
     patchfiles
     distfiles
@@ -117,9 +156,12 @@ variant xcode conflicts universal description "Use Xcode supplied cctools" {
 
 destroot.args           RAW_DSTROOT=${destroot} DSTROOT=${destroot}${prefix} RC_ProjectSourceVersion=${version}
 
+if {${os.major} >= 20} {
+    universal_variant no
+}
+
 if {![variant_isset xcode]} {
     depends_build       port:libunwind-headers
-    variant universal conflicts xcode {}
 }
 
 post-extract {
@@ -173,19 +215,24 @@ post-patch {
         reinplace "s:__TRY_SYSTEM_CLANG__:${try_system_clang}:" ${worksrcpath}/as/driver.c
 
         foreach file [glob ${worksrcpath}/{*/,}Makefile] {
-            reinplace "s:/usr/local:@PREFIX@:g" ${file}
-            reinplace "s:/usr:@PREFIX@:g" ${file}
-            reinplace "s:@PREFIX@:${prefix}:g" ${file}
-            reinplace "s:${prefix}/efi:${prefix}:g" ${file}
-            reinplace "s:/Developer${prefix}:${prefix}:g" ${file}
-            reinplace "s:${prefix}/man:${prefix}/share/man:g" ${file}
+            reinplace -q "s:/usr/local:@PREFIX@:g" ${file}
+            reinplace -q "s:/usr:@PREFIX@:g" ${file}
+            reinplace -q "s:@PREFIX@:${prefix}:g" ${file}
+            reinplace -q "s:${prefix}/efi:${prefix}:g" ${file}
+            reinplace -q "s:/Developer${prefix}:${prefix}:g" ${file}
+            reinplace -q "s:${prefix}/man:${prefix}/share/man:g" ${file}
 
             # Don't strip installed binaries
-            reinplace "s:\\(install .*\\)-s :\\1:g" ${file}
+            reinplace -q "s:\\(install .*\\)-s :\\1:g" ${file}
 
             if {${os.major} < 10} {
-                reinplace "s:${prefix}/bin/mig:/usr/bin/mig:g" ${file}
+                reinplace -q "s:${prefix}/bin/mig:/usr/bin/mig:g" ${file}
             }
+        }
+
+        # macOS 10.14's SDKs have newer versions that are needed to compile
+        if {${os.major} > 17} {
+            file delete -force ${worksrcpath}/include/mach/i386
         }
     }
 }

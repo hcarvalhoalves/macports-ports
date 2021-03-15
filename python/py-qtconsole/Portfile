@@ -4,40 +4,55 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-qtconsole
-version             4.5.1
+version             5.0.2
 revision            0
+
 categories-append   devel
 platforms           darwin
 license             BSD
 supported_archs     noarch
 
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 
 maintainers         {stromnov @stromnov} openmaintainer
 
-description         Jupyter Qt console.
+description         Jupyter QtConsole
 long_description    ${description}
 
-homepage            http://jupyter.org
-master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}
+homepage            https://jupyter.org
 
-distname            ${python.rootname}-${version}
-
-checksums           rmd160  6b51af0f971cfdb914f04e8e9f301a9ab5b0a04e \
-                    sha256  4af84facdd6f00a6b9b2927255f717bb23ae4b7a20ba1d9ef0a5a5a8dbe01ae2 \
-                    size    424392
+checksums           rmd160  c76f1d25d874c5707408a4be85c2f79ee0970b53 \
+                    sha256  404994edfe33c201d6bd0c4bd501b00c16125071573c938533224992bea0b30f \
+                    size    428499
 
 if {${name} ne ${subport}} {
+    if {${python.version} in "27 35"} {
+        version     4.7.7
+        revision    1
+        checksums   rmd160  d1289312eb91b253a306aaae2644b0f4b3b4037b \
+                    sha256  f236ead8711dba0702507dd8fad473c7216a86eefa6098eff8ec4b54f57d7804 \
+                    size    425068
+    }
+
     depends_lib-append  port:py${python.version}-setuptools \
                         port:py${python.version}-traitlets \
                         port:py${python.version}-ipython_genutils \
                         port:py${python.version}-jupyter_core \
                         port:py${python.version}-jupyter_client \
                         port:py${python.version}-pygments \
-                        port:py${python.version}-ipykernel
+                        port:py${python.version}-ipykernel \
+                        port:py${python.version}-qtpy \
+                        port:py${python.version}-zmq
 
     # Note: depends on one of py-pyqt4, py-pyqt5 or py-pyside (first available at runtime)
-    notes-append        "Please do not forget to install one of QT backends: py${python.version}-pyside, py${python.version}-pyqt5 or py${python.version}-pyqt4."
+    notes-append        "Please do not forget to install one of Qt backends: py${python.version}-pyside, py${python.version}-pyqt5 or py${python.version}-pyqt4."
+
+    post-destroot {
+        set docdir ${prefix}/share/doc/${subport}
+        xinstall -d ${destroot}${docdir}
+        xinstall -m 0644 -W ${worksrcpath} CONTRIBUTING.md LICENSE \
+            README.md ${destroot}${docdir}
+    }
 
     livecheck.type      none
 }

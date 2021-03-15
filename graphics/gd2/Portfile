@@ -4,7 +4,17 @@ PortSystem                  1.0
 PortGroup                   github 1.0
 PortGroup                   muniversal 1.0
 
-github.setup                libgd libgd 2.2.5 gd-
+# getline
+# https://github.com/libgd/libgd/issues/611
+PortGroup                   legacysupport 1.0
+legacysupport.newest_darwin_requires_legacy 10
+
+github.setup                libgd libgd 2.3.2 gd-
+revision                    0
+checksums                   rmd160  6d88b4cdee53d8ff4a1559cfbf1cd7a1da1fee0d \
+                            sha256  478a047084e0d89b83616e4c2cf3c9438175fb0cc55d8c8967f06e0427f7d7fb \
+                            size    2821096
+
 name                        gd2
 categories                  graphics
 maintainers                 {ryandesign @ryandesign}
@@ -29,14 +39,12 @@ long_description            gd is a graphics library. It allows your code to \
 github.tarball_from         releases
 use_xz                      yes
 
-checksums                   rmd160  1c20f719161da596dac6c5c5b92bde71ddc9aedb \
-                            sha256  8c302ccbf467faec732f0741a859eef4ecae22fea2d2ab87467be940842bde51
-
 depends_build               port:gettext
 
 depends_lib                 port:freetype \
                             port:fontconfig \
-                            port:jpeg \
+                            path:include/turbojpeg.h:libjpeg-turbo \
+                            port:libheif \
                             port:libiconv \
                             port:libpng \
                             port:tiff \
@@ -45,34 +53,23 @@ depends_lib                 port:freetype \
 
 patchfiles                  patch-src-gdft.c.diff
 
+# Supports libavif but we don't have a port for it yet.
+
 configure.args-append       --disable-werror \
                             --with-freetype=${prefix} \
                             --with-fontconfig=${prefix} \
+                            --with-heif=${prefix} \
                             --with-jpeg=${prefix} \
                             --with-png=${prefix} \
                             --with-tiff=${prefix} \
                             --with-webp=${prefix} \
                             --with-zlib=${prefix} \
+                            --without-avif \
                             --without-liq \
                             --without-x \
                             --without-xpm
 
 configure.cflags-append     -DDEFAULT_FONTPATH=\\\"/System/Library/Fonts:/Library/Fonts\\\"
-
-post-configure {
-    if {[variant_isset universal]} {
-        set dirs {}
-        foreach arch ${universal_archs_to_use} {
-            lappend dirs ${worksrcpath}-${arch}
-        }
-    } else {
-        set dirs ${worksrcpath}
-    }
-    foreach dir ${dirs} {
-        reinplace -E {s|-arch [a-z0-9_]+||g} \
-            ${dir}/config/gdlib-config
-    }
-}
 
 variant x11 {
     depends_lib-append      port:xpm

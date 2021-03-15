@@ -3,8 +3,8 @@
 PortSystem          1.0
 PortGroup           github 1.0
 
-github.setup        yarnpkg yarn 1.16.0 v
-revision            0
+github.setup        yarnpkg yarn 1.22.10 v
+revision            1
 
 categories          devel
 
@@ -27,15 +27,16 @@ homepage            https://yarnpkg.com/
 
 github.tarball_from releases
 distname            ${name}-${git.branch}
-checksums           rmd160  46cd51881cddc91fadadc0951f57d12e4994637e \
-                    sha256  df202627d9a70cf09ef2fb11cb298cb619db1b958590959d6f6e571b50656029 \
-                    size    1172930
 
-depends_run         path:bin/node:nodejs10
+checksums           rmd160  93f551f2f987a454a7f5295eb62bcc26a0e01eb2 \
+                    sha256  7e433d4a77e2c79e6a7ae4866782608a8e8bcad3ec6783580577c59538381a6e \
+                    size    1244965
+
+depends_run         path:bin/node:nodejs15
 
 platform darwin {
     if {${os.major} < 13} {
-        depends_run-replace path:bin/node:nodejs10 path:bin/node:nodejs6
+        depends_run-replace path:bin/node:nodejs15 path:bin/node:nodejs8
     }
 }
 
@@ -47,6 +48,7 @@ build {
 destroot {
   copy ${worksrcpath} ${destroot}${prefix}/libexec/yarn
   ln -s ${prefix}/libexec/yarn/bin/yarn ${destroot}${prefix}/bin/yarn
+  ln -s ${prefix}/libexec/yarn/bin/yarnpkg ${destroot}${prefix}/bin/yarnpkg
 }
 
 notes "

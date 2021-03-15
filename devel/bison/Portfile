@@ -6,7 +6,7 @@ name                bison
 subport             bison-runtime {}
 
 epoch               1
-version             3.4.1
+version             3.7.5
 if {${subport} eq "bison"} {
     revision        0
 } else {
@@ -43,9 +43,10 @@ if {${subport} eq "bison-runtime"} {
                         desk calculators to complex programming \
                         languages.
 
-    depends_lib         port:gettext
-    depends_run         port:bison-runtime \
+    depends_lib         port:gettext \
+                        port:libiconv \
                         port:m4
+    depends_run         port:bison-runtime
     depends_skip_archcheck-append m4
 }
 homepage            https://www.gnu.org/software/bison
@@ -53,9 +54,9 @@ homepage            https://www.gnu.org/software/bison
 master_sites        gnu
 use_xz              yes
 
-checksums           rmd160  2ba8202daa764e703f111d1cd3deec40c1837c35 \
-                    sha256  27159ac5ebf736dffd5636fd2cd625767c9e437de65baa63cb0de83570bd820d \
-                    size    2198020
+checksums           rmd160  f1c4b3443c4ce51619d33f6e92b76cc3cf37b048 \
+                    sha256  e8c53bc5bc396d636622d0f25e31ca92fd53f00b09629f13ef540d564a6b31ab \
+                    size    2622228
 
 configure.args      --disable-silent-rules \
                     ac_cv_prog_HAVE_GCJ_IN_PATH= \
@@ -72,6 +73,23 @@ if {${subport} eq "bison-runtime"} {
     livecheck.type  none
 } else {
     patchfiles-append skip-runtime-po.patch
+
+    # __WORDSIZE is not defined in the Tiger stdint.h header
+    # we add in a 32 and 64 bit compatible version of the macro
+    # taken from the later Apple stdint.h headers
+    patchfiles-append patch-wordsize.diff
+
+    # the build uses pragmas inside functions, which requires a newer gcc version
+    # and also uses C11 redefinition of typedefs in the test suite
+    # this is possibly a bug, to be further elucidated once a more complete understanding
+    # is available. See ticket #59927 for further details of this issue.
+    compiler.c_standard 2011
     test.run        yes
     test.target     check
+}
+
+platform darwin 8 {
+    # https://trac.macports.org/ticket/58819
+    depends_build-append port:flex
+    configure.args-append ac_cv_prog_LEX=${prefix}/bin/flex
 }

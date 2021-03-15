@@ -4,15 +4,15 @@ PortSystem          1.0
 PortGroup           github 1.0
 
 # normally update mediainfolib port at the same time
-github.setup        MediaArea MediaInfo 18.12 v
-checksums           rmd160  9bee7a245c8d8240365d4b1fdb5ab66ea22a4b40 \
-                    sha256  5b5b8ec9c00dcdd480c2c988a99cf44ebb87074d740e45f4d3ebf82fb6ead6df \
-                    size    2470653
+github.setup        MediaArea MediaInfo 20.09 v
+checksums           rmd160  cceba19b48a1e2a05cca9a473bc16e623d31c7b6 \
+                    sha256  24c841297d2c8e4d4d50465f96dc36fc8462fb2aff39ebfd6165d28c19610a3d \
+                    size    3194008
 
 name                mediainfo
 categories          multimedia
 platforms           darwin
-maintainers         {ctreleaven @ctreleaven}
+maintainers         {ctreleaven @ctreleaven} openmaintainer
 license             BSD
 
 description         Identifies audio and video codecs in a media file. CLI
@@ -30,6 +30,7 @@ if {${name} eq ${subport}} {
     worksrcdir     ${worksrcdir}/Project/GNU/GUI
 }
 
+#mediainfolib needs autoreconf, assume this does too
 use_autoreconf      yes
 autoreconf.args-append  --force --install
 
@@ -40,7 +41,7 @@ subport MediaInfo-gui {
     PortGroup           app 1.0
     PortGroup           wxWidgets 1.0
     wxWidgets.use       wxWidgets-3.2
-    revision            0
+
 
     description         Identifies audio and video codecs in a media file. GUI
     long_description    MediaInfo supplies technical and tag information about a \

@@ -5,7 +5,7 @@ PortSystem          1.0
 PortGroup           github 1.0
 PortGroup           python 1.0
 
-github.setup        dnsviz dnsviz 0.8.2 v
+github.setup        dnsviz dnsviz 0.9.2 v
 github.tarball_from releases
 
 categories          net
@@ -19,18 +19,17 @@ long_description    DNSViz is a tool suite for measurement, diagnostic, and \
                     visualization of Domain Name System (DNS) behavior, \
                     including its security extensions (DNSSEC).
 
-checksums           rmd160 b64c17ec194824616e542ab704b5df0888bab197 \
-                    sha256 a81ff254c23718cd6f364b03bf6e9c80468fa4663fd5be66043de7b0bece1cab \
-                    size 250539
+checksums           rmd160 896aeb632ef9f882c1dab90bb7cc7370de16eca3 \
+                    sha256 e2d2751f2e2facc2a49ff30f75a0771f4156dee0bda9e888bd8f09fca7212795 \
+                    size 388624
 
-python.default_version  27
+python.default_version  38
 
 depends_build       path:bin/dot:graphviz
 
 depends_run         port:py${python.version}-dnspython \
                     port:py${python.version}-m2crypto \
                     port:py${python.version}-pygraphviz \
-                    port:py${python.version}-libnacl
 
 destroot.destdir    --prefix=${python.prefix} \
                     --root=${destroot} \

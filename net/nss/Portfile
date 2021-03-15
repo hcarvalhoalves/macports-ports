@@ -4,7 +4,7 @@ PortSystem          1.0
 PortGroup           muniversal 1.0
 
 name                nss
-version             3.44
+version             3.62
 revision            0
 set NSS_VMAJOR      [lindex [split ${version} .] 0]
 set NSS_VMINOR      [lindex [split ${version} .] 1]
@@ -18,9 +18,9 @@ maintainers         nomaintainer
 license             {MPL-2 GPL-2+ LGPL-2.1+}
 description         Network Security Service libraries.
 
-long_description    ${description}
+long_description    {*}${description}
 use_configure       no
-homepage            http://www.mozilla.org/projects/security/pki/nss/
+homepage            https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS
 platforms           darwin
 
 set my_release      NSS_[strsed ${version} {g/\./_/}]_RTM
@@ -28,9 +28,16 @@ set my_release      NSS_[strsed ${version} {g/\./_/}]_RTM
 master_sites        https://ftp.mozilla.org/pub/mozilla.org/security/nss/releases/${my_release}/src/ \
                     ftp://ftp.mozilla.org/pub/mozilla.org/security/nss/releases/${my_release}/src/
 
-checksums           rmd160  7ab3ffca517592882636535d770ceac392cc1edf \
-                    sha256  a5620e59b6eeedfd5a12c9298b50ad92e9898b223e214eb675e36f4ffb5b6aff \
-                    size    23474704
+checksums           rmd160  dcac4d4a32520fd63d4f3dc9e280a61417a49de8 \
+                    sha256  86d6df7cece25b8d4efa53e4c19af903c484eb79871163f37b5232bb406a5478 \
+                    size    82159506
+
+# build fails with gcc-4.2 on Intel, but succeeds with gcc-4.2 on PPC
+# cc1: error: unrecognized command line option "-mpclmul"
+# cc1: error: unrecognized command line option "-maes"
+if {${configure.build_arch} in [list i386 x86_64]} {
+    compiler.blacklist-append *gcc-4.* *gcc-3.*
+}
 
 depends_lib     port:nspr \
                 port:zlib \
@@ -96,21 +103,35 @@ post-destroot {
 use_parallel_build  no
 
 # tls13esni.c:72: error: 'for' loop initial declaration used outside C99 mode
+compiler.c_standard 1999
 configure.cflags-append -std=c99
 
 # mimic nss/coreconf/Darwin.mk
 
-if {![variant_isset universal]} {
-    if {${build_arch} eq "x86_64" || ${build_arch} eq "ppc64"} {
+array set cpu_arch_map [list \
+    arm64   aarch64 \
+    i386    x86 \
+    x86_64  x86_64]
+
+if {![info exists universal_possible]} {
+    set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+}
+if {!${universal_possible} || ![variant_isset universal]} {
+    if {${configure.build_arch} in [list arm64 ppc64 x86_64]} {
         build.args-append USE_64=1
+    }
+    if {[info exists cpu_arch_map(${configure.build_arch})]} {
+        build.args-append CPU_ARCH=$cpu_arch_map(${configure.build_arch})
     }
 
     build.args-append \
         CC="${configure.cc} ${configure.cflags} [get_canonical_archflags cc]" \
         CCC="${configure.cxx} ${configure.cxxflags} [get_canonical_archflags cxx]"
 } else {
-    lappend merger_build_args(x86_64) USE_64=1
+    lappend merger_build_args(arm64)  USE_64=1 CPU_ARCH=aarch64
+    lappend merger_build_args(i386)   CPU_ARCH=x86
     lappend merger_build_args(ppc64)  USE_64=1
+    lappend merger_build_args(x86_64) USE_64=1 CPU_ARCH=x86_64
 
     foreach arch ${universal_archs} {
         lappend merger_build_args(${arch}) \
@@ -133,7 +154,7 @@ if {${configure.sdkroot} ne ""} {
         MACOS_SDK_DIR=${configure.sdkroot}
 }
 
-if {[variant_isset universal]} {
+if {${universal_possible} && [variant_isset universal]} {
     # chk files can not be merged
 
     merger-post-destroot {
@@ -155,6 +176,11 @@ if {[variant_isset universal]} {
             system "env DYLD_LIBRARY_PATH=${destroot}${prefix}/lib/nss ${destroot}${prefix}/bin/shlibsign -i ${base}.dylib -o ${chk}"
         }
     }
+}
+
+platform darwin 8 {
+    depends_build-append port:gmake
+    build.cmd ${prefix}/bin/gmake
 }
 
 livecheck.type    regex

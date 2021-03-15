@@ -3,7 +3,8 @@
 PortSystem              1.0
 PortGroup               golang 1.0
 
-go.setup                github.com/git-lfs/git-lfs 2.7.2 v
+go.setup                github.com/git-lfs/git-lfs 2.13.2 v
+revision                0
 maintainers             {raimue @raimue} \
                         openmaintainer
 platforms               darwin
@@ -11,22 +12,31 @@ categories              devel
 supported_archs         noarch
 
 description             Git Large File Storage
-long_description        ${description} is an extension for versioning large files
+long_description        {*}${description} is an extension for versioning large files
 homepage                https://git-lfs.github.com/
 license                 MIT
 
-checksums               rmd160  addd885d9301bf3c895133b0b4adfd996cedb4fc \
-                        sha256  6880eb7eccaa55c80cae91afb6795709b5a39e208ba2ac804b7b2ea5dd6e2358 \
-                        size    1672846
+checksums               rmd160  b0c385f014971857a939f93118753de53a10ab5a \
+                        sha256  7e9c1e2c2a02be327b31cb25c033c563555cfc67565219866d50837d4641894d \
+                        size    2528000
 
-depends_build-append    port:rb19-ronn
+depends_build-append    port:rb27-ronn-ng
 depends_run             port:git
+
+if {${os.platform} eq "darwin" && ${os.major} < 16} {
+    # requires clonefile(3), see https://trac.macports.org/ticket/60121
+    known_fail      yes
+    pre-fetch {
+        ui_error "${name} requires macOS 10.12 or later."
+        return -code error "incompatible OS version"
+    }
+}
 
 use_configure no
 
 build.cmd               make
 build.target            bin/git-lfs man
-build.args              RONN=${prefix}/bin/ronn-1.9
+build.args              RONN=${prefix}/bin/ronn-2.7
 
 destroot {
     set bindir ${destroot}${prefix}/bin

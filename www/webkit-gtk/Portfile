@@ -7,13 +7,11 @@
 PortSystem          1.0
 PortGroup           conflicts_build 1.0
 PortGroup           muniversal 1.0
-PortGroup           compiler_blacklist_versions 1.0
-PortGroup           cxx11 1.1
 
 name                webkit-gtk
 epoch               2
 version             2.4.11
-revision            2
+revision            4
 description         Apple's WebKit HTML rendering library for GTK+
 long_description    ${description}
 maintainers         nomaintainer
@@ -63,6 +61,8 @@ depends_lib         path:lib/pkgconfig/glib-2.0.pc:glib2 \
 # leopard-platform.patch: https://bugs.webkit.org/show_bug.cgi?id=140143
 # remove-cf-available.patch: https://trac.macports.org/ticket/49849
 # RenderThemeGtk2-toRenderBox.patch: https://trac.macports.org/ticket/51406
+# patch-icu_fix.diff: https://bugs.webkit.org/show_bug.cgi?id=171612
+#                     https://bugs.webkit.org/show_bug.cgi?id=202600
 
 patchfiles          clang-assertions.patch \
                     case-insensitive.patch \
@@ -74,9 +74,12 @@ patchfiles          clang-assertions.patch \
                     leopard-malloc.patch \
                     libedit.patch \
                     remove-cf-available.patch \
-                    RenderThemeGtk2-toRenderBox.patch
+                    RenderThemeGtk2-toRenderBox.patch \
+                    patch-icu_fix.diff
 
 conflicts_build     google-test
+
+compiler.cxx_standard   2011
 
 # https://trac.macports.org/ticket/36329
 configure.perl      /usr/bin/perl
@@ -97,6 +100,10 @@ configure.args      --disable-webkit2 \
                     --enable-webgl \
                     --disable-jit
 
+if {![info exists universal_possible]} {
+    set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+}
+
 subport webkit-gtk3 {
     conflicts webkit-gtk3-devel webkit-gtk3-2.0
     depends_lib-append      port:gtk3
@@ -105,7 +112,7 @@ subport webkit-gtk3 {
 #
 # move gtk-docs to allow parallel install with webkit-gtk
 #
-    if {[variant_isset universal]} {
+    if {${universal_possible} && [variant_isset universal]} {
 #
 # using diff to merge derived include files sometimes
 # results in a corrupted file due to nested /* */ blocks
@@ -140,7 +147,7 @@ if {${name} eq ${subport}} {
 configure.universal_args-delete --disable-dependency-tracking
 
 # gobject-introspection uses g-ir-scanner, which uses $CC from env
-if {[variant_isset universal]} {
+if {${universal_possible} && [variant_isset universal]} {
     foreach arch ${configure.universal_archs} {
         lappend merger_build_args(${arch})     CC='${configure.cc} -arch ${arch}'
         lappend merger_destroot_args(${arch})  CC='${configure.cc} -arch ${arch}'
@@ -160,11 +167,7 @@ configure.cppflags-append   -DGTEST_USE_OWN_TR1_TUPLE=1
 configure.cflags-append     -ftemplate-depth=256
 configure.cxxflags-append   -ftemplate-depth=256
 
-if {[vercmp [macports_version] 2.5.99] >= 0} {
 autoreconf.env-append "ACLOCAL=aclocal -I Source/autotools"
-} else {
-autoreconf.env-append ACLOCAL="aclocal -I Source/autotools"
-}
 use_autoreconf      yes
 autoreconf.args     -fvi
 

@@ -4,10 +4,10 @@ PortSystem          1.0
 PortGroup           texlive 1.0
 
 name                LaTeXML
-version             0.8.3
-checksums           rmd160  27cd0fa18dbb99daf524a57128183c4df7cf3f01 \
-                    sha256  28a57369b65b85d09c1a2516e69d26bbbe102ab790cae5e2fc9709b26185f62f \
-                    size    10704659
+version             0.8.5
+checksums           rmd160  22a13fbd2a6bf65f2d65162f6c555bb9b7e2273e \
+                    sha256  1de821d0df8c88041ee10820188f33feac77d5618de4c0798a296a425f4e2637 \
+                    size    13083829
 
 license             public-domain
 maintainers         {nist.gov:bruce.miller @brucemiller}
@@ -17,13 +17,14 @@ long_description \
 
 # Written in Perl, but it is an application, not just modules
 PortGroup           perl5 1.0
-perl5.branches      5.26
+perl5.branches      5.28
 perl5.setup         ${name} ${version}
 perl5.link_binaries_suffix
 
 categories          tex
-homepage            http://dlmf.nist.gov/LaTeXML/
-master_sites        ${homepage}releases/
+homepage            https://dlmf.nist.gov/LaTeXML/
+master_sites        ${homepage}releases/ \
+                    https://cpan.metacpan.org/authors/id/B/BR/BRMILLER/
 
 platforms           darwin
 supported_archs     noarch
@@ -48,6 +49,17 @@ depends_lib-append \
 # but those should be in any non-obsolete Perl's core modules.
 
 #============================================================
+# The #! line normally uses env perl for flexibility,
+# but this doesn't work w/multiple perls on MacPorts
+post-configure {
+    fs-traverse file ${worksrcpath}/bin {
+        if {[file isfile ${file}]} {
+            ui_info "Fixing path in ${file}"
+            reinplace "s|#!/usr/bin/env perl|#!${prefix}/bin/perl${perl5.major}|g" ${file}
+        }
+    }
+}
+#============================================================
 # LaTeXML works MUCH better if there is a TeX installed.
 # - it uses some latex style files from texlive within bindings
 # - it can install its own style files for use within tex/latex
@@ -71,7 +83,7 @@ post-destroot {
 
 # Note whether we've found a TeX
 post-activate {
-    if [file executable ${prefix}/bin/mktexlsr] {
+    if {[file executable ${prefix}/bin/mktexlsr]} {
         set latexml.found_tex yes
     }
 }
@@ -87,7 +99,7 @@ set latexml.mactex_candidates { \
 variant mactex description {Build with MacTeX support} {
     # First, check if MacTeX actually seems to be there...
     foreach dir ${latexml.mactex_candidates} {
-        if [file executable "${dir}/kpsewhich"] {
+        if {[file executable "${dir}/kpsewhich"]} {
             set latexml.mactex_bin ${dir}
             break
         }

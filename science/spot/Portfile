@@ -2,28 +2,26 @@ PortSystem          1.0
 PortGroup           compiler_blacklist_versions 1.0
 
 name                spot
-version             2.7.5
+version             2.9.6
 revision            0
 categories          science math
-maintainers         {mmoll @mamoll} openmaintainer
+maintainers         nomaintainer
 description         Spot is an object-oriented model checking library written in C++.
 long_description    ${description}
 homepage            https://spot.lrde.epita.fr/index.html
 platforms           darwin
 license             GPL-3
 master_sites        http://www.lrde.epita.fr/dload/spot/
-checksums           rmd160  51f408bb13e9f20ff52c0f78a47ae0b8d5c050b4 \
-                    sha256  2cbbfb6245250603c92fd3d512d07b5d70c7924826b156a260c4a41039c0ce23 \
-                    size    7367614
+checksums           rmd160  711331649fa689a010013ee4f4af59c074a46c69 \
+                    sha256  3cc6f69f17f0d1566d68be7040099df70203748b66121354d8ab84d8d13dd3a8 \
+                    size    6990615
 depends_lib-append  port:boost
 
-# make sure compiler supports C++14
-compiler.blacklist *gcc* {clang <= 700.1.81} {macports-clang-3.[0-6]}
-compiler.fallback-append macports-clang-4.0
-
+compiler.cxx_standard 2014
+patchfiles patch-configure.diff
 configure.args-append --disable-python
 
-set pythons_suffixes {34 35 36 37}
+set pythons_suffixes {35 36 37 38 39}
 
 set pythons_ports {}
 foreach s ${pythons_suffixes} {
@@ -59,7 +57,7 @@ foreach s ${pythons_suffixes} {
 }
 
 # enable one python variant so that the python bindings can be compiled
-set selected_python python35
+set selected_python python37
 foreach s ${pythons_suffixes} {
     if {[variant_isset python${s}]} {
         set selected_python python${s}

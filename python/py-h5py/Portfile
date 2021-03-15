@@ -5,10 +5,16 @@ PortGroup               github 1.0
 PortGroup               python 1.0
 PortGroup               mpi 1.0
 
-github.setup            h5py h5py 2.9.0
+github.setup            h5py h5py 3.2.1
 name                    py-h5py
+
 # h5py needs to be re-built after hdf5 upgrades
-revision                1
+revision                0
+
+checksums \
+    rmd160  57cfc9f6690745d4f1864b59ef183fe6f5f79326 \
+    sha256  e87268f6dc04d5d2b5cf8d6d8765d0e6db9335935d41b60198f49658e649517d \
+    size    395914
 
 platforms               darwin
 license                 BSD
@@ -26,49 +32,31 @@ long_description  \
     datatypes and data structures and their HDF5 equivalents vastly \
     simplifies the process of reading and writing data from Python.
 
-homepage                http://www.h5py.org
+homepage                https://www.h5py.org
 
-# Dropping -devel versions; mature & stable
-# Can be removed after 6/13/2019
-# Support for -devel
-set DEV_VERSION     0
-
-subport                 py27-h5py-devel {set DEV_VERSION 27}
-subport                 py34-h5py-devel {set DEV_VERSION 34}
-subport                 py35-h5py-devel {set DEV_VERSION 35}
-subport                 py36-h5py-devel {set DEV_VERSION 36}
-
-python.versions         27 34 35 36 37
-python.default_version  27
-
-checksums \
-    rmd160  5e2c0025768dc4a0ef7ae53e11ebdd67c4224509 \
-    sha256  aa1ae897c63cfc62f600bb5ed2be7ba771eff42745e0bdfa08b668fdb11f86c6 \
-    size    296584
-
-if {${DEV_VERSION}} {
-    # Dropping -devel versions; mature & stable
-    # Can be removed after 6/13/2019
-    PortGroup   obsolete 1.0
-    replaced_by py${python.version}-h5py
-} elseif {${name} ne ${subport}} {
-    conflicts               py${python.version}-h5py-devel
-}
+python.versions         37 38 39
 
 # Only check against releases.
-livecheck.regex             "archive/(\[0-9.\]+)\.tar\.gz"
-
+github.livecheck.regex      {([0-9.]+)}
 
 if {${name} ne ${subport}} {
     depends_build-append    port:py${python.version}-cython
 
-    depends_lib-append      port:py${python.version}-numpy \
+    depends_lib-append      port:py${python.version}-cached-property \
+                            port:py${python.version}-numpy \
                             port:py${python.version}-six \
                             port:py${python.version}-pkgconfig \
                             port:hdf5
 
+    build.env-append        HDF5_DIR=${prefix}
+    destroot.env-append     HDF5_DIR=${prefix}
+
+    post-patch {
+        reinplace "/=={np_min}/s/==/>=/" setup.py
+    }
+
     post-destroot {
-        system -W ${destroot}${prefix} "mkdir -p share/doc/${subport}"
+        xinstall -d ${destroot}${prefix}/share/doc/${subport}
         copy ${worksrcpath}/lzf/LICENSE.txt \
             ${destroot}${prefix}/share/doc/${subport}
     }
@@ -81,10 +69,8 @@ if {${name} ne ${subport}} {
         mpi.enforce_variant     hdf5 \
                                 py${python.version}-mpi4py
 
-        use_configure           yes
-        configure.cmd           ${build.cmd} configure
-        configure.args          --mpi
-        configure.pre_args
+        build.env-append        HDF5_MPI=ON
+        destroot.env-append     HDF5_MPI=ON
     }
 
     livecheck.type          none

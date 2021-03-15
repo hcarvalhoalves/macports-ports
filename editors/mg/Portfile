@@ -1,7 +1,7 @@
 PortSystem          1.0
 PortGroup           github 1.0
 
-github.setup	    ibara mg 6.5 mg-
+github.setup	    ibara mg 6.8.1 mg-
 github.tarball_from releases
 
 # change version from date to OpenBSD version
@@ -10,15 +10,17 @@ epoch               1
 categories          editors
 platforms           darwin
 license             ISC/BSD
-maintainers         {@ra1nb0w irh.it:rainbow} openmaintainer
+maintainers         {ra1nb0w @ra1nb0w} openmaintainer
 description         small Emacs-like editor
 long_description    Micro GNU/Emacs: a small, fast, lightweight, emacs-like editor.\
                     No extension language, just a basic editor for text & code.
 
-checksums           rmd160  3a28ec30e6a2f8ec49f968abdf21caa8135c86c7 \
-                    sha256  3e4bb4582c8d1a72fb798bc320a9eede04f41e7e72a1421193174b1a6fc43cd8 \
-                    size    159278
+checksums           rmd160  524e3497c5d4bda45d28189b5154507d9956620c \
+                    sha256  a4af7afa77fed691096be8e2ff0507cc6bdd8efe7255916f714168d02790044c \
+                    size    244206
 
-depends_lib-append  port:ncurses
+depends_lib-append \
+    port:ncurses
 
-configure.args   --prefix=${prefix} --mandir=${prefix}/share/man
+configure.args \
+    --mandir=${prefix}/share/man

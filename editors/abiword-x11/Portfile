@@ -2,14 +2,12 @@
 
 PortSystem          1.0
 
-# error: use of undeclared identifier 'nullptr'
-PortGroup           cxx11 1.1
 PortGroup           gobject_introspection 1.0
 
 name                abiword-x11
 set dname           abiword
 version             3.0.2
-revision            1
+revision            3
 license             GPL-2+
 description         A word processor with gnome support.
 long_description    ${description}
@@ -27,7 +25,8 @@ checksums           rmd160  fde551492b0cffa7d522082906f374490bd47f5c \
 distname            ${dname}-${version}
 
 patchfiles          patch-configure.diff \
-                    patch-jpeg_read_header.diff
+                    patch-jpeg_read_header.diff \
+                    c++11.patch
 
 depends_build       port:pkgconfig
 
@@ -37,8 +36,7 @@ depends_lib         port:desktop-file-utils \
                     port:evolution-data-server \
                     port:goffice \
                     port:gtk3 \
-                    port:jpeg \
-                    port:libchamplain \
+                    path:include/turbojpeg.h:libjpeg-turbo \
                     port:libgcrypt \
                     port:libgsf \
                     port:libical \
@@ -54,11 +52,15 @@ depends_lib         port:desktop-file-utils \
 
 depends_run         port:adwaita-icon-theme
 
+# uses nullptr
+compiler.cxx_standard   2011
+
 gobject_introspection   yes
 
+# champlain seems to cause crashes on startup
 configure.args      --disable-default-plugins \
                     --disable-silent-rules \
-                    --with-champlain=yes \
+                    --with-champlain=no \
                     --enable-clipart=yes \
                     --enable-templates=yes
 

@@ -2,55 +2,88 @@
 
 PortSystem          1.0
 PortGroup           python 1.0
+PortGroup           select 1.0
 
 name                py-pytest
-version             4.4.1
+version             6.2.2
 revision            0
+
 categories-append   devel
 platforms           darwin
 license             MIT
 supported_archs     noarch
 
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 
 maintainers         {stromnov @stromnov} openmaintainer
 
 description         py.test: simple powerful testing with Python
 
-long_description    The py.test` testing tool makes it easy to write small \
-                    tests, yet scales to support complex functional testing.
+long_description    The pytest framework makes it easy to write small tests, \
+                    yet scales to support complex functional testing \
+                    for applications and libraries.
 
 homepage            https://pytest.org
-master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}
 
-distname            ${python.rootname}-${version}
-
-checksums           rmd160  efb4ccd7c2b0e469960cb35295b8ed6456f27864 \
-                    sha256  b7802283b70ca24d7119b32915efa7c409982f59913c1a6c0640aacf118b95f5 \
-                    size    931385
+checksums           rmd160  5e788a16285b8b3d41648ceda2bcffebc179aaa8 \
+                    sha256  9d1edf9e7d0b84d72ea3dbcdfd22b35fb543a5e8f2a60092dd578936bf63d7f9 \
+                    size    1116980
 
 if {${name} ne ${subport}} {
     depends_build-append \
                         port:py${python.version}-setuptools_scm
 
     depends_lib-append  port:py${python.version}-setuptools \
-                        port:py${python.version}-py \
-                        port:py${python.version}-six \
                         port:py${python.version}-attrs \
-                        port:py${python.version}-more-itertools \
+                        port:py${python.version}-iniconfig \
+                        port:py${python.version}-packaging \
                         port:py${python.version}-pluggy \
-                        port:py${python.version}-atomicwrites
+                        port:py${python.version}-py \
+                        port:py${python.version}-toml
+
+    if {${python.version} < 38} {
+        depends_lib-append port:py${python.version}-importlib-metadata
+    }
+
+    depends_run         port:pytest_select
 
     if {${python.version} eq 27} {
-        depends_lib-append \
-                        port:py${python.version}-funcsigs
-    }
-    if {${python.version} < 36} {
-        depends_lib-append \
-                        port:py${python.version}-pathlib2
+        version             4.6.3
+        revision            2
+        distname            ${python.rootname}-${version}
+        checksums           rmd160  5d88707bd2fc29ee675087b24461a9ca8cbe1ffb \
+                            sha256  4a784f1d4f2ef198fe9b7aef793e9fa1a3b2f84e822d9b3a64a181293a572d45 \
+                            size    949947
+
+        depends_lib-append  port:py${python.version}-atomicwrites \
+                            port:py${python.version}-six \
+                            port:py${python.version}-funcsigs \
+                            port:py${python.version}-more-itertools
+    } elseif {${python.version} eq 35} {
+        version             5.4.3
+        revision            0
+        distname            ${python.rootname}-${version}
+        checksums           rmd160  c846ffd08e49fe6742a97b6606aebcf4a2761f01 \
+                            sha256  7979331bfcba207414f5e1263b5a0f8f521d0f457318836a7355531ed1a4c7d8 \
+                            size    1022353
+        depends_lib-append  port:py${python.version}-more-itertools
     }
 
-    patchfiles-append   patch-setup.cfg.diff
+    if {${python.version} <= 35} {
+        depends_lib-append  port:py${python.version}-wcwidth \
+                            port:py${python.version}-pathlib2
+        depends_lib-delete  port:py${python.version}-iniconfig \
+                            port:py${python.version}-toml
+    }
+
+    select.group        pytest
+    select.file         ${filespath}/pytest${python.version}
+    notes-append "
+To make the Python ${python.branch} version of pytest the one that is run\
+when you execute the commands without a version suffix, e.g. 'pytest', run:
+
+sudo port select --set ${select.group} [file tail ${select.file}]
+"
 
     livecheck.type      none
 }

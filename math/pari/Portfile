@@ -2,10 +2,12 @@
 
 PortSystem          1.0
 PortGroup           muniversal 1.0
+PortGroup           compiler_blacklist_versions 1.0
+PortGroup           xcode_workaround 1.0
 
 name                pari
-version             2.11.2
-revision            1
+version             2.13.0
+revision            0
 categories          math
 platforms           darwin
 license             GPL-2+
@@ -17,12 +19,12 @@ long_description    PARI/GP is a widely used computer algebra system designed \
                     for fast  computations in number theory (factorizations, \
                     algebraic number theory,  elliptic curves...)
 
-homepage            http://pari.math.u-bordeaux.fr/
+homepage            https://pari.math.u-bordeaux.fr/
 master_sites        ${homepage}pub/pari/unix/
 
-checksums           rmd160  f79735493b8be000d22b8f645c12a2d7ca91391c \
-                    sha256  4a6532b3c77350363fa618ead5cd794a172d7b7e5757a28f7788e658b5469339 \
-                    size    4433038
+checksums           rmd160  c58a2e0898b04d62f9809ac8409a22b3b8786a53 \
+                    sha256  c811946de9d2c1ed0e97ff08e80d966f9a0b55848b7688406fab229e3948ba93 \
+                    size    4758091
 
 depends_lib         port:gmp \
                     port:ncurses \
@@ -34,7 +36,9 @@ platform darwin 8 {
 }
 
 # llvm-gcc produces incorrect code, ticket #33024
-compiler.blacklist  llvm-gcc-4.2
+compiler.blacklist-append llvm-gcc-4.2
+
+xcode_workaround.type avoid_xcode_compiler
 
 configure.cmd       ./Configure
 
@@ -88,7 +92,7 @@ variant doc description {Build DVI/PDF/PS documentation} {
     depends_build-append path:bin/tex:texlive
     build.target-append docpdf
     post-destroot {
-        if {[variant_isset universal]} {
+        if {[variant_exists universal] && [variant_isset universal]} {
             set dir ${worksrcpath}-[lindex ${universal_archs_to_use} 0]
         } else {
             set dir ${worksrcpath}

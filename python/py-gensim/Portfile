@@ -4,13 +4,13 @@ PortSystem          1.0
 PortGroup           python 1.0
 PortGroup           github 1.0
 
-github.setup        RaRe-Technologies gensim 3.7.3
+github.setup        RaRe-Technologies gensim 3.8.2
 name                py-gensim
 categories-append   textproc
 platforms           darwin
 license             LGPL-2+
 
-python.versions     27 35 36 37
+python.versions     37 38
 
 maintainers         {stromnov @stromnov} openmaintainer
 
@@ -23,9 +23,9 @@ long_description    Gensim is a Python library for topic modelling, document \
 
 homepage            http://radimrehurek.com/gensim/
 
-checksums           rmd160  9ffb58f3e3161f25ad7d8e9d656e02ab807d587f \
-                    sha256  576a59251d790aa076aff9be1ba24eb31589718d59f73bc18c45c4f90e784bb7 \
-                    size    42999344
+checksums           rmd160  173004340a5055c92ba5af7a6d567fff1cff6b62 \
+                    sha256  1ea0c079676fa93683cc0fc591c1575946655c9ce0e98421620a276ab9676c68 \
+                    size    43363541
 
 if {${name} ne ${subport}} {
     depends_build-append \
@@ -44,4 +44,11 @@ if {${name} ne ${subport}} {
     }
 
     livecheck.type      none
+}
+
+foreach {old new} {27 38 35 38 36 38} {
+    subport py${old}-${python.rootname} "
+        replaced_by py${new}-${python.rootname}
+        PortGroup obsolete 1.0
+    "
 }

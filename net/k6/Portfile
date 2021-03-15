@@ -1,9 +1,9 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
-PortGroup           github 1.0
+PortGroup           golang 1.0
 
-github.setup        loadimpact k6 0.24.0 v
+go.setup            github.com/loadimpact/k6 0.29.0 v
 categories          net
 platforms           darwin
 license             AGPL-3+
@@ -16,32 +16,17 @@ long_description    k6 is a modern load testing tool, building on Load Impact's 
                     CLI or a REST API.
 homepage            https://k6.io/
 
-checksums           rmd160  bb0a31c9e7b47e3f51bfb7ef3338d3df84880a98 \
-                    sha256  bd8f2413c92ad2aef45b7e5940b611c674e77f291e95e265388af944e21e4ce8 \
-                    size    4876610
+checksums           rmd160  cd954dc10fed3110a6681fe0e54adf3912093cba \
+                    sha256  2d76614bee424be37206989e46acc6abfca791aeb64d49d8f3a75cfc0d6eece6 \
+                    size    6463858
 
-set goproj          github.com/${github.author}/${github.project}
-
-depends_build       port:go
-use_configure       no
-worksrcdir          src/${goproj}
-
-post-extract {
-    xinstall -d ${workpath}/src/github.com/${github.author}
-    move ${workpath}/${name}-${github.version} \
-        ${worksrcpath}
-}
-
-build {
-    system -W ${worksrcpath} "GOPATH=${workpath} \
-      ${prefix}/bin/go build -v -o ${workpath}/${github.project}"
-}
+build.env-delete    GO111MODULE=off
 
 destroot {
-    xinstall ${workpath}/${github.project} ${destroot}${prefix}/bin
+    xinstall -m 0755 ${worksrcpath}/${name} ${destroot}${prefix}/bin/
 
     set docdir ${prefix}/share/doc/${name}
     xinstall -d ${destroot}${docdir}
-    xinstall -m 644 -W ${worksrcpath} README.md LICENSE.md \
+    xinstall -m 0644 -W ${worksrcpath} README.md LICENSE.md \
         ${destroot}${docdir}
 }

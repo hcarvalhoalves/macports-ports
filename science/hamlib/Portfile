@@ -2,15 +2,16 @@
 
 PortSystem          1.0
 PortGroup           github 1.0
+PortGroup           legacysupport 1.0
 
-github.setup        hamlib hamlib 3.3
-github.tarball_from releases
+# clock_gettime
+legacysupport.newest_darwin_requires_legacy 15
 
 name                hamlib
 categories          science
 platforms           darwin
 license             LGPL GPL
-maintainers         {@ra1nb0w irh.it:rainbow} openmaintainer
+maintainers         {ra1nb0w @ra1nb0w} openmaintainer
 
 description         Ham Radio Control Libraries
 
@@ -20,12 +21,47 @@ long_description    Flexible and portable shared libraries that offer a \
 
 homepage            https://hamlib.github.io
 
-checksums           rmd160  e9a09b5878101b44802adf2a82cb697e3560c918 \
-                    sha256  c90b53949c767f049733b442cd6e0a48648b55d99d4df5ef3f852d985f45e880 \
-                    size    2192119
+subport hamlib-devel {}
+if {[string first "-devel" $subport] > 0} {
 
-depends_build       port:pkgconfig
+    github.setup    Hamlib Hamlib 5d18d9f38ffa5879b8414b99f8ae4402bfaa6104
+    version         20210302-[string range ${github.version} 0 7]
+    checksums       rmd160  38e131edaf21ead0da3a0bdf17ddc4f36234358d \
+                    sha256  a575282ada01159662a2b3e78bfda22f521b3cf6aed419440cd986eb6779c4dc \
+                    size    1565032
+    revision        0
 
-depends_lib         port:libtool \
-                    port:libusb-compat \
-                    port:libxml2
+    name            hamlib-devel
+    long_description ${long_description} This port is kept up with the Hamlib \
+        GIT 'master' branch, is typically updated weekly to monthly.
+    conflicts       hamlib
+
+    use_autoconf    yes
+    autoconf.cmd    ./bootstrap
+
+    # need for autoconf
+    depends_build-append \
+        port:autoconf    \
+        port:automake    \
+        port:libtool
+
+} else {
+
+    github.setup    Hamlib Hamlib 4.1
+    github.tarball_from releases
+    checksums       rmd160  fd5e2c165c02de0b60a6af1ff812cb12dbc64de7 \
+                    sha256  b4d4b9467104d1f316c044d002c4c8e62b9f792cbb55558073bd963203b32342 \
+                    size    2260629
+    revision        0
+
+    conflicts       hamlib-devel
+
+}
+
+depends_build-append \
+    port:pkgconfig
+
+depends_lib-append \
+    port:libtool \
+    port:libusb-compat \
+    port:libxml2

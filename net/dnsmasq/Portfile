@@ -3,7 +3,7 @@
 PortSystem          1.0
 
 name                dnsmasq
-version             2.80
+version             2.84
 categories          net
 license             GPL
 maintainers         {snc @nerdling} openmaintainer
@@ -32,9 +32,9 @@ notes               "A startup item has been generated that will aid in\
 master_sites        http://www.thekelleys.org.uk/dnsmasq/
 use_xz              yes
 
-checksums           rmd160  5a26def1ae9a47a2debe08845dfc41d14f3bfa2e \
-                    sha256  cdaba2785e92665cf090646cba6f94812760b9d7d8c8d0cfb07ac819377a63bb \
-                    size    501072
+checksums           rmd160  51342173c980d756a99a0d8fb6ba9ab0f786b939 \
+                    sha256  603195c64b73137609b07e1024ae0b37f652b2f5fe467dce66985b3d1850050c \
+                    size    514216
 
 patchfiles          patch-src-config.h.diff \
                     patch-src-network.c.diff
@@ -48,13 +48,8 @@ post-patch {
 use_configure       no
 
 variant universal {}
-if {[vercmp [macports_version] 2.5.99] >= 0} {
 build.env-append    "CC=${configure.cc} [get_canonical_archflags]"
 destroot.env-append    "CC=${configure.cc} [get_canonical_archflags]"
-} else {
-build.env-append    CC="${configure.cc} [get_canonical_archflags]"
-destroot.env-append    CC="${configure.cc} [get_canonical_archflags]"
-}
 
 destroot.args       PREFIX=${prefix}
 destroot.keepdirs   ${destroot}${prefix}/var/run/${name}

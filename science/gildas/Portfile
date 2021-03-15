@@ -5,12 +5,11 @@ PortGroup           compilers 1.0
 PortGroup           active_variants 1.1 
 
 name                gildas
-version             201906b
+version             202102a
 set my_version      [string tolower [clock format [clock scan 2000-[string range ${version} 4 5]-10] -format %b]][string range ${version} 2 3][string range ${version} 6 end]
 categories          science
 platforms           darwin
-maintainers         {smaret @smaret} \
-                    {bardeau @bardeau}
+maintainers         {bardeau @bardeau}
 license             permissive
 
 description         Radioastronomy data analysis software
@@ -25,31 +24,33 @@ long_description    GILDAS is a collection of state-of-the-art softwares \
                     few parts in C/C++ (mainly keyboard interaction, \
                     plotting, widgets).
 
-homepage            http://www.iram.fr/IRAMFR/GILDAS/gildas.html
-master_sites        http://www.iram.fr/~gildas/dist/ \
-                    http://www.iram.fr/~gildas/dist/archive/gildas/
+homepage            https://www.iram.fr/IRAMFR/GILDAS/gildas.html
+master_sites        https://www.iram.fr/~gildas/dist/ \
+                    https://www.iram.fr/~gildas/dist/archive/gildas/
 distname            ${name}-src-${my_version}
 use_xz              yes
 
-checksums           rmd160  d9f84b95b25026cde96ee209f210c4c7f9b8c3cb \
-                    sha256  363d191afdb1fda12ec19d6b9c3ab4189e7c3b036e78f7359d17671d846118ce \
-                    size    138423056
+checksums           rmd160  68c9a6ccdc18e25ff1af9822af47adbf3d2a9170 \
+                    sha256  a7d5ac991e3f506a698cbe689ff403a2d8ce4c08c68fb439b8d3a5f66b8a9014 \
+                    size    42941124
 
 patch.pre_args      -p1
 patchfiles          patch-admin-Makefile.def.diff \
                     patch-admin-Makefile.python.diff \
+                    patch-admin-Makefile.build.diff \
                     patch-admin-gildas-env.sh.diff \
-                    patch-admin-define-system.sh.diff \
-                    patch-lapack.diff
+                    patch-admin-define-system.sh.diff
 
 depends_lib         port:gtk2 \
                     port:libpng \
-                    port:python27 \
-                    port:py27-numpy
+                    port:python38 \
+                    port:py38-numpy
 
+# coreutils needed to use GNU gsort instead of native BSD sort as older version
+# of sort do not support sort -V:
 depends_build       port:cfitsio \
                     port:pkgconfig \
-                    port:slatec
+                    port:coreutils
 
 set my_build_opts   ""
 variant openmp description {Add OpenMP support} {set my_build_opts "-o openmp"}
@@ -62,13 +63,7 @@ compilers.enforce_some_fortran cfitsio
 
 compilers.choose    fc
 compilers.setup     -g95 -gcc44 -gcc45 -gcc46 require_fortran
-configure.python    ${prefix}/bin/python2.7
-
-post-extract {
-    if {![gcc_variant_isset]} {
-        reinplace -W ${worksrcpath}/admin "s|-Wrealloc-lhs-all||" define-system.sh
-    }
-}
+configure.python    ${prefix}/bin/python3.8
 
 configure {
     set cxxstdlib {}
@@ -76,6 +71,7 @@ configure {
         set cxxstdlib [string map {lib -l} ${configure.cxx_stdlib}]
     }
 
+    reinplace -W ${worksrcpath}/admin "s|@PREFIX@|${prefix}|g" define-system.sh
     reinplace -W ${worksrcpath}/admin "s|@CC@|${configure.cc}|g" Makefile.def Makefile.python gildas-env.sh define-system.sh
     reinplace -W ${worksrcpath}/admin "s|@CCFLAGS@|${configure.cflags}|g" Makefile.def Makefile.python gildas-env.sh define-system.sh
     reinplace -W ${worksrcpath}/admin "s|@FC@|${configure.fc}|g" Makefile.def Makefile.python gildas-env.sh define-system.sh
@@ -84,7 +80,7 @@ configure {
     reinplace -W ${worksrcpath}/admin "s|@CPP@|${configure.cpp}|g" Makefile.def Makefile.python gildas-env.sh define-system.sh
     reinplace -W ${worksrcpath}/admin "s|@CPPFLAGS@|${configure.cppflags}|g" Makefile.def Makefile.python gildas-env.sh define-system.sh
     reinplace -W ${worksrcpath}/admin "s|@LDFLAGS@|${configure.ldflags}|g" Makefile.def Makefile.python gildas-env.sh define-system.sh
-    reinplace -W ${worksrcpath}/admin "s|@PYTHON@|${configure.python}|g" Makefile.def Makefile.python gildas-env.sh define-system.sh
+    reinplace -W ${worksrcpath}/admin "s|@PYTHON@|${configure.python}|g" Makefile.build Makefile.def Makefile.python gildas-env.sh define-system.sh
     reinplace -W ${worksrcpath}/admin "s|@STDCXXLIB@|${cxxstdlib}|g" Makefile.def Makefile.python gildas-env.sh define-system.sh
 }
 

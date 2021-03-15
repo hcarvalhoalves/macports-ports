@@ -5,11 +5,11 @@ PortGroup           app 1.0
 PortGroup           active_variants 1.1
 
 name                pspp-devel
-set buildstamp      20190520050002
-set buildhash       gedcf83
-version             1.3.0
+set buildstamp      20210314102504
+set buildhash       ge5a3aa
+epoch               1
+version             1.5.2
 revision            5
-# depends_test port:p${perl5.major}-text-diff
 categories          math
 license             GPL-3+
 maintainers         {snc @nerdling}
@@ -35,18 +35,23 @@ depends_lib-append  path:lib/pkgconfig/cairo.pc:cairo \
                     port:gsl \
                     port:libiconv \
                     port:libxml2 \
+                    port:librsvg \
                     port:ncurses \
-                    path:bin/perl:perl5 \
+                    port:perl5.28 \
                     path:lib/pkgconfig/pango.pc:pango \
+                    port:python38 \
                     port:readline \
                     port:spread-sheet-widget \
+                    port:texinfo \
                     port:zlib
 
-depends_build-append    port:pkgconfig
+depends_build-append    port:pkgconfig port:p5.28-text-diff port:coreutils
 
-checksums           rmd160  9643a4ecf1f40cc15dd2a43ded4d549087f8f481 \
-                    sha256  7f411b61e825f851f897978060a4ae81e176a6afe38bc0bbd745af1a2b673695 \
-                    size    7296734
+depends_test-append port:p5.28-text-diff port:coreutils
+
+checksums           rmd160  8df80458d3dcc2bea9fe891620d846229b128f09 \
+                    sha256  a58f0a7f94363f6edfcd2c2affc4e757355ae7e8cffa79253aa5bca72aac828e \
+                    size    8658145
 
 post-extract {
     if {[variant_isset gui]} {
@@ -62,7 +67,8 @@ post-patch {
 }
 
 #configure.cflags-append -g
-configure.perl      ${prefix}/bin/perl
+configure.python    ${prefix}/bin/python3.8
+configure.perl      ${prefix}/bin/perl5.28
 configure.args-append   --disable-rpath \
                         --without-libpq \
                         --without-gui \
@@ -75,10 +81,11 @@ if {[lsearch -exact ${nif_compilers} ${configure.compiler}] > -1} {
     configure.optflags-append -fno-inline-functions
 }
 
-build.target-append  html
-
+test.args           -j${build.jobs}
 test.run            yes
 test.target         check
+test.env            TESTSUITEFLAGS="-j${build.jobs}"
+#test.env            TESTSUITEFLAGS='-v -k unrepresentable'
 #test.env            TESTSUITEFLAGS='1177 1178 1179 1180 1181 1182 1183 1184 1185 1186'
 
 variant help requires gui description {Provide in-application help via yelp} {

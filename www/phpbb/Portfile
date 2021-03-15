@@ -3,7 +3,8 @@
 PortSystem          1.0
 
 name                phpbb
-version             3.2.7
+version             3.3.3
+set branch          [join [lrange [split ${version} .] 0 1] .]
 categories          www php
 platforms           darwin freebsd
 maintainers         {snc @nerdling} openmaintainer
@@ -21,26 +22,26 @@ long_description    phpBB is a high powered, fully scalable, and highly \
 
 installs_libs       no
 
-depends_run         port:php56-apache2handler \
-                    port:php56-ftp \
-                    port:php56-imagick \
-                    port:php56-gd
+depends_run         port:php73-apache2handler \
+                    port:php73-ftp \
+                    port:php73-imagick \
+                    port:php73-gd
 
 homepage            http://www.phpbb.com/
-master_sites        https://www.phpbb.com/files/release
+master_sites        https://download.phpbb.com/pub/release/${branch}/${version}/
 distname            phpBB-${version}
 use_bzip2           yes
 
-checksums           rmd160  2e128dc40720218ddd26323991e80c1799d05c23 \
-                    sha256  223688db716c580f62ee9a92ce7147610b820f1da52b64ec2fbf9671597a4f77 \
-                    size    4384851
+checksums           rmd160  61e8e7d606ebdddb20798f581b507bda63fda883 \
+                    sha256  a70d19174f74c91c18010f2bd8e89390c935143bb985c54056aaa4c3b0a54409 \
+                    size    4703855
 
 variant mysql description {add convenient runtime dependency on PHP's mysql extension} {
-    depends_run-append  port:php56-mysql
+    depends_run-append  port:php73-mysql
 }
 
 variant postgresql description {add convenient runtime dependency on PHP's postgresql extension} {
-    depends_run-append  port:php56-postgresql
+    depends_run-append  port:php73-postgresql
 }
 
 set docpath         ${destroot}${prefix}/www/data

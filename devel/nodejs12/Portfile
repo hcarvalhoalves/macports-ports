@@ -2,16 +2,16 @@
 
 PortSystem              1.0
 PortGroup               compiler_blacklist_versions 1.0
+PortGroup               legacysupport 1.0
 
 # on macOS nodejs only builds against libc++
 # this force is OK as node does not link against any other c++ libs
 depends_lib-append      port:libcxx
 configure.cxx_stdlib    libc++
-PortGroup               cxx11 1.1
+compiler.cxx_standard   2011
 
 name                    nodejs12
-version                 12.4.0
-revision                0
+version                 12.21.0
 
 categories              devel net
 platforms               darwin
@@ -25,22 +25,25 @@ long_description        Node's goal is to provide an easy way to build scalable 
                         Machine or Python's Twisted. Node takes the event model a bit further-it \
                         presents the event loop as a language construct instead of as a library.
 
-conflicts               nodejs6 nodejs8 nodejs10 nodejs11
+conflicts               nodejs8 nodejs10 nodejs13 nodejs14 nodejs15
 
-homepage                http://nodejs.org/
+homepage                https://nodejs.org/
 master_sites            ${homepage}dist/v${version}
 use_xz                  yes
 
-checksums               rmd160  ee17750fdb47768eaad1aa65a29003cb0f81c40a \
-                        sha256  20b52366d3502c60d4aec0bd5052c841a94bf1cd5d74b2ea1e498c1a2ada8ce3 \
-                        size    22479676
+checksums               rmd160  1e024ad17c8d0ef941d889e953cbae47e8ef7812 \
+                        sha256  052f37ace6f569b513b5a1154b2a45d3c4d8b07d7d7c807b79f1566db61e979d \
+                        size    23650552
 
 distname                node-v${version}
 
 depends_build           port:pkgconfig
 
-depends_lib             port:python27
-#                        path:lib/libssl.dylib:openssl
+depends_lib             port:icu \
+                        port:python38 \
+                        path:lib/libssl.dylib:openssl
+
+use_xcode               yes
 
 proc rec_glob {basedir pattern} {
     set files [glob -directory $basedir -nocomplain -type f $pattern]
@@ -50,7 +53,7 @@ proc rec_glob {basedir pattern} {
     return $files
 }
 
-configure.python ${prefix}/bin/python2.7
+configure.python ${prefix}/bin/python3.8
 
 patchfiles              patch-common.gypi.diff
 
@@ -73,13 +76,13 @@ if { ${os.platform} eq "darwin" && ${os.major} < 11 } {
 }
 
 configure.args-append   --without-npm
-configure.args-append   --with-intl=small-icu
-#configure.args-append   --shared-openssl
-#configure.args-append   --shared-openssl-includes=${prefix}/include/openssl
-#configure.args-append   --shared-openssl-libpath=${prefix}/lib
+configure.args-append   --with-intl=system-icu
+configure.args-append   --shared-openssl
+configure.args-append   --shared-openssl-includes=${prefix}/include/openssl
+configure.args-append   --shared-openssl-libpath=${prefix}/lib
 
 # V8 only supports ARM and IA-32 processors
-supported_archs         i386 x86_64
+supported_archs         i386 x86_64 arm64
 
 universal_variant       no
 
@@ -87,8 +90,7 @@ universal_variant       no
 configure.ccache        no
 
 test.run                yes
-
-use_parallel_build      no
+test.cmd                ${build.cmd} -j${build.jobs}
 
 switch $build_arch {
     i386 {
@@ -96,6 +98,9 @@ switch $build_arch {
     }
     x86_64 {
         configure.args-append   --dest-cpu=x64
+    }
+    arm64 {
+        configure.args-append   --dest-cpu=arm64
     }
 }
 
@@ -151,7 +156,6 @@ destroot {
     xinstall -m 644 -W ${worksrcpath} \
         AUTHORS \
         CHANGELOG.md \
-        COLLABORATOR_GUIDE.md \
         CONTRIBUTING.md \
         GOVERNANCE.md \
         LICENSE \
@@ -161,4 +165,4 @@ destroot {
 
 livecheck.url       ${homepage}dist/
 livecheck.type      regex
-livecheck.regex     {v(\d+\.\d+\.\d+)}
+livecheck.regex     {v(12\.\d+\.\d+)}

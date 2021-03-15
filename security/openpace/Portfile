@@ -4,6 +4,7 @@ PortSystem              1.0
 PortGroup               github 1.0
 
 github.setup            frankmorgner openpace 1.1.0
+revision                1
 categories              security libs
 platforms               darwin
 license                 GPL-3
@@ -19,6 +20,6 @@ checksums               rmd160  9962fbf76f82809bc6cc91ef98df85ad112e5066 \
                         size    3428532
 
 depends_build           port:gengetopt port:help2man port:pkgconfig
-depends_lib             port:openssl
+depends_lib             path:lib/libssl.dylib:openssl
 
 configure.args          --disable-silent-rules

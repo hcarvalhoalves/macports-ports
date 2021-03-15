@@ -4,7 +4,7 @@ PortSystem          1.0
 
 name                mapserver
 version             6.2.4
-revision            3
+revision            4
 maintainers         hbaspecto.com:jea openmaintainer
 categories          gis
 license             permissive
@@ -23,7 +23,7 @@ checksums           rmd160  690374d43a1b733c3b7acd73c37099d95554c599 \
 depends_build       port:pkgconfig
 
 depends_lib         port:gd2 \
-                    port:jpeg \
+                    path:include/turbojpeg.h:libjpeg-turbo \
                     port:libpng \
                     port:freetype \
                     port:giflib
@@ -117,16 +117,10 @@ variant geos description {Add GEOS operations support} {
     configure.args-append   --with-geos
 }
 
-variant apache2 conflicts apache_apple apache22 description {Use MacPorts Apache 2} {
+variant apache2 conflicts apache_apple description {Use MacPorts Apache 2} {
     depends_run-append      port:apache2
     global cgi_path
     set cgi_path "${prefix}/www/apache2/cgi-bin/"
-}
-
-variant apache22 conflicts apache_apple apache2 description {Use MacPorts Apache 2} {
-    # remove after 2020-04-30
-    ui_error "Please do not install this variant since Apache 2.2 is obsolete."
-    return -code error
 }
 
 variant apache_apple conflicts apache2 description {Use Apple Apache} {
@@ -135,7 +129,7 @@ variant apache_apple conflicts apache2 description {Use Apple Apache} {
     destroot.violate_mtree yes
 }
 
-if {![variant_isset apache2] && ![variant_isset apache22] && ![variant_isset apache_apple]} {
+if {![variant_isset apache2] && ![variant_isset apache_apple]} {
     # default to the apple apache version if none specified
     default_variants +apache_apple
 }

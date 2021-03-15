@@ -3,7 +3,8 @@
 PortSystem          1.0
 
 name                mupdf
-version             1.14.0
+version             1.17.0
+revision            1
 categories          graphics
 platforms           darwin
 maintainers         {gmail.com:starkhalo @harciga} openmaintainer
@@ -30,16 +31,16 @@ homepage            https://www.mupdf.com/
 master_sites        ${homepage}downloads/archive/
 distname            ${name}-${version}-source
 
-checksums           rmd160  4bff6300792025f5bd76b46d010dcfc8d2edeeb1 \
-                    sha256  c443483a678c3fc258fa4adc124146225d0bb443c522619faadebf6b363d7724 \
-                    size    55654104
+checksums           rmd160  98c5473e78a48ece1fb2c6c49e5ded007ba42dab \
+                    sha256  00e33fa89cb42f1ef9e3bb73671b1cb6d210f5159bd68168fa5c89ceb24dd48e \
+                    size    65510829
 
 depends_build       port:pkgconfig
 
 depends_lib         port:freetype \
                     port:harfbuzz \
                     port:jbig2dec \
-                    port:jpeg \
+                    path:include/turbojpeg.h:libjpeg-turbo \
                     port:openjpeg \
                     port:zlib
 

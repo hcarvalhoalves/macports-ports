@@ -1,10 +1,9 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
-PortGroup           cxx11 1.1
 
 name                xapian-core
-version             1.4.11
+version             1.4.17
 categories          devel
 platforms           darwin
 maintainers         {ryandesign @ryandesign} openmaintainer
@@ -22,15 +21,18 @@ master_sites        https://oligarchy.co.uk/xapian/${version}/
 dist_subdir         xapian
 use_xz              yes
 
+compiler.cxx_standard \
+                    2011
+
 if {${subport} eq ${name}} {
     revision                    0
 
     # version.h does not get generated properly when there are multiple -arch flags
     PortGroup                   muniversal 1.0
 
-    checksums                   rmd160  8e14120ebb8ea4b09e1e71ea784051577bb8daa9 \
-                                sha256  9f16b2f3e2351a24034d7636f73566ab74c3f0729e9e0492934e956b25c5bc07 \
-                                size    2975524
+    checksums                   rmd160  6f40fed418405d11782d81f84536ca257fd8cc1f \
+                                sha256  b5eb8556dea1b0cad4167a66223522e66d670ec1eba16c7fdc844ed6b652572e \
+                                size    2997700
 
     # TODO: Fix xapian-config to not require the .la file
     # /opt/local/bin/xapian-config --ltlibs --cxxflags
@@ -39,8 +41,8 @@ if {${subport} eq ${name}} {
 
     depends_lib                 port:zlib
 
-    if {[variant_exists universal] && [variant_isset universal]} {
-        post-build {
+    post-build {
+        if {[variant_exists universal] && [variant_isset universal]} {
             foreach arch ${universal_archs_to_use} {
                 # xapian-config records build directory, which interferes with universal merge
                 reinplace "s|${worksrcpath}-${arch}|${worksrcpath}|g" ${worksrcpath}-${arch}/xapian-config
@@ -55,10 +57,36 @@ if {${subport} eq ${name}} {
     livecheck.type              none
 }
 
-if [string match {xapian-bindings-*} ${subport}] {
-    checksums                   rmd160  e977d8d2811147e7c51db17d598029137eadf980 \
-                                sha256  9da356c8b20a66ea3d44002e24fee4ed961989d9ba726a13d13e8d56f216718d \
-                                size    1125716
+subport xapian-omega {
+    revision                    0
+    checksums                   rmd160  47022bd5c79eaf012f617bd70b47926adde17754 \
+                                sha256  d52eea4cd1bbf334e84af6d41ea3424466ab75e3dadd4a736e4eb0c976392d16 \
+                                size    547372
+
+    description                 web application using the Xapian library
+    long_description            Xapian Omega is an application built on the \
+                                Xapian library, consisting of indexers and a \
+                                CGI search frontend.
+
+    homepage                    ${homepage}/docs/omega/overview.html
+
+    distname                    xapian-omega-${version}
+
+    depends_lib                 port:libiconv \
+                                port:libmagic \
+                                port:pcre \
+                                port:xapian-core \
+                                port:zlib
+
+    configure.args              --with-iconv
+}
+
+if {[string match {xapian-bindings-*} ${subport}]} {
+    checksums                   rmd160  b9efdfd51eb2836fd942c10396f3afafe820e336 \
+                                sha256  48a65d91e0c3a4a8f4a1ca05dc39225912088aca2c47c0048cc93b09d338ebd3 \
+                                size    1135100
+
+    homepage                    ${homepage}/docs/bindings/
 
     distname                    xapian-bindings-${version}
 
@@ -78,24 +106,38 @@ if [string match {xapian-bindings-*} ${subport}] {
 
 # Java
 subport xapian-bindings-java {
+    PortGroup                   java 1.0
+
     revision                    0
 
     description                 Xapian bindings for Java
-    long_description            ${description}
+    long_description            {*}${description}
+
+    # Required java version
+    java.version                6+
+    # JDK port to install if required java not found
+    java.fallback               openjdk11
 
     configure.args-replace      --without-java --with-java
 
-    # TODO: libxapian_jni.jnilib gets "installed" into the work directory:
+    # jni destination violates the mtree layout
+    destroot.violate_mtree  yes
+
     # https://trac.xapian.org/ticket/774
+    post-destroot {
+        file mkdir ${destroot}/Library/Java/Extensions
+        move ${destroot}/${worksrcpath}/java/built/libxapian_jni.jnilib \
+            ${destroot}/Library/Java/Extensions/libxapian_jni.jnilib
+    }
 }
 
 # Perl
-foreach v {5.26 5.28} {
+foreach v {5.26 5.28 5.30} {
     subport xapian-bindings-perl${v} "
         revision                0
 
         description             Xapian bindings for Perl ${v}
-        long_description        \${description}
+        long_description        \{*\}\${description}
 
         depends_lib-append      port:perl${v}
 
@@ -109,7 +151,7 @@ foreach v {5.26 5.28} {
 }
 
 # PHP
-foreach v {5.5 5.6 7.0 7.1 7.2 7.3} {
+foreach v {5.5 5.6 7.0 7.1 7.2 7.3 7.4} {
     set v_no_dot [string map {. {}} ${v}]
     if {[vercmp ${v} 7] >= 0} {
         set suffix 7
@@ -122,7 +164,7 @@ foreach v {5.5 5.6 7.0 7.1 7.2 7.3} {
         revision                0
 
         description             Xapian bindings for PHP ${v}
-        long_description        \${description}
+        long_description        \{*\}\${description}
 
         depends_lib-append      port:php${v_no_dot}
 
@@ -137,7 +179,7 @@ foreach v {5.5 5.6 7.0 7.1 7.2 7.3} {
 }
 
 # Python
-foreach v {2.7 3.4 3.5 3.6 3.7} {
+foreach v {2.7 3.5 3.6 3.7 3.8} {
     set v_no_dot [string map {. {}} ${v}]
     if {[vercmp ${v} 3] >= 0} {
         set suffix 3
@@ -148,7 +190,7 @@ foreach v {2.7 3.4 3.5 3.6 3.7} {
         revision                0
 
         description             Xapian bindings for Python ${v}
-        long_description        \${description}
+        long_description        \{*\}\${description}
 
         depends_build-append    port:py${v_no_dot}-sphinx
 
@@ -170,7 +212,7 @@ foreach v {2.1 2.2 2.3 2.4 2.5 2.6} {
         revision                0
 
         description             Xapian bindings for Ruby ${v}
-        long_description        \${description}
+        long_description        \{*\}\${description}
 
         depends_lib-append      port:ruby${v_no_dot}
 

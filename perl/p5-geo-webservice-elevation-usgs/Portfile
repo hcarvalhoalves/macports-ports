@@ -3,8 +3,8 @@
 PortSystem          1.0
 PortGroup           perl5 1.0
 
-perl5.branches      5.26 5.28
-perl5.setup         Geo-WebService-Elevation-USGS 0.112
+perl5.branches      5.26 5.28 5.30
+perl5.setup         Geo-WebService-Elevation-USGS 0.117
 license             {Artistic-1 GPL}
 maintainers         {devans @dbevans} openmaintainer
 description         Geo::WebService::Elevation::USGS - Elevation queries against USGS web services.
@@ -12,15 +12,16 @@ long_description    ${description}
 
 platforms           darwin
 
-checksums           rmd160  8a38a354a17005839c923d170e686cc2f7aea397 \
-                    sha256  2644447819f950fbb0a107da780176a8d6fd4371d79d32fe2b6ae800176959b9 \
-                    size    42963
+checksums           rmd160  744033c9c0315629f840a47c53548324ef3b2a1f \
+                    sha256  b13338be67b957e32efa31e25d36bbf6b202f912dbfaae925b9778a94b574489 \
+                    size    37351
 
 if {${perl5.major} != ""} {
     depends_lib-append \
                     port:p${perl5.major}-http-message \
                     port:p${perl5.major}-json \
-                    port:p${perl5.major}-libwww-perl
+                    port:p${perl5.major}-libwww-perl \
+                    port:p${perl5.major}-lwp-protocol-https
 
     perl5.use_module_build
     supported_archs noarch

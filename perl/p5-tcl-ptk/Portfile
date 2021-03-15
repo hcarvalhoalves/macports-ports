@@ -3,8 +3,9 @@
 PortSystem          1.0
 PortGroup           perl5 1.0
 
-perl5.branches      5.26 5.28
-perl5.setup         Tcl-pTk 0.96
+perl5.branches      5.26 5.28 5.30
+perl5.setup         Tcl-pTk 1.08 ../../authors/id/C/CA/CAC
+revision            1
 
 platforms           darwin
 maintainers         {@chrstphrchvz gmx.us:chrischavez} openmaintainer
@@ -25,15 +26,17 @@ long_description    Tcl::pTk interfaces perl to an existing Tcl/Tk \
                     features (for example native-looking widgets using the \
                     Tile package).\n
 
-checksums           rmd160  713e74cd7fe03988f5dbc3d1d7b3982413d422e9 \
-                    sha256  3321905ce86ebbe459af26c10d469a06315f9ff11920cdcb8fb93390e458c658 \
-                    size    540049
+checksums           rmd160  e8f2f531d0896b10ed0690bbe69afceccf801e66 \
+                    sha256  2872a903fedca73d875e4e0ea06b03bf8839a59a497b5cb7893f2eeb6e9fafb2 \
+                    size    549297
 
 if {${perl5.major} != ""} {
     depends_lib-append \
                     port:p${perl5.major}-class-isa \
                     port:p${perl5.major}-sub-name \
                     port:p${perl5.major}-tcl \
+                    port:p${perl5.major}-time-hires \
+                    port:BWidget \
                     port:tix \
                     port:tk \
                     port:tkimg \

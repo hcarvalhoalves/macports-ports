@@ -2,10 +2,10 @@ PortSystem 1.0
 
 name	   inventor
 version	   2.1.5-10
-revision	10
+revision	11
 categories	devel graphics x11
 platforms	darwin
-maintainers	{css @cssdev}
+maintainers	nomaintainer
 
 description	SGI Open InventorTM graphics toolkit
 license		GPL-2
@@ -27,7 +27,7 @@ depends_lib	    port:xorg-libXi \
 		    port:xorg-libXt \
 		    port:libGLU \
 		    port:freetype \
-		    port:jpeg \
+		    path:include/turbojpeg.h:libjpeg-turbo \
 		    port:glw
 
 patchfiles	    patch-BarChart-GNUmakefile.diff \
@@ -101,7 +101,7 @@ universal_variant	no
 use_configure	no
 build.env	DYLD_LIBRARY_PATH=${worksrcpath}/lib IVROOT=${destroot}
 
-destroot.env	${build.env}
+destroot.env	{*}${build.env}
 
 post-destroot {
 	      xinstall -m 755 -d ${destroot}${prefix}/share/${name}

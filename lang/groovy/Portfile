@@ -1,7 +1,11 @@
-PortSystem 1.0
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+
+PortSystem      1.0
+PortGroup       java 1.0
 
 name            groovy
-version         2.5.7
+version         3.0.7
+revision        0
 
 categories      lang java
 maintainers     {breun.nl:nils @breun} openmaintainer
@@ -32,18 +36,21 @@ long_description Groovy... \
                 * compiles straight to Java bytecode so you can use it anywhere \
                   you can use Java
 
-homepage        http://groovy-lang.org/
+homepage        https://groovy-lang.org/
 master_sites    https://dl.bintray.com/${name}/maven/
 distname        apache-${name}-binary-${version}
 use_zip         yes
 
-checksums       rmd160  fd3b3ba43b53e67b3aa86286633cf8f455295dc0 \
-                sha256  3d905dfe4f739c8c0d9dd181e6687ac816e451bf327a9ec0740da473cfebc9e0 \
-                size    30058416
+checksums       rmd160  5b7152283a2d50ef6db2a31dc174963963737de9 \
+                sha256  b9e2041cb83a963922f6761a0b037c5784670616632142b8d7002b7c3a96b7f5 \
+                size    43340743
 
 worksrcdir      ${name}-${version}
 
 use_configure   no
+
+java.version    1.8+
+java.fallback   openjdk8
 
 build {}
 
@@ -64,7 +71,7 @@ destroot {
     }
 
     # Add symlinks to the scripts
-    foreach f { grape grape_completion groovy groovyConsole groovyConsole_completion groovy_completion groovyc groovyc_completion groovydoc groovydoc_completion groovysh groovysh_completion java2groovy startGroovy } {
+    foreach f { grape grape_completion groovy groovy_completion groovyConsole groovyConsole_completion groovyc groovyc_completion groovydoc groovydoc_completion groovysh groovysh_completion java2groovy startGroovy } {
         ln -s ../share/java/${name}/bin/${f} ${destroot}${prefix}/bin
     }
 }

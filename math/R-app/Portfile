@@ -4,10 +4,10 @@ PortSystem 1.0
 PortGroup xcode 1.0
 
 name                    R-app
-version                 1.68
-revision                1
+version                 1.74
+revision                0
 categories              math science aqua
-maintainers             {me.com:kjell.konis @kjellpk}
+maintainers             {me.com:kjell.konis @kjellpk} {i0ntempest @i0ntempest} openmaintainer
 license                 GPL-2+
 
 description             R GUI for Mac OS X
@@ -22,8 +22,9 @@ master_sites            http://cran.rstudio.com/bin/macosx/ \
 
 distname                Mac-GUI-${version}
 
-checksums               rmd160  5ea4a9c722b1ca465bca1cc67f5d4b14370682e2 \
-                        sha256  7dff17659a69e3c492fdfc3fb765e3c9537157d50b6886236bee7ad873eb416d
+checksums               rmd160  5f76466cc300c99d7a3949021af384af362cc93b \
+                        sha256  2188ba8a7ee6fbcbbc112cb431fe6492345ec4bf1fa6885d940df6207fcec6ab \
+                        size    1335742
 
 post-patch {
     reinplace "s|/Library/Frameworks/R.framework|${frameworks_dir}/R.framework|g" \
@@ -38,10 +39,14 @@ universal_variant       no
 
 xcode.project           R.xcodeproj
 xcode.target            R
-xcode.configuration     SnowLeopard64
+xcode.configuration     Release
 
 xcode.build.settings    FRAMEWORK_SEARCH_PATHS=${frameworks_dir}
 xcode.destroot.settings FRAMEWORK_SEARCH_PATHS=${frameworks_dir}
+
+if {[vercmp ${xcodeversion} 10.0] >= 0} {
+    destroot.pre_args  -UseNewBuildSystem=NO
+}
 
 post-destroot {
     delete ${destroot}${applications_dir}/sush

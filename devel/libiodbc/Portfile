@@ -4,12 +4,10 @@ PortSystem          1.0
 PortGroup           github 1.0
 PortGroup           active_variants 1.1
 
-conflicts           unixODBC
-
-github.setup        openlink iODBC 3.52.12 v
+github.setup        openlink iODBC 3.52.14 v
 #override name (keep it lowercase)
 name                libiodbc
-revision            1
+revision            2
 categories          devel
 maintainers         {snc @nerdling} openmaintainer
 license             BSD
@@ -19,8 +17,9 @@ long_description    iODBC is the acronym for Independent Open DataBase Connectiv
                     ODBC and X/Open specifications.
 platforms           darwin
 
-checksums           rmd160  1eebd33f846f1b03d157b2f1882933998b85dddb \
-                    sha256  b783506aac2df3f1b126b7867464878f5e79985370106019aef15d9dcc4b19c8
+checksums           rmd160  bfc775fc92dbbdf9679c85f340455bb0acbbfc83 \
+                    sha256  1c8a69e265b0284eac263612d094b122dc7e76dc47d676e4df0285b490665cf4 \
+                    size    800370
 
 depends_build-append    port:automake \
                         port:autoconf \
@@ -30,8 +29,9 @@ patchfiles-append   patch-iodbcinst-unicode.h.diff
 
 configure.args-append   --disable-libodbc
 
-variant libodbc description {install extra libodbc.so library} {
+variant libodbc description {install extra libodbc.a library} {
     configure.args-replace --disable-libodbc --enable-libodbc
+    conflicts           unixODBC
 }
 
 variant x11 {
@@ -62,12 +62,13 @@ variant x11 {
     configure.args-delete   --disable-gui
 }
 
-default_variants +x11 +libiodbc
+default_variants +x11 +libodbc
 
 pre-configure {
     system -W ${worksrcpath} "sh ./autogen.sh"
 }
 configure.args-append   --disable-gui \
+                        --includedir=${prefix}/include/${name} \
                         --with-iodbc-inidir=${prefix}/etc
 
 # make[2]: *** No rule to make target `../iodbcadm/libiodbcadm.la', needed by `iodbcadm-gtk'.  Stop.

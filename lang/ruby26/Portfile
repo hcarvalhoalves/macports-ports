@@ -4,8 +4,8 @@ PortSystem          1.0
 PortGroup           select 1.0
 
 name                ruby26
-version             2.6.3
-revision            0
+version             2.6.6
+revision            4
 
 categories          lang ruby
 maintainers         {kimuraw @kimuraw} openmaintainer
@@ -26,10 +26,10 @@ use_bzip2           yes
 distname            ruby-${version}
 dist_subdir         ruby26
 
-checksums           md5 52e609b756735115814b9c8463f185e2 \
-                    rmd160 54e239c1836284ffd0f7b99587a974eacf1aebf0 \
-                    sha1 aed3bd3c5346b3b85a6b184bb320465d98994fe3 \
-                    sha256 dd638bf42059182c1d04af0d5577131d4ce70b79105231c4cc0a60de77b14f2e
+checksums           md5 abc030870bfbe18ae9c356abebd95cb6 \
+                    rmd160 1360730a1c81be2a3e869a341f899b50ce10a26d \
+                    sha1 62adcc4c465a8790b3df87860551e7ad7d84f23d \
+                    sha256 f08b779079ecd1498e6a2548c39a86144c6c784dcec6f7e8a93208682eb8306e
 
 use_parallel_build  no
 
@@ -42,12 +42,6 @@ depends_lib         port:readline \
 depends_run         port:ruby_select
 depends_build       port:pkgconfig
 depends_skip_archcheck pkgconfig
-
-# requires gmake 3.81 or later
-if {${os.major} < 10} {
-    depends_build-append    port:gmake
-    build.cmd               ${prefix}/bin/gmake
-}
 
 select.group        ruby
 select.file         ${filespath}/ruby26
@@ -62,23 +56,27 @@ configure.args      --enable-shared \
                     --program-suffix=2.6 \
                     --with-rubylibprefix="${prefix}/lib/ruby2.6"
 
-platform darwin 11 {
-    # Build requires 10.8 SDK, even when targeting 10.7
-    # https://trac.macports.org/ticket/57986
-    set ten_eight_sdkpath ${developer_dir}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk
-    if {[file exists $ten_eight_sdkpath]} {
-        configure.sdkroot $ten_eight_sdkpath
-    } else {
-        pre-fetch {
-            error "Building $name @${version} on Mac OS X 10.7 requires the MacOSX10.8.sdk to be present in ${developer_dir}/Platforms/MacOSX.platform/Developer/SDKs"
-        }
-    }
-}
+# patch-configure_cxx11.diff: fix "invalid suffix on literal" with C++11
+#                             from RUBY_ARCH and RUBY_PLATFORM in config.h
+#                             https://trac.macports.org/ticket/58255
+patchfiles          patch-configure_cxx11.diff
 
+# [NOTE] workaround for mismatch of sdk versions on macOS 11.x,
+# such as MacOSX11.0.sdk (buildbot) <=> MacOSX11.1.sdk (user's Mac).
+# (see ruby27)
+post-build {
+    if {${os.major} >= 20} {
+        # ruby saves its' compile options (CFLAGS, LDFLAGS, ..) in "rbconfig.rb" at build,
+        # and uses the options when complile binary extensions.
 
-platform darwin {
-    if {${os.major} < 10} {
-        configure.args-append --disable-dtrace
+        # rewrite MacOSX11.1.sdk -> MacOSX.sdk in rbconfig.rb
+        file copy ${worksrcpath}/rbconfig.rb ${worksrcpath}/rbconfig.rb.orig
+        reinplace -E -q {s|(/MacOSX)[0-9\.]+(\.sdk[\'\"]?[[:blank:]])|\1\2|g} \
+		    ${worksrcpath}/rbconfig.rb \
+		    ${worksrcpath}/ruby-2.6.pc
+        reinplace -E -q {s|(/MacOSX)[0-9\.]+(\.sdk[\'\"]?)$|\1\2|g} \
+		    ${worksrcpath}/rbconfig.rb \
+		    ${worksrcpath}/ruby-2.6.pc
     }
 }
 
@@ -137,7 +135,35 @@ variant relative description "Enable relative loading of libraries to allow for 
         configure.args-append  --enable-load-relative
 }
 
+# legacy systems suport
+platform darwin {
+
+    # Build requires 10.8 SDK when targeting 10.7
+    # see https://trac.macports.org/ticket/57986
+    if {${os.major} == 11} {
+        set ten_eight_sdkpath ${developer_dir}/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk
+        if {[file exists $ten_eight_sdkpath]} {
+            configure.sdkroot $ten_eight_sdkpath
+        } else {
+            pre-fetch {
+                error "Building $name @${version} on Mac OS X 10.7 requires the MacOSX10.8.sdk to be present in ${developer_dir}/Platforms/MacOSX.platform/Developer/SDKs"
+            }
+        }
+    }
+
+    if {${os.major} < 11} {
+        depends_build-append    port:gmake
+        build.cmd               ${prefix}/bin/gmake
+        configure.args-append   --disable-dtrace
+        configure.cflags-append -std=c99
+    }
+
+    if {${os.major} == 8} {
+        configure.cppflags-append -DCPU_SUBTYPE_MASK=0xff000000
+    }
+}
+
+
 livecheck.type  regex
 livecheck.url   https://cache.ruby-lang.org/pub/ruby/2.6/
-livecheck.regex ruby-(2.6.\\d+)${extract.suffix}
-
+livecheck.regex ruby-(2\\.6\\.\\d+)[quotemeta ${extract.suffix}]

@@ -5,17 +5,16 @@ PortGroup           python 1.0
 PortGroup           select 1.0
 
 name                py-flake8
-version             3.7.7
+version             3.8.4
 revision            0
+
 categories-append   devel
 platforms           darwin
 supported_archs     noarch
 license             MIT
-
 maintainers         {petr @petrrr} openmaintainer
 
 description         The modular source code checker: pep8, pyflakes and Co.
-
 long_description    \
     Flake8 runs all the tools by launching the single flake8 script. It is \
     is a wrapper around the following tools: PyFlakes, PEP8 and the McCabe \
@@ -25,14 +24,11 @@ long_description    \
 
 homepage            https://flake8.readthedocs.org/
 
-distname            ${python.rootname}-${version}
-master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}
+checksums           rmd160  be4a5419587b2685198ecde6733566082522e0e4 \
+                    sha256  aadae8761ec651813c24be05c6f7b4680857ef6afaae4651a4eccaef97ce6c3b \
+                    size    163583
 
-checksums           rmd160  f803451aaa8a18e494c526f1cb108863072347f2 \
-                    sha256  859996073f341f2670741b51ec1e67a01da142831aa1fdc6242dbf88dffbe661 \
-                    size    148457
-
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 
 if {${name} ne ${subport}} {
     depends_lib-append      port:py${python.version}-codestyle \
@@ -41,15 +37,15 @@ if {${name} ne ${subport}} {
                             port:py${python.version}-pyflakes \
                             port:py${python.version}-setuptools
 
-    if { ${python.version} eq 27 } {
+    if {${python.version} < 38} {
+        depends_lib-append  port:py${python.version}-importlib-metadata
+    }
+
+    if {${python.version} eq 27} {
         depends_lib-append  port:py${python.version}-configparser \
                             port:py${python.version}-enum34 \
                             port:py${python.version}-functools32 \
                             port:py${python.version}-typing
-    }
-
-    if { ${python.version} eq 34 } {
-        depends_lib-append  port:py${python.version}-typing
     }
 
     depends_run-append      port:${python.rootname}_select
@@ -63,15 +59,11 @@ when you execute the commands without a version suffix, e.g. 'flake8', run:
 port select --set ${select.group} [file tail ${select.file}]
 "
 
-    # Adding documentation
     post-destroot {
         set dest_doc ${destroot}${prefix}/share/doc/${subport}
-        xinstall -d  ${dest_doc}
-        xinstall -m 755 -W ${worksrcpath} \
-            CONTRIBUTORS.txt \
-            LICENSE \
-            README.rst \
-                ${dest_doc}
+        xinstall -d ${dest_doc}
+        xinstall -m 0644 -W ${worksrcpath} CONTRIBUTORS.txt \
+            LICENSE README.rst ${dest_doc}
     }
 
     depends_test-append \
@@ -84,6 +76,4 @@ port select --set ${select.group} [file tail ${select.file}]
     test.env        PYTHONPATH=${worksrcpath}/build/lib
 
     livecheck.type  none
-} else {
-    livecheck.name  ${python.rootname}
 }

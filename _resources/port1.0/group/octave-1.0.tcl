@@ -18,34 +18,11 @@ options octave.module octave.config_h
 default octave.config_h {no}
 
 # some header files from Octave require C++-11
-PortGroup cxx11 1.1
-# overrule cxx11 PortGroup because octave can use GCC compilers for Fortran
-#    even if configure.cxx_stdlib is libc++
-compiler.blacklist-delete *gcc*
+compiler.cxx_standard  2011
 
-# override universal_setup found in portutil.tcl so it uses muniversal PortGroup
 # see https://trac.macports.org/ticket/51643
-proc universal_setup {args} {
-    if {[variant_exists universal]} {
-        ui_debug "universal variant already exists, so not adding the default one"
-    } elseif {[exists universal_variant] && ![option universal_variant]} {
-        ui_debug "universal_variant is false, so not adding the default universal variant"
-    } elseif {[exists use_xmkmf] && [option use_xmkmf]} {
-        ui_debug "using xmkmf, so not adding the default universal variant"
-    } elseif {![exists os.universal_supported] || ![option os.universal_supported]} {
-        ui_debug "OS doesn't support universal builds, so not adding the default universal variant"
-    } elseif {[llength [option supported_archs]] == 1} {
-        ui_debug "only one arch supported, so not adding the default universal variant"
-    } else {
-        ui_debug "adding universal variant via PortGroup muniversal"
-        uplevel "PortGroup muniversal 1.0"
-        if {[vercmp [macports_version] 2.5.3] <= 0} {
-        uplevel "default universal_archs_supported {\"i386 x86_64\"}"
-        } else {
-        uplevel "default universal_archs_supported {i386 x86_64}"
-        }
-    }
-}
+PortGroup muniversal 1.0
+default universal_archs_supported {i386 x86_64}
 
 proc octave.setup {module version} {
     global octave.module
@@ -62,12 +39,9 @@ proc octave.set_module {opt action args} {
     }
 }
 
-if {[vercmp [macports_version] 2.5.3] <= 0} {
-    default categories   {"math science"}
-} else {
-    default categories   "math science"
-}
-default master_sites {sourceforge:octave}
+default categories   "math science"
+default master_sites [list sourceforge:project/octave/Octave%20Forge%20Packages/Individual%20Package%20Releases \
+                        sourceforge:octave]
 default distname     {${octave.module}-${version}}
 default worksrcdir   {${octave.module}}
 # do not build in parallel; many can't, and these are small builds
@@ -109,16 +83,21 @@ port::register_callback octave.add_env
 post-extract {
     # rename the effective worksrcdir to always be ${octave.module}
 
-    set worksrcdir_name [exec /bin/ls ${workpath} | grep -v -E "^\\."]
-    if {[string equal ${worksrcdir_name} ${octave.module}] == 0} {
-        # work-around for case-insensitive file systems when the
-        # extract directory name is the same as the octave module name
-        # except for letter case; should always work no matter if the
-        # file system is case-insensitive or case-sensitive.
-
-        move ${workpath}/${worksrcdir_name} ${workpath}/tmp-${worksrcdir_name}
-        move ${workpath}/tmp-${worksrcdir_name} ${workpath}/${octave.module}
+    if {[exec /bin/ls ${workpath} | grep -v -E "^\\." | awk "END \{print NR\}"] == 2} {
+        delete ${workpath}/${octave.module}
+        move [glob ${workpath}/*-*] ${workpath}/${octave.module}
     }
+
+#     set worksrcdir_name [exec /bin/ls ${workpath} | grep -v -E "^\\."]
+#     if {[string equal ${worksrcdir_name} ${octave.module}] == 0} {
+#         # work-around for case-insensitive file systems when the
+#         # extract directory name is the same as the octave module name
+#         # except for letter case; should always work no matter if the
+#         # file system is case-insensitive or case-sensitive.
+# 
+#         move ${workpath}/${worksrcdir_name} ${workpath}/tmp-${worksrcdir_name}
+#         move ${workpath}/tmp-${worksrcdir_name} ${workpath}/${octave.module}
+#     }
 }
 
 configure.universal_args-delete --disable-dependency-tracking
@@ -143,19 +122,23 @@ pre-configure {
         }
 
     } else {
-        configure.env-append OCTAVE_ARCH=${build_arch}
+        configure.env-append OCTAVE_ARCH=${configure.build_arch}
         configure.args \
             "'try; pkg build -verbose -nodeps ${workpath}/tmp-build ${workpath}/${distname}.tar.gz; catch; disp(lasterror.message); exit(1); end_try_catch;'"
 
         # fortran arch flag is not set automatically
-        if {${build_arch} eq "x86_64" || ${build_arch} eq "ppc64"} {
+        if {${configure.build_arch} eq "x86_64" || ${configure.build_arch} eq "ppc64"} {
             configure.fflags-append -m64
         } else {
             configure.fflags-append -m32
         }
     }
 
-    configure.cmd /usr/bin/arch -arch \$OCTAVE_ARCH ${prefix}/bin/octave-cli
+    if { ${supported_archs} eq "noarch" } {
+        configure.cmd ${prefix}/bin/octave-cli
+    } else {
+        configure.cmd /usr/bin/arch -arch \$OCTAVE_ARCH ${prefix}/bin/octave-cli
+    }
 
     configure.pre_args -q -f -H --eval
     configure.post_args
@@ -168,7 +151,7 @@ build {}
 pre-destroot {
     set octave_api_version [exec "${prefix}/bin/octave-config" -p API_VERSION]
 
-    destroot.cmd /usr/bin/arch -arch \$OCTAVE_ARCH ${prefix}/bin/octave-cli
+    destroot.cmd ${configure.cmd}
     destroot.pre_args -q -f -H --eval
 
     if { ${os.arch} eq "i386" } {
@@ -208,7 +191,7 @@ pre-destroot {
         set octave_install_lib   ${destroot}${prefix}/lib/octave/packages
         set octave_tgz_file ${workpath}/tmp-build/[exec /bin/ls ${workpath}/tmp-build]
 
-        destroot.env-append OCTAVE_ARCH=${build_arch}
+        destroot.env-append OCTAVE_ARCH=${configure.build_arch}
 
         destroot.args \
             "'try; pkg prefix ${octave_install_share} ${octave_install_lib}; pkg install -verbose -nodeps -local ${octave_tgz_file}; catch; disp(lasterror.message); exit(1); end_try_catch;'"

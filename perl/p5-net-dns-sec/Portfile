@@ -3,9 +3,9 @@
 PortSystem          1.0
 PortGroup           perl5 1.0
 
-perl5.branches      5.26 5.28
+perl5.branches      5.26 5.28 5.30
 
-perl5.setup         Net-DNS-SEC 1.13
+perl5.setup         Net-DNS-SEC 1.18 ../../authors/id/N/NL/NLNETLABS
 license             MIT
 maintainers         {devans @dbevans} openmaintainer
 
@@ -16,9 +16,9 @@ long_description    The Net::DSN::SEC suite provides the resource records \
                     useful for dynamic updates using key-pairs. \
                     RSA and DSA crypto routines are supported.
 
-checksums           rmd160  05a499ff2c36aa1a641defeaf66346eef47f016a \
-                    sha256  4539ce00ecf6f1cd6ce2423a2c610fb83db08d62e9c669c3a92540b7f018ccda \
-                    size    44796
+checksums           rmd160  3840c75341cf08ff448fbae771d6a167c6ef377b \
+                    sha256  65ea2b1e878ca651238192426d41d1750eb77b5b7ba1fb71be3fc2ebb7e237b9 \
+                    size    46301
 
 platforms           darwin
 supported_archs     noarch

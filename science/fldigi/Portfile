@@ -1,16 +1,17 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
+PortGroup           muniversal 1.0
 
 name                fldigi
-version             4.1.03
-revision            1
+version             4.1.18
+revision            0
 # same sources but with different version
 set version_flarq   4.3.7
 categories          science
 platforms           darwin macosx
 license             GPL-3
-maintainers         {@ra1nb0w irh.it:rainbow} openmaintainer
+maintainers         {ra1nb0w @ra1nb0w} openmaintainer
 
 description         Fast Light Digital Modem Application
 long_description    Fldigi (Fast Light Digital Modem Application), is a \
@@ -19,34 +20,47 @@ long_description    Fldigi (Fast Light Digital Modem Application), is a \
 homepage            http://www.w1hkj.com
 master_sites        http://www.w1hkj.com/files/${name}/
 
-checksums           rmd160  a7f17268a910d0642187bf333b8fd46b646f88af \
-                    sha256  37d9404cd02ad0497fb369ab73ade4f6330e1f82bfce908c4fe89f21642775b4 \
-                    size    4682813
+checksums           rmd160  cc8cb2d3c8595f83ddfac5cdcc6282e791872713 \
+                    sha256  3c7fd84ab3a84ba4525b251e9d56120daee626a3831684a974fdad476f90270d \
+                    size    4847091
 
 depends_build-append \
-    port:pkgconfig
+    port:pkgconfig \
+    port:asciidoc
 
 depends_lib-append \
     path:lib/libfltk.dylib:fltk \
-    port:hamlib \
+    path:lib/libhamlib.dylib:hamlib \
     port:libpng \
     port:libsamplerate \
     port:libsndfile \
     port:portaudio
 
-# remove when upstream accept it
-patchfiles-append \
-    patch-info.plist.diff
-
 configure.args-append \
-    --without-pulseaudio
+    --without-pulseaudio \
+    --with-asciidoc
+
+# build fix: remove -no-stack-check on macOS < 10.10
+if {${os.platform} eq "darwin" && ${os.major} <= 13} {
+    use_autoreconf yes
+    patchfiles-append \
+        remove_no-stack-check.patch
+}
 
 # We put this into a pre-configure block so it can be evaluated _after_ platform selection.
 pre-configure {
-    # enable optimization (SSE3) on all Intel hardwares
-    if {${build_arch} eq "i386" || ${build_arch} eq "x86_64"} {
-        configure.args-append \
-            --enable-optimizations=sse3
+
+    # enable optimization on all Intel hardwares
+    if {[variant_exists universal] && [variant_isset universal]} {
+        set merger_configure_args(x86_64) configure.args-append --enable-optimizations=x86-64
+        set merger_configure_args(i386)   configure.args-append --enable-optimizations=i686
+    } elseif {[variant_isset native]} {
+        configure.args-append --enable-optimizations=native
+    } else {
+        switch -- ${configure.build_arch} {
+            x86_64 { configure.args-append --enable-optimizations=x86-64 }
+            i386   { configure.args-append --enable-optimizations=i686 }
+        }
     }
 
     # Fix building for older macOS versions via MACOSX_DEPLOYMENT_TARGET
@@ -68,6 +82,17 @@ variant bundle description {Enable the optional macOS bundle of fldigi/flarq} {
         copy ${workpath}/${name}-${version}/src/${name}-${version}/${name}-${version}.app ${destroot}${applications_dir}/${name}.app
         copy ${workpath}/${name}-${version}/src/${name}-${version}/flarq-${version_flarq}.app ${destroot}${applications_dir}/flarq.app
     }
+}
+
+variant pulseaudio description {Build fldigi with pulseaudio support} {
+    configure.args-delete --without-pulseaudio
+    configure.args-append --with-pulseaudio
+    depends_lib-append \
+        port:pulseaudio
+}
+
+variant native conflicts universal description {Enable native cpu flags optimization} {
+    # check pre-configure
 }
 
 default_variants-append +bundle

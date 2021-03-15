@@ -4,13 +4,13 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-flask
-version             1.0.2
+version             1.1.2
 revision            0
-checksums           rmd160  2a4ee681dfe52fd92529eacfccebb47995ca006a \
-                    sha256  2271c0070dbcb5275fad4a82e29f23ab92682dc45f9dfbc22c02ba9b9322ce48 \
-                    size    644534
+checksums           rmd160  b28143a7f4f5c9b99e34f45dce277320765073d9 \
+                    sha256  4efa1ae2d7c9865af48986de8aeb8504bf32c7f3d6fdc9353d34b21f4b127060 \
+                    size    637516
 
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 platforms           darwin
 maintainers         {ryandesign @ryandesign} openmaintainer
 license             BSD
@@ -20,7 +20,7 @@ description         microframework for Python based on Werkzeug and Jinja2
 
 long_description    Flask is a ${description}, intended for small-scale applications
 
-homepage            http://flask.pocoo.org/
+homepage            https://palletsprojects.com/p/flask/
 master_sites        pypi:F/Flask/
 default distname    {Flask-${version}}
 
@@ -37,4 +37,9 @@ if {${name} ne ${subport}} {
     livecheck.type      regex
     livecheck.url       https://pypi.python.org/pypi/Flask/json
     livecheck.regex     {Flask-(\d+(?:\.\d+)*)\.[tz]}
+}
+
+subport py34-${python.rootname} {
+    replaced_by py35-${python.rootname}
+    PortGroup obsolete 1.0
 }

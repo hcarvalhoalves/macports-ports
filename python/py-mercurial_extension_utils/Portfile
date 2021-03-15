@@ -2,30 +2,34 @@
 
 PortSystem          1.0
 PortGroup           python 1.0
-PortGroup           bitbucket 1.0
+PortGroup           gitlab 1.0
 
-bitbucket.setup     Mekk mercurial-extension_utils 1.3.7
+gitlab.instance     https://foss.heptapod.net
+gitlab.setup        mercurial mercurial-extension_utils 1.5.1
+
 name                py-mercurial_extension_utils
 
 categories-append   devel
-license             GPL
+platforms           darwin
+supported_archs     noarch
+license             BSD
 maintainers         nomaintainer
+
 description         Utility methods for Mercurial extensions
 long_description    ${description}
 
+checksums           rmd160  e1ff7af4305f77856a9df35ced0d898028ce83ae \
+                    sha256  e864519f7070cc2d03f937d0c0f6e3240c981b7b3d162f7b746b2fe420601e74 \
+                    size    22071
 
-platforms           darwin
-
-checksums           rmd160  2b2bfe7ea60453e92dedf999b0b2157e84d63bdf \
-                    sha256  7ba14ce4b37aa50e1d0c047e2733b242a1c737031fded177d7831734b681fb18 \
-                    size    20066
-
-python.versions     27
+python.versions     27 37 38 39
 
 if {${name} ne ${subport}} {
-    depends_run         port:mercurial
+    depends_build-append \
+                    port:py${python.version}-setuptools
 
-    depends_build       port:py${python.version}-setuptools
+    depends_run-append \
+                    port:mercurial
 
-    livecheck.type      none
+    livecheck.type  none
 }

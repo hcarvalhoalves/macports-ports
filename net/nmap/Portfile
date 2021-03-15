@@ -1,12 +1,12 @@
 PortSystem 1.0
 
 name		nmap
-version		7.70
+version		7.91
 categories	net
 maintainers	darkart.com:opendarwin.org {geeklair.net:dluke @danielluke}
 description	Port scanning utility for large networks
 license		{GPL-2 OpenSSLException}
-homepage	http://nmap.org/
+homepage	https://nmap.org/
 platforms	darwin freebsd
 
 long_description Nmap is a utility for port scanning large networks, although \
@@ -23,11 +23,11 @@ long_description Nmap is a utility for port scanning large networks, although \
 
 master_sites	https://nmap.org/dist/
 
-checksums	md5	84eb6fbe788e0d4918c2b1e39421bf79 \
-		sha1	71057361a0953bba5967dc0385de77f3eed792de \
-		rmd160	39b176e3b515bb5bf95503e3cb431a0dcd9e97ed \
-		sha256	847b068955f792f4cc247593aca6dc3dc4aae12976169873247488de147a6e18 \
-		size	10467371
+checksums	md5	239cef725863ab454590a1bb8793b72b \
+		sha1	e72198f463ee9d557e4c5c9444cc5a0e5c36b00c \
+		rmd160	3e011fdd6fb3b391a3cbfc6e4c7ec35ccfe1819b \
+		sha256	18cc4b5070511c51eb243cdd2b0b30ff9b2c4dc4544c6312f75ce3a67a593300 \
+		size	10503500
 
 depends_lib	port:libpcap \
 		port:zlib \
@@ -41,6 +41,14 @@ configure.args	--without-zenmap --without-ndiff \
 		--with-liblua=included \
 		--without-subversion
 		
+# https://trac.macports.org/ticket/58837
+# build system does not pass the stdlib on the link line resulting in link errors
+# for some build configurations using non-default stdlib settings
+if {${os.platform} eq "darwin" && ${os.version} < 13} {
+  if {[string match *clang* ${configure.cxx}]} {
+    configure.ldflags-append -stdlib=${configure.cxx_stdlib}
+  }
+}
 
 # nmap's configure script in nselib-bin does not respect --with-liblua=included
 configure.env ac_cv_header_lua_h=no

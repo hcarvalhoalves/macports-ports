@@ -4,8 +4,9 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-tempora
-version             1.14.1
+version             4.0.1
 revision            0
+
 categories-append   devel
 platforms           darwin
 supported_archs     noarch
@@ -21,21 +22,30 @@ homepage            https://pypi.python.org/pypi/${python.rootname}
 distname            ${python.rootname}-${version}
 master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}
 
-checksums           rmd160  7dac285c19fc780e630536bf456d6c7c37c10e15 \
-                    sha256  cb60b1d2b1664104e307f8e5269d7f4acdb077c82e35cd57246ae14a3427d2d6 \
-                    size    19383
+checksums           rmd160  aa8824bdc291c6763fce61dcf46d722b67638ecf \
+                    sha256  9af06854fafb26d3d40d3dd6402e8baefaf57f90e48fdc9a94f6b22827a60fb3 \
+                    size    20978
 
-patchfiles          patch-remove-flake8.diff
-
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 
 if {${name} ne ${subport}} {
     depends_build-append    port:py${python.version}-setuptools_scm
     depends_lib-append      port:py${python.version}-jaraco.functools \
                             port:py${python.version}-tz \
-                            port:py${python.version}-six
+                            port:py${python.version}-setuptools \
+                            port:py${python.version}-six \
+                            port:py${python.version}-toml
 
-    if {${python.version} > 33} {
+    if {${python.version} < 36} {
+        version             1.14.1
+        revision            2
+        # Below distname is required for this to work
+        distname            ${python.rootname}-${version}
+
+        checksums           rmd160  7dac285c19fc780e630536bf456d6c7c37c10e15 \
+                            sha256  cb60b1d2b1664104e307f8e5269d7f4acdb077c82e35cd57246ae14a3427d2d6 \
+                            size    19383
+
         depends_test-append port:py${python.version}-py \
                             port:py${python.version}-pytest \
                             port:py${python.version}-freezegun
@@ -43,9 +53,18 @@ if {${name} ne ${subport}} {
         test.env            PYTHONPATH=${worksrcpath}/build/lib
         test.cmd            py.test-${python.branch}
         test.target
+
+        livecheck.type      none
     }
 
+    depends_test-append port:py${python.version}-py \
+                        port:py${python.version}-pytest \
+                        port:py${python.version}-freezegun
+    test.run            yes
+    test.args           -o addopts=''
+    test.env            PYTHONPATH=${worksrcpath}/build/lib
+    test.cmd            py.test-${python.branch}
+    test.target
+
     livecheck.type  none
-} else {
-    livecheck.type  pypi
 }

@@ -4,14 +4,15 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-tpot
-version             0.10.1
+python.rootname     TPOT
+version             0.11.7
 revision            0
 categories-append   devel math science
 platforms           darwin
 license             LGPL
 supported_archs     noarch
 
-python.versions     27 35 36 37
+python.versions     27 35 36 37 38 39
 
 maintainers         {stromnov @stromnov} openmaintainer
 
@@ -21,13 +22,10 @@ long_description    A Python tool that automatically creates and optimizes \
                     Machine Learning pipelines using genetic programming.
 
 homepage            https://github.com/EpistasisLab/tpot
-master_sites        pypi:T/TPOT
 
-distname            TPOT-${version}
-
-checksums           rmd160  0bbc582a54cc8595c1280b7bad5b560d332a50b2 \
-                    sha256  22a3c380421ef6330802a52a764f0fa6ac0253cbb4b2879c950525d7c4309966 \
-                    size    895881
+checksums           rmd160  55de8320ae8ad0681552ee44afd0a043c942a50a \
+                    sha256  64ff1845efdec3d9c70b35587f719cc0821722f27d16f542f83bf81f448e3ff1 \
+                    size    908251
 
 if {${name} ne ${subport}} {
     depends_lib-append  port:py${python.version}-setuptools \
@@ -38,9 +36,17 @@ if {${name} ne ${subport}} {
                         port:py${python.version}-update_checker \
                         port:py${python.version}-tqdm \
                         port:py${python.version}-stopit \
-                        port:py${python.version}-pandas
+                        port:py${python.version}-pandas \
+                        port:py${python.version}-joblib
+
+    if {${python.version} eq 27} {
+        version             0.10.2
+        revision            0
+        distname            ${python.rootname}-${version}
+        checksums           rmd160  a543e0f031aca47193cefe96c927f30d3d11c556 \
+                            sha256  276b58ac5b5dc67faf1340c36ac6135f2e717c0a8e04ab6ae382b56c34addfba \
+                            size    897030
+    }
 
     livecheck.type      none
-} else {
-    livecheck.name      TPOT
 }

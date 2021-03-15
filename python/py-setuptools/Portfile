@@ -4,7 +4,7 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-setuptools
-version             41.0.1
+version             54.1.1
 categories-append   devel
 # License status is murky. The current maintainer decided to relicense as
 # MIT, but he doesn't appear to have obtained the permission of previous
@@ -23,29 +23,54 @@ platforms           darwin
 supported_archs     noarch
 
 homepage            https://pypi.org/project/setuptools/
-master_sites        pypi:s/setuptools/
-use_zip             yes
 
-checksums           rmd160 610a2eb14c3ffa128b125b3bf992e2a479cf8a0b \
-                    sha256 a222d126f5471598053c9a77f4b5d4f26eaa1f150ad6e01dcf1a42e185d05613
+checksums           md5 8e6f57965865fe7afd9d4ee68016b0aa \
+                    rmd160 8d169505b5dc2c103b52f6724004dc1fbf337ea8 \
+                    sha256 1ce82798848a978696465866bb3aaab356003c42d6143e1111fcf069ac838274
 
-python.versions     26 27 33 34 35 36 37
+python.versions     26 27 33 34 35 36 37 38 39
 python.link_binaries no
 
 if {$subport ne $name} {
-    if {${python.version} == 26} {
+
+    if {${python.version} <= 35} {
+        use_zip     yes
+        post-destroot {
+            ln -s ${python.prefix}/bin/easy_install-${python.branch} ${destroot}${prefix}/bin
+        }
+    }
+
+    if {${python.version} == 35} {
+        version     50.3.1
+        revision    0
+        checksums   md5 6a323319a1d3b7d1939ddc0f6bc7dbe9 \
+                    rmd160 7f42ab7c6305d5c01180fe8d3946bc0d57b6c718 \
+                    sha256 0e9772768fa6e9d3cf818a3e6e24dd2236f319d2c478312995edcb30ddeb8343
+    } elseif {${python.version} == 27} {
+        version     44.1.1
+        revision    0
+        checksums   md5 2c41f19cfd1f16a7d7bb23689921ac1b \
+                    rmd160 f8af333dabae2df9fba6f02dc2d22249b15d83e8 \
+                    sha256 c67aa55db532a0dadc4d2e20ba9961cbd3ccc84d544e9029699822542b5a476b
+    } elseif {${python.version} == 34} {
+        version     43.0.0
+        revision    0
+        checksums   md5 792983f474cd2bd314fa3af28813cdb6 \
+                    rmd160 b0c380d5789a76b43c409d35f3250efd8577fd91 \
+                    sha256 db45ebb4a4b3b95ff0aca3ce5fe1e820ce17be393caf8902c78aa36240e8c378
+    } elseif {${python.version} == 33} {
+        version     39.2.0
+        revision    0
+        checksums   md5 dd4e3fa83a21bf7bf9c51026dc8a4e59 \
+                    rmd160 6070de164cf74412fe7c9a9d04031112b06cfc2a \
+                    sha256 f7cddbb5f5c640311eb00eab6e849f7701fa70bf6a183fc8a2c33dd1d1672fb2
+    } elseif {${python.version} == 26} {
         version     36.8.0
         revision    0
         checksums   md5    3ecaa938a4c95a74dfbcd6340a47c7c5 \
                     rmd160 457c838b9fb09cf0bf9ba519a098e1c009710aa3 \
                     sha256 b2aa5a00e9e4fd20f3c3dd412d490921746efe14bda34d53973c4a59ab05b35d
-    } elseif {${python.version} == 33} {
-        version     39.2.0
-        revision    0
-        checksums   rmd160 6070de164cf74412fe7c9a9d04031112b06cfc2a \
-                    sha256 f7cddbb5f5c640311eb00eab6e849f7701fa70bf6a183fc8a2c33dd1d1672fb2
     }
-    distname        setuptools-${version}
 
     build.env-append    SETUPTOOLS_INSTALL_WINDOWS_SPECIFIC_FILES=0
     destroot.env-append SETUPTOOLS_INSTALL_WINDOWS_SPECIFIC_FILES=0
@@ -53,7 +78,6 @@ if {$subport ne $name} {
        xinstall -m 755 -d ${destroot}${prefix}/share/doc/${subport}
        xinstall -m 644 -W ${worksrcpath} CHANGES.rst README.rst \
           ${destroot}${prefix}/share/doc/${subport}
-       ln -s ${python.prefix}/bin/easy_install-${python.branch} ${destroot}${prefix}/bin
     }
     livecheck.type      none
 }

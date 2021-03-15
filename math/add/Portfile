@@ -3,7 +3,7 @@
 PortSystem          1.0
 
 name                add
-version             20180701
+version             20210108
 revision            0
 categories          math
 platforms           darwin
@@ -18,9 +18,9 @@ homepage            https://invisible-island.net/add/
 master_sites        ftp://ftp.invisible-island.net/pub/add/
 extract.suffix      .tgz
 
-checksums           rmd160  b24d4eec3e800a4689e779e31687bebf0a1a9f65 \
-                    sha256  cfacdaa158770a63ef95956b26f592f3af36d857ff93b87d26a4b0fa76914b92 \
-                    size    163226
+checksums           rmd160  7b74e4c240902ebd36546b0b9f1fc83fde5e35c3 \
+                    sha256  1f57f2f3d807af1a471fb3b5ecd6dd85398a66942797df543d2de68440dbe430 \
+                    size    173004
 
 depends_lib         port:ncurses
 

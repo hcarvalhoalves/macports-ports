@@ -3,9 +3,10 @@
 PortSystem 1.0
 
 name			    abcl
-version			    1.5.0
+version			    1.8.0
 revision            0
 categories		    lang java
+PortGroup           java 1.0
 license             GPL-2
 maintainers		    {easieste @easye} openmaintainer
 description		    A Common Lisp implementation that runs on the JVM
@@ -20,18 +21,21 @@ long_description	\
     so it can be a utilized as a scripting engine in any Java \
     application.
     
-homepage            http://common-lisp.net/project/armedbear 
+homepage            https://abcl.org
 platforms           darwin
-master_sites        http://abcl.org/releases/${version}/
+master_sites        https://abcl.org/releases/${version}/
 distname            abcl-src-${version}
 
-checksums           md5     bd697ba4484a4bd02f3dd85f1260b586 \
-                    sha1    7543f68cf2661a1668361d3d2f8efed979100a3d \
-                    rmd160  65a787ca2015b6de457789c096689225505e4834 \
-                    sha256  920ee7d634a7f4ceca0a469d431d3611a321c566814d5ddb92d75950c0631bc2
+checksums           md5     9bbdf32caa0ed33f89c065fe60d1a989 \
+                    sha1    c2851f214181a2d3f8a68bd88c18624fd101864f \
+                    rmd160  24076d5f6539dcf759114530966a6d3acfa2a252 \
+                    sha256  1d871ee2f6bcf991d5a6eff7ea5105ef808610db882604d4df0411e971ad257f \
+                    size    2613411
 
 depends_build       port:apache-ant
 
+java.version        11
+java.fallback       openjdk11
 use_configure       no
 
 build.cmd           ant

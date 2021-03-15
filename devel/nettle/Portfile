@@ -2,12 +2,14 @@
 
 PortSystem          1.0
 PortGroup           muniversal 1.0
+PortGroup           compiler_blacklist_versions 1.0
 
 name                nettle
-version             3.4.1
-checksums           rmd160  ecf0b73ffa9020037161fa10bc3d7e0e578e5b3e \
-                    sha256  f941cf1535cd5d1819be5ccae5babef01f6db611f9b5a777bae9c7604b8a92ad \
-                    size    1947053
+version             3.7.1
+revision            0
+checksums           rmd160  fcb350221e21d7bb2c22f90a3b020df669ff34a7 \
+                    sha256  156621427c7b00a75ff9b34b770b95d34f80ef7a55c3407de94b16cbf436c42e \
+                    size    2380974
 
 categories          devel crypto
 platforms           darwin
@@ -28,21 +30,39 @@ long_description    Nettle is a cryptographic library that is designed to fit \
                     cryptographic algorithms for the application to use in \
                     any environment and in any way it needs.
 
-homepage            http://www.lysator.liu.se/~nisse/nettle/
+homepage            https://www.lysator.liu.se/~nisse/nettle/
 master_sites        gnu
 
 depends_lib         port:gmp
 
-patchfiles          no-fink.patch \
-                    c89.patch \
-                    macosx-dylib.patch
+patchfiles          no-fink.patch
 
 use_autoreconf      yes
 autoreconf.args     -fvi
 
+# error: invalid instruction mnemonic 'sha1rnds4'
+compiler.blacklist  *gcc-4.* {clang < 500}
+# This works around base not adding macports-gcc to the fallback list
+# automatically on ppc (nettle doesn't use C++ anyway)
+# <https://trac.macports.org/ticket/59195>
+compiler.cxx_standard
+
 configure.args      --disable-openssl \
                     --enable-fat \
                     --enable-shared
+
+# aes-decrypt-internal.s:73:2: error: unrecognized instruction mnemonic
+# aes-decrypt-internal.s:76:8: error: vector register expected
+# aes-decrypt-internal.s:77:6: error: invalid operand for instruction
+# etc.
+set merger_configure_args(arm64) --build=aarch64-apple-darwin${os.major}
+
+if {![info exists universal_possible]} {
+    set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+}
+if {(!${universal_possible} || ![variant_isset universal]) && [info exists merger_configure_args(${build_arch})]} {
+    configure.args-append $merger_configure_args(${build_arch})
+}
 
 test.run            yes
 test.target         check

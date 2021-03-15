@@ -1,11 +1,10 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
-PortGroup           cxx11 1.1
 PortGroup           github 1.0
 
 epoch               1
-github.setup        google re2 2019-06-01
+github.setup        google re2 2021-02-02
 revision            0
 categories          devel textproc
 maintainers         nomaintainer
@@ -19,14 +18,15 @@ long_description    RE2 is a fast, safe, thread-friendly alternative to \
 platforms           darwin
 license             BSD
 
-checksums           rmd160  567c55c5d590ea094b9e280345a29ead07a40606 \
-                    sha256  790edf96a6e884e543d0e7b93c7c814b4c95d085942bfd1eaa272160308f8dff \
-                    size    392546
+checksums           rmd160  47471514269abd3b815358fa2e8934d4489985e3 \
+                    sha256  3fe6eecd1bc4a254a0eac1f63c4af2002da6ec157986307a364fe4647bae9792 \
+                    size    402998
 
 use_configure       no
 
 variant universal   {}
 
+compiler.cxx_standard   2011
 if {[string match *clang* ${configure.cxx}]} {
     configure.ldflags-append -stdlib=${configure.cxx_stdlib}
 }

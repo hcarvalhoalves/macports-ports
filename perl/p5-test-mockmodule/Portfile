@@ -3,17 +3,17 @@
 PortSystem          1.0
 PortGroup           perl5 1.0
 
-perl5.branches      5.26 5.28
-perl5.setup         Test-MockModule v0.170.0
+perl5.branches      5.26 5.28 5.30
+perl5.setup         Test-MockModule v0.175.0
 maintainers         nomaintainer
-license             GPL-3
+license             {Artistic-1 GPL}
 
 description         Override subroutines in a module for unit testing
 long_description    ${description}
 
-checksums           rmd160  c8fdc27ba2ac12ec7c65f1bf085b93fd1fa1d35d \
-                    sha256  9f79ba975cb049e1e807c36de1a31126079fffc4f22ee81526641a8969e6ef5d \
-                    size    24765
+checksums           rmd160  31ebfced910de093429d1ab8a22a5dff13cb3412 \
+                    sha256  07b284d713dd82ced1b42c60ccb1621a3c77c54b21b13b8694a75945c045eefe \
+                    size    21914
 
 platforms           darwin
 

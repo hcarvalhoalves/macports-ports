@@ -2,7 +2,6 @@
 
 PortSystem          1.0
 PortGroup           cmake 1.1
-PortGroup           cxx11 1.1
 PortGroup           github 1.0
 PortGroup           wxWidgets 1.0
 
@@ -10,7 +9,7 @@ name                CubicSDR
 categories          science comms
 platforms           darwin macosx
 license             GPL-2
-maintainers         {@ra1nb0w irh.it:rainbow} {michaelld @michaelld} openmaintainer
+maintainers         {ra1nb0w @ra1nb0w} {michaelld @michaelld} openmaintainer
 description         Cross-Platform Software-Defined Radio Application
 long_description    CubicSDR is the software portion of Software Defined \
     Radio. By Using hardware that converts RF spectrum into a digital \
@@ -18,17 +17,26 @@ long_description    CubicSDR is the software portion of Software Defined \
     functions in software instead of traditional hardwre.
 homepage            https://www.cubicsdr.com
 
-github.setup        cjcliffe CubicSDR 9bf25b8feb39053ee029b996595c57e06a44b6c3
-version             20190602-[string range ${github.version} 0 7]
-checksums           rmd160 ff8db11f0cfe5994d10fa6e3c09a642d9c1ede5b \
-                    sha256 5fc78962c8c12549d0d71225d6708594d3cbe0d81d2a06d8425f9e06bf409ccf \
-                    size   36025036
+github.setup        cjcliffe CubicSDR bdf31ebf767fd446d7e2803a15be32c4682722e3
+version             20210223-[string range ${github.version} 0 7]
+checksums           rmd160  577c5fa25e8dff9a3d0f7c93f9620e2476891b11 \
+                    sha256  3e1539c0067b1418b78305e5f3aabea1a4282be431fd40f630d0613c56bf82bc \
+                    size    35913693
 revision            0
+
+compiler.cxx_standard 2011
 
 # CubicSDR requires wxWidgets.use of wxWidgets-3.1 or newer -- "3.2"
 # by the wxWidgets PG -- which is what this provides. selecting 3.0
 # does not work.
 wxWidgets.use       wxWidgets-3.2
+
+# CHECK if upstream has merged it
+# enable out-of-tree patch the fix retina display
+patchfiles-append \
+    enable-highdpi.patch
+configure.args-append \
+    -DUSE_OSX_RETINA=1
 
 depends_lib-append \
     port:liquid-dsp \
@@ -43,7 +51,7 @@ configure.cxxflags-append \
     -D_WCHAR_H_CPLUSPLUS_98_CONFORMANCE_
 
 variant hamlib description {Support hamlib for radio control functions} {
-    depends_lib-append      port:hamlib
+    depends_lib-append      path:lib/libhamlib.dylib:hamlib
     configure.args-append   -DUSE_HAMLIB=1
 }
 

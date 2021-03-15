@@ -1,7 +1,7 @@
 PortSystem 1.0
 
 name                    diffstat
-version                 1.62
+version                 1.64
 categories              devel
 maintainers             {toby @tobypeterson}
 description             Make histogram from diff-output
@@ -13,9 +13,9 @@ platforms               darwin
 master_sites            ftp://ftp.invisible-island.net/pub/diffstat/ \
                         https://invisible-mirror.net/archives/diffstat/
 extract.suffix          .tgz
-checksums               rmd160 7dcc8583d68856cb3b1b73db23cdb2e9f78f5d1f \
-                        sha256 7f09183644ed77a156b15346bbad4e89c93543e140add9dab18747e30522591f \
-                        size 263314
+checksums               rmd160 2e212599a50aa0dce86ac9022d41acc6e85f71b2 \
+                        sha256 b8aee38d9d2e1d05926e6b55810a9d2c2dd407f24d6a267387563a4436e3f7fc \
+                        size 278873
 
 configure.args          --mandir=${prefix}/share/man
 

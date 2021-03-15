@@ -4,47 +4,61 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-keyring
-version             19.0.2
+version             23.0.0
 revision            0
-categories-append   security
 
+categories-append   security
+platforms           darwin
+supported_archs     noarch
 license             {MIT PSF}
 maintainers         {reneeotten @reneeotten} openmaintainer
+
 description         Python interface to access the system keyring service
 long_description    The Python keyring lib provides a easy way to access the system \
                     keyring service from python. It can be used in any application \
                     that needs safe password storage. The OSXKeychain keyring service \
                     supports the Keychain service in Mac OS X.
 
-platforms           darwin
-supported_archs     noarch
-
 homepage            https://github.com/jaraco/keyring
-master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}
-distname            ${python.rootname}-${version}
 
-checksums           rmd160  5e0afce0c6001f7478c4139ed42296b9de98810c \
-                    sha256  1b74595f7439e4581a11d4f9a12790ac34addce64ca389c86272ff465f5e0b90 \
-                    size    48417
+checksums           rmd160  9c32bfa3bf5a3ec6df4bcc13db77e0a16060facb \
+                    sha256  237ff44888ba9b3918a7dcb55c8f1db909c95b6f071bfb46c6918f33f453a68a \
+                    size    58472
 
-python.versions     27 34 35 36 37
+python.versions     27 35 36 37 38 39
 
 if {${name} ne ${subport}} {
-    if {${python.version} in "27 34"} {
+    if {${python.version} eq 27} {
         version     18.0.1
         revision    0
-        distname    ${python.rootname}-${version}
         checksums   rmd160  0e07d12c4943d18499350057a9df781fb4fcbbaf \
                     sha256  67d6cc0132bd77922725fae9f18366bb314fd8f95ff4d323a4df41890a96a838 \
                     size    48559
+
+        depends_lib-append \
+                    port:py${python.version}-entrypoints
+
+    } elseif {${python.version} eq 35} {
+        version     20.0.1
+        revision    1
+        checksums   rmd160  171bae4ffee2780dff9d7529c52e119abd9d0a97 \
+                    sha256  963bfa7f090269d30bdc5e25589e5fd9dad2cf2a7c6f176a7f2386910e5d0d8d \
+                    size    53452
+    } else {
+        depends_build-append \
+                    port:py${python.version}-toml
     }
 
     depends_build-append \
                     port:py${python.version}-setuptools_scm
 
     depends_lib-append \
-                    port:py${python.version}-setuptools \
-                    port:py${python.version}-entrypoints
+                    port:py${python.version}-setuptools
+
+    if {${python.version} in "35 36 37"} {
+        depends_lib-append \
+                port:py${python.version}-importlib-metadata
+    }
 
     post-destroot {
         set docdir ${prefix}/share/doc/${subport}

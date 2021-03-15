@@ -1,12 +1,18 @@
 # -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
 
 PortSystem          1.0
+PortGroup           github 1.0
 PortGroup           xcode 1.0
 
+github.setup        rharder imagesnap 0.2.10
+revision            0
+checksums           rmd160  0ca2875b5eb29613bd1d4abf6a76864d1c8b565d \
+                    sha256  0e7873d6541b35905440d9578c121a91785edaf5180fd2a4d4d0c186894d0c86 \
+                    size    64335
+
 name                ImageSnap
-version             0.2.5
 categories          sysutils graphics
-maintainers         ryandesign
+maintainers         {ryandesign @ryandesign}
 license             public-domain
 
 description         command-line tool to capture images from iSight or \
@@ -15,23 +21,33 @@ description         command-line tool to capture images from iSight or \
 long_description    ${name} is a command-line tool that lets you capture \
                     still images from an iSight or other video source.
 
-homepage            http://iharder.sourceforge.net/current/macosx/imagesnap/
-master_sites        sourceforge:project/iharder/imagesnap
+github.tarball_from archive
 
-distname            ${name}-v${version}
-extract.suffix      .tgz
-
-checksums           rmd160  8455b057ce5f27130547524c3a7fb812f54d766e \
-                    sha256  2516edd6e8fe35c075f0a6517b9fb8ba9af296f8f29b9e349566b9ba6f729615
-
-pre-fetch {
-    if {${os.major} < 9} {
+if {${os.major} < 9} {
+    known_fail      yes
+    pre-fetch {
         ui_error "${name} requires Mac OS X 10.5 or greater. Try isightcapture instead."
         return -code error "incompatible Mac OS X version"
     }
+} elseif {${os.major} < 11} {
+    # 0.2.6 and later use AVFoundation which was introduced in Lion.
+    version         0.2.5
+    revision        0
+    checksums       rmd160  8455b057ce5f27130547524c3a7fb812f54d766e \
+                    sha256  2516edd6e8fe35c075f0a6517b9fb8ba9af296f8f29b9e349566b9ba6f729615 \
+                    size    45002
+
+    master_sites    sourceforge:project/iharder/imagesnap
+    distname        ${name}-v${version}
+    extract.suffix  .tgz
+    set readme      ReadMeOrDont.rtf
+} else {
+    patchfiles      README.md.patch
+    set readme      README.md
 }
 
 post-extract {
+    # Delete the precompiled binary so that we compile it ourselves.
     delete ${worksrcpath}/imagesnap
 }
 
@@ -40,7 +56,5 @@ xcode.destroot.path ${prefix}/bin
 post-destroot {
     set docdir ${destroot}${prefix}/share/doc/${name}
     xinstall -d ${docdir}
-    xinstall -m 644 -W ${worksrcpath} ReadMeOrDont.rtf ${docdir}
+    xinstall -m 0644 -W ${worksrcpath} ${readme} ${docdir}
 }
-
-livecheck.regex     /${name}-v(\[0-9.\]+)${extract.suffix}

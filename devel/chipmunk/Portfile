@@ -2,7 +2,6 @@
 
 PortSystem          1.0
 PortGroup           cmake 1.0
-PortGroup           cxx11 1.1
 
 name                chipmunk
 version             7.0.3
@@ -14,7 +13,7 @@ license             MIT
 maintainers         {stromnov @stromnov} openmaintainer
 
 description         Fast and lightweight 2D rigid body physics library in C
-long_description    ${description}
+long_description    {*}${description}
 
 homepage            http://chipmunk-physics.net
 master_sites        http://chipmunk-physics.net/release/Chipmunk-7.x/
@@ -27,6 +26,8 @@ checksums           rmd160  29d617a1ce16eac77530661f847942e4c5133007 \
                     size    1015496
 
 use_parallel_build  yes
+
+compiler.cxx_standard 2011
 
 configure.args-append   -DBUILD_DEMOS:BOOL=OFF \
                         -DINSTALL_DEMOS:BOOL=OFF \

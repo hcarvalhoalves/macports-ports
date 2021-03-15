@@ -6,11 +6,11 @@ PortGroup               waf 1.0
 PortGroup               legacysupport 1.0
 
 # Please revbump mpv whenever ffmpeg{,-devel} is updated!
-github.setup            mpv-player mpv 0.29.1 v
-revision                4
+github.setup            mpv-player mpv 0.33.0 v
+revision                2
 categories              multimedia
 license                 GPL-2+
-maintainers             {ionic @Ionic}
+maintainers             {ionic @Ionic} {i0ntempest @i0ntempest} openmaintainer
 platforms               darwin
 
 description             mpv is a movie player based on MPlayer and mplayer2.
@@ -22,7 +22,7 @@ long_description        ${description} It plays most MPEG/VOB, AVI, Ogg/OGM, \
                         and even H.264 movies.
 homepage                http://www.mpv.io/
 
-set waf_version         2.0.9
+set waf_version         2.0.21
 set waf_distfile        waf-${waf_version}
 set mpv_distfile        ${distfiles}
 master_sites-append     https://waf.io/:waf
@@ -31,28 +31,27 @@ distfiles-append        ${waf_distfile}:waf
 extract.only-delete     ${waf_distfile}
 
 checksums               ${mpv_distfile} \
-                        rmd160  10edd02cf12c4668c57317caf3042df30ae1128c \
-                        sha256  c7076df8c46f2696121d0b96cc5edfc472cbccc3b6a70d9b5c00a72b6a41c820 \
-                        size    3059829 \
+                        rmd160  dc2cbc3e3177b7e2ef7d7b80759a3d3e23f2f7e7 \
+                        sha256  c2e5c50b4948b9e27b6e6aa8c1950a4af2634e9a20e5dea57bc64dd93640190e \
+                        size    3259692 \
                         ${waf_distfile} \
-                        rmd160  bbb01fa7c1d552c01e5a6531ed27aef710d668e7 \
-                        sha256  2a8e0816f023995e557f79ea8940d322bec18f286917c8f9a6fa2dc3875dfa48 \
-                        size    103104
+                        rmd160  a0c45ee5ec65d2953d48c8c32d62b4da27cd3dc1 \
+                        sha256  7cebf2c5efe53cbb9a4b5bdc4b49ae90ecd64a8fce7a3222d58e591b58215306 \
+                        size    104921
 
 installs_libs           no
 
-depends_build           port:pkgconfig
+depends_build-append    port:pkgconfig
 depends_lib             path:lib/libavcodec.dylib:ffmpeg \
                         path:bin/perl:perl5 \
                         port:libiconv \
                         port:zlib \
                         port:libass \
-                        port:libbluray \
                         port:lcms2
 
 universal_variant       no
 
-default_variants        +network +osd +opengl +dvd +audiocd +libarchive
+default_variants        +network +osd +opengl +bluray +dvd +audiocd +libarchive
 
 if {${os.platform} eq "darwin" && ${os.major} > 10} {
     # current macOS bundle errors on < 10.7 due to unhandled -psn_* argument
@@ -66,7 +65,7 @@ platform darwin i386 {
 
 
 # Current waf doesn't support --nocache anymore. Set by PortGroup.
-configure.args-delete   --nocache
+configure.post_args-delete   --nocache
 
 # I'd *really* love to see what's going on in waf, but even the continue-on-failure option
 # makes waf bail out on the first optional component that was not found (which will always
@@ -77,7 +76,6 @@ configure.args-delete   --nocache
 # We cannot use --enable-cplayer here. Only --disable-cplayer
 # is recognized. Boo!
 configure.args-append   --enable-manpage-build \
-                        --enable-libass \
                         --enable-coreaudio \
                         --enable-cocoa \
                         --enable-cplugins \
@@ -92,7 +90,6 @@ configure.args-append   --enable-manpage-build \
                         --disable-egl-angle-win32 \
                         --disable-audiounit \
                         --disable-ios-gl \
-                        --disable-mali-fbdev \
                         --disable-direct3d \
                         --disable-android \
                         --disable-rpi \
@@ -102,36 +99,31 @@ configure.args-append   --enable-manpage-build \
 # dependencies, explicitly disable everything optional first.
 # This list should be expanded each time the port is updated to a
 # new version, disabling any newly added options.
-configure.args-append   --disable-pdf-build \
-                        --disable-test \
+configure.args-append   --disable-caca \
+                        --disable-cdda \
                         --disable-clang-database \
                         --disable-debug-build \
-                        --disable-libsmbclient \
-                        --disable-libass-osd \
-                        --disable-dvdread \
                         --disable-dvdnav \
-                        --disable-cdda \
-                        --disable-vapoursynth \
-                        --disable-vapoursynth-lazy \
-                        --disable-libarchive \
-                        --disable-rubberband \
-                        --disable-pulse \
-                        --disable-jack \
-                        --disable-openal \
-                        --disable-gl-cocoa \
-                        --disable-x11 \
-                        --disable-xv \
-                        --disable-gl-x11 \
                         --disable-egl-x11 \
-                        --disable-caca \
-                        --disable-jpeg \
-                        --disable-tv \
-                        --disable-lua \
-                        --disable-apple-remote \
                         --disable-gl \
-                        --disable-zsh-comp \
+                        --disable-gl-cocoa \
+                        --disable-gl-x11 \
+                        --disable-jack \
                         --disable-javascript \
-                        --disable-uchardet
+                        --disable-jpeg \
+                        --disable-libarchive \
+                        --disable-libbluray \
+                        --disable-lua \
+                        --disable-openal \
+                        --disable-pdf-build \
+                        --disable-pulse \
+                        --disable-rubberband \
+                        --disable-test \
+                        --disable-tv \
+                        --disable-uchardet \
+                        --disable-vapoursynth \
+                        --disable-x11 \
+                        --disable-xv
 
 # Fix picking up the correct talloc version.
 # -isystem has the added benefit of moving the include
@@ -171,12 +163,9 @@ platform macosx {
 
         # Force clang compiler as installed by Xcode's CLT's... hopefully.
         compiler.blacklist-append   *gcc* cc macports-*
-
-        configure.args-replace      --disable-apple-remote \
-                                    --enable-apple-remote
     }
 
-    if {${os.major} <= 10 || ${configure.build_arch} ne "x86_64"} {
+    if {${os.major} <= 14 || [lsearch -exact [list x86_64 arm64] ${configure.build_arch}] == -1} {
         # Disable Cocoa output.
         # Users on old systems will need to embrace X11.
         configure.args-replace      --enable-cocoa \
@@ -203,18 +192,16 @@ platform darwin {
                     which is the location preferred by upstream.
     }]
 
-    # https://github.com/mpv-player/mpv/pull/6214
-    patchfiles-append   patch-fix-swift-detection.diff
-
-    # swift build tools test fails on 10.10 now
-    if {${os.major} < 15} {
+    # cocoa-cb backend requires Swift 5 or 4 support, which is only available
+    # in Xcode 9.1 onwards.
+    if {[vercmp ${xcodeversion} 9.1] < 0} {
         configure.args-replace  --enable-swift \
                                 --disable-swift
     }
 
     # VideotoolBox, a new hardware acceleration framework, is supported on 10.8+ and "here to stay".
     # It provides support for H264, H263, MPEG1, MPEG2 and MPEG4.
-    if {${os.major} > 11} {
+    if {${os.major} > 14} {
         configure.args-delete   --disable-videotoolbox-gl
         configure.args-append   --enable-videotoolbox-gl
     }
@@ -233,15 +220,19 @@ platform darwin {
         }
     }
 
+    # C11 atomics is mandatory from version 0.33.0
+    compiler.c_standard 2011
+
+    # Should eliminate most swift (module) related problems
+    if {[vercmp ${xcodeversion} 9.1] >= 0 || ${os.major} >= 16} {
+        use_xcode yes
+    }
+
     # Shared build fixes for 10.6 and 10.7.
     if {${os.major} < 12} {
         patchfiles-append   patch-misc-import-CoreVideo.diff
         patchfiles-append   patch-waftools-detection-compiler-py-no-tautological.diff
     }
-
-    # fix typo in restricted block. This patch can disappear after next update as this
-    # fix has been merged upstream 20190126
-    patchfiles-append   patch-osdep-macosx_compat-h-typo.diff
 
     # Make mpv work as good as possible on 10.6 and below. No Cocoa support, instead concentrate
     # on getting the OpenGL output to work via X11.
@@ -270,6 +261,10 @@ platform darwin {
         }
     }
 
+    # Fix for https://trac.macports.org/ticket/61319
+    configure.env-append   MACOS_SDK=${configure.sdkroot}
+    configure.env-append   MACOS_SDK_VERSION=${configure.sdk_version}
+
     post-extract {
         xinstall -m 0644 -W "${filespath}" config-maintainer "${worksrcpath}/TOOLS/"
     }
@@ -293,7 +288,7 @@ platform darwin {
             reinplace -W "${worksrcpath}/TOOLS" "/@@HWDEC_CUDA@@/d" config-maintainer
         }
 
-        if {${os.major} < 11 || ${configure.build_arch} ne "x86_64"} {
+        if {${os.major} < 11 || [lsearch -exact [list x86_64 arm64] ${configure.build_arch}] == -1} {
             reinplace -W "${worksrcpath}/TOOLS" "s/@@BACKEND@@/x11/" config-maintainer
         } else {
             reinplace -W "${worksrcpath}/TOOLS" "s/@@BACKEND@@/cocoa/" config-maintainer
@@ -303,20 +298,21 @@ platform darwin {
 
 
 # Shameless copy from ipe-tools.
-set python.versions         {27 37}
-dict set python.legacy_versions 36 37
-# After Python 3.8 is released, and mpv can be built with it,
+set python.versions         {38 39}
+dict set python.legacy_versions 37 38
+# After Python 3.9 is released, and mpv can be built with it,
 # replace with the above lines with the following:
-#set python.versions         {27 38}
-#dict set python.legacy_versions 37 38
+#set python.versions         {27 39}
+#dict set python.legacy_versions 38 39
 
-set python.default_version  27
+set python.default_version  39
 set python.version          ""
 
 # Create python variants.
 foreach ver ${python.versions} {
     set variant_line {variant python${ver} description }
-    append variant_line " {Use python${ver} to generate man pages}"
+    set python_branch [join [split ${ver} {}] "."]
+    append variant_line " {Use Python ${python_branch} to build ${name} and generate man pages}"
 
     foreach over ${python.versions} {
         if {${ver} == ${over}} {
@@ -336,7 +332,9 @@ foreach ver ${python.versions} {
 # Create legacy python variants, mapping to the replacement version.
 dict for {legacy_ver replace_ver} ${python.legacy_versions} {
     set variant_line {variant python${legacy_ver} description }
-    append variant_line " {Legacy variant for python${legacy_ver} mapping to python${replace_ver}}"
+    set legacy_branch [join [split ${legacy_ver} {}] "."]
+    set replace_branch [join [split ${replace_ver} {}] "."]
+    append variant_line " {Legacy variant for Python ${legacy_branch} mapping to Python ${replace_branch}}"
     append variant_line " requires python${replace_ver}"
 
     foreach over ${python.versions} {
@@ -364,9 +362,12 @@ if {${variant_none}} {
 }
 
 # Set ${python.version} to the currently active variant.
+# And let waf use the same python version as the currently active variant.
 foreach ver ${python.versions} {
     if {[variant_isset python${ver}]} {
         set python.version ${ver}
+        set python_branch [join [split ${python.version} {}] "."]
+        waf.python_branch ${python_branch}
     }
 }
 
@@ -424,7 +425,7 @@ variant bundle description {Enable the optional macOS bundle of mpv} {
 }
 
 variant screenshot description {Enable optional screenshot support} {
-    depends_lib-append      path:lib/libjpeg.dylib:jpeg
+    depends_lib-append      path:include/turbojpeg.h:libjpeg-turbo
     configure.args-replace  --disable-jpeg \
                             --enable-jpeg
 }
@@ -433,11 +434,23 @@ variant network description {Enable networking support via youtube-dl (supports 
     depends_run-append      port:youtube-dl
 }
 
+variant bluray description {Enable Bluray and AACS/BD+ encryption support} {
+    depends_lib-append     port:libbluray
+    depends_run-append     port:libaacs \
+                           port:libbdplus
+    configure.args-delete  --disable-libbluray
+    notes-append {
+                    
+                    To play Bluray discs with AACS encryption, decryption key database file "keydb.cfg" needs to be placed at:
+                    * ~/Library/Preferences/aacs/ (on macOS, or)
+                    * ~/.config/aacs/ (on other darwin).
+                    You can easily find this file on the internet.
+    }
+}
+
 variant dvd description {Enable DVD and DeCSS support} {
     depends_lib-append      port:libdvdread \
                             port:libdvdnav
-    configure.args-replace  --disable-dvdread \
-                            --enable-dvdread
     configure.args-replace  --disable-dvdnav \
                             --enable-dvdnav
 }
@@ -493,7 +506,7 @@ variant x11 {
 }
 
 variant opengl description {Enable OpenGL output support. Both the CoreVideo and X11 (GLX) outputs are supported} {
-    if {${os.platform} eq "darwin" && ${os.major} > 10} {
+    if {${os.platform} eq "darwin" && ${os.major} > 14} {
         configure.args-replace  --disable-gl-cocoa \
                                 --enable-gl-cocoa
     }
@@ -520,22 +533,20 @@ variant caca description {Enable animated ASCII art video output} {
 
 variant osd description {Enable onscreen display and TrueType font support} {
     depends_lib-append      port:lua52
-    configure.args-delete   --disable-lua \
-                            --disable-libass-osd
+    configure.args-delete   --disable-lua
     configure.args-append   --enable-lua \
-                            --lua=52fbsd \
-                            --enable-libass-osd
+                            --lua=52fbsd
 }
 
-variant smb description {Enable Samba support} {
-    depends_lib-append      path:lib/pkgconfig/smbclient.pc:samba3
-    configure.args-replace  --disable-libsmbclient \
-                            --enable-libsmbclient
-}
+#variant smb description {Enable Samba support} {
+#    depends_lib-append      path:lib/pkgconfig/smbclient.pc:samba3
+#    configure.args-replace  --disable-libsmbclient \
+#                            --enable-libsmbclient
+#}
+# Removed in 0.33.0
 
 variant debug description {Compile with debugging symbols} {
-    configure.args-replace  --disable-debug-build \
-                            --enable-debug-build
+    configure.args-delete   --disable-debug-build
 }
 
 variant printable_doc description {Generate printable documents (PDF help)} {
@@ -545,12 +556,6 @@ variant printable_doc description {Generate printable documents (PDF help)} {
                             port:py27-Pillow
     configure.args-replace  --disable-pdf-build \
                             --enable-pdf-build
-}
-
-variant zsh description {Enable/install zsh completion support} {
-    depends_lib-append      path:${prefix}/bin/zsh:zsh
-    configure.args-replace  --disable-zsh-comp \
-                            --enable-zsh-comp
 }
 
 #variant javascript description {Enable JavaScript support via mujs} {
@@ -563,4 +568,8 @@ variant uchardet description {Enable the uchardet encoding detector} {
     depends_lib-append      port:uchardet
     configure.args-replace  --disable-uchardet \
                             --enable-uchardet
+}
+
+variant libmpv description {Enable the libmpv library} {
+    configure.args-append --enable-libmpv-shared
 }

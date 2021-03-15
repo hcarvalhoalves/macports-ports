@@ -3,17 +3,22 @@
 PortSystem              1.0
 
 name                    mysql8
-version                 8.0.16
-set boost_version       1.69.0
+version                 8.0.23
+
+set boost_version       1.73.0
+
 categories              databases
 platforms               darwin
 license                 GPL-2
-maintainers             {gmail.com:herby.gillot @herbygillot} openmaintainer
-homepage                https://www.mysql.com/
+
+homepage                https://dev.mysql.com
+
+maintainers             {gmail.com:herby.gillot @herbygillot} \
+                        openmaintainer
 
 # Set revision_client and revision_server to 0 on version bump.
-set revision_client 3
-set revision_server 4
+set revision_client 0
+set revision_server 0
 
 set name_mysql          ${name}
 set version_branch      [join [lrange [split ${version} .] 0 1] .]
@@ -23,7 +28,6 @@ set boost_distname      boost_${boost_distver}
 
 if {$subport eq $name} {
     PortGroup           muniversal 1.0
-    PortGroup           cxx11 1.1
     PortGroup           cmake 1.1
     PortGroup           select 1.0
     PortGroup           compiler_blacklist_versions 1.0
@@ -44,18 +48,19 @@ if {$subport eq $name} {
                         ${boost_distname}${extract.suffix}:boost
 
     checksums           ${distname}${extract.suffix} \
-                        rmd160  2e0d3326331b74fec8ab3e147f330d2d4f75382e \
-                        sha256  8d9fe89920dc8bbbde2857b7b877ad2fa5ec2f231c68e941d484f3b72735eaea \
-                        size    146811037 \
+                        rmd160  39d65842de1438d3a3ea5c5c78f6e48ef80c2dbe \
+                        sha256  d26cbbf9eccf8c8f14743c3e26c37a8ba71ebd45e8b2d66c6dd37790037bb787 \
+                        size    284336596 \
                         ${boost_distname}${extract.suffix} \
-                        rmd160  ad6cd576a5229a11601986908ff03261582c9f81 \
-                        sha256  9a2c2819310839ea373f42d69e733c339b4e9a19deab6bfec448281554aa4dbb \
-                        size    111710205
+                        rmd160  47f3dad1ddb5e1e9f367f05a4019d5fac48a2e3b \
+                        sha256  9995e192e68528793755692917f9eb6422f3052a53c5e13ba278a228af6c7acf \
+                        size    128699082
 
     depends_lib-append  path:lib/libssl.dylib:openssl \
                         port:cyrus-sasl2 \
                         port:icu \
-                        port:zlib
+                        port:zlib \
+                        port:zstd
 
     depends_run-append  port:mysql_select
 
@@ -64,10 +69,15 @@ if {$subport eq $name} {
 
     use_parallel_build  yes
 
-    # Requires c++14
-    compiler.blacklist-append *gcc* {clang < 900} macports-clang-3.* \
-                              macports-clang-4.0 macports-clang-5.0 macports-clang-6.0
-    compiler.whitelist clang macports-clang-7.0 macports-clang-8.0
+    compiler.cxx_standard 2014
+
+    # TODO: explain why these compilers are blacklisted
+    compiler.blacklist-append *gcc-5 {clang < 900}
+
+    # clang 8.0+ are too strict to build this port
+    # version:1:1: error: C++ requires a type specifier for all declarations
+    # MYSQL_VERSION_MAJOR=8
+    compiler.blacklist-append {macports-clang-[8-9].0}
 
     # Use default CMake build_types
     if {[variant_isset debug]} {
@@ -82,7 +92,8 @@ if {$subport eq $name} {
         cmake.build_type    Release
 
         configure.args-append \
-            -DINSTALL_MYSQLTESTDIR= \
+            -DWITH_DEBUG=OFF \
+            -DWITH_DTRACE:BOOL=OFF \
             -DWITH_UNIT_TESTS=OFF
     }
 
@@ -114,9 +125,11 @@ if {$subport eq $name} {
         -DWITH_BOOST:PATH="${worksrcpath}/../${boost_distname}" \
         -DWITH_ICU:PATH="${prefix}" \
         -DWITH_INNODB_MEMCACHED=1 \
+        -DWITH_PROTOBUF=bundled \
         -DWITH_SASL:PATH="${prefix}" \
         -DWITH_SSL:PATH="${prefix}" \
-        -DWITH_ZLIB:PATH="${prefix}"
+        -DWITH_ZLIB:PATH=system \
+        -DWITH_ZSTD=system
 
     # FIXME: Disable building MySQL Router until we resolve link issues
     configure.args-append \
@@ -125,9 +138,13 @@ if {$subport eq $name} {
 #       -DROUTER_INSTALL_PLUGINDIR="lib/${name_mysql}/mysqlrouter"
 
     patch.pre_args  -p1
-    patchfiles      patch-cmake-install_layout.cmake.diff \
-                    patch-router-cmake-set_rpath.diff \
-                    patch-sql-local-boost.diff
+    patchfiles      patch-cmake-install_macros-protobuf-path.cmake.diff \
+                    patch-cmake-install_layout.cmake.diff \
+                    patch-cmake-sasl-disable-platform-check.diff \
+                    patch-mysql8-workaround-no-SC_PHYS_PAGES.diff \
+                    patch-scripts-cmakelists.diff \
+                    patch-sql-local-boost.diff \
+                    patch-mysql8-ffsll-apple.diff
 
     post-extract {
         file mkdir ${cmake.build_dir}/macports
@@ -139,17 +156,25 @@ if {$subport eq $name} {
     post-patch {
         reinplace "s|@NAME@|${name_mysql}|g" \
             ${worksrcpath}/cmake/install_layout.cmake
-        reinplace "s|@NAME@|${name_mysql}|g" \
-            ${worksrcpath}/router/cmake/set_rpath.cmake
+#       reinplace "s|@NAME@|${name_mysql}|g" \
+#           ${worksrcpath}/router/cmake/set_rpath.cmake
         reinplace "s|@NAME@|${name_mysql}|g" \
             ${cmake.build_dir}/macports/macports-default.cnf \
             ${cmake.build_dir}/macports/my.cnf
         reinplace "s|@PREFIX@|${prefix}|g" \
             ${cmake.build_dir}/macports/macports-default.cnf \
             ${cmake.build_dir}/macports/my.cnf
+
+        # don't force /usr/bin/libtool -- allow cctools' version to be used
+        reinplace "s|/usr/bin/libtool|libtool|g" \
+            ${worksrcpath}/cmake/libutils.cmake \
+            ${worksrcpath}/cmake/os/Darwin.cmake
     }
 
     post-destroot {
+        # Remove tests
+        file delete -force -- ${destroot}${prefix}/share/${name_mysql}/mysql-test
+
         # proc portdestroot::destroot_finish fails to find and compress our man pages
         # so borrow the compress command and run on our files now.
         set manpath "${destroot}${prefix}/share/man"
@@ -220,7 +245,7 @@ as follows:
 "
 
     livecheck.type      regex
-    livecheck.url       http://dev.mysql.com/downloads/mysql/${version_branch}.html
+    livecheck.url       https://dev.mysql.com/downloads/mysql/${version_branch}.html
     livecheck.regex     "MySQL Community Server (${version_branch}(\.\[0-9.\]+)?)"
 }
 
@@ -228,7 +253,7 @@ subport ${name_mysql}-server {
     revision            ${revision_server}
     license             GPL-2
     description         Run ${name_mysql} as server
-    long_description    ${description}
+    long_description    {*}${description}
 
     supported_archs     noarch
     distfiles

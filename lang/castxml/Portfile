@@ -2,14 +2,12 @@
 
 PortSystem          1.0
 PortGroup           cmake 1.1
-PortGroup           cxx11 1.1
 PortGroup           github 1.0
-PortGroup           compiler_blacklist_versions 1.0
 
-github.setup        CastXML CastXML 0404c2333bdd875a9213a78f01b1e211e9fbf6d0
+github.setup        CastXML CastXML 0.4.2 v
 
 name                castxml
-version             20190325
+epoch               20190718
 revision            0
 categories          lang
 platforms           darwin
@@ -20,9 +18,12 @@ maintainers         {stromnov @stromnov} openmaintainer
 description         CastXML is a C-family abstract syntax tree XML output tool.
 long_description    ${description}
 
-checksums           rmd160  7fee7ae55b9c38eb3e4b74090f49e9099f0007fa \
-                    sha256  2e1e4f5bf0e418211a0a1c36337e430c32682fde423ef5792358e86d46e76b5c \
-                    size    93075
+checksums           rmd160  23c9f4e19f99d9cdff5a3c5294805c1287f60a2a \
+                    sha256  ea08a45e15a31dc15dac76b3f05dcddc660352fcb783a9ea4c5b24bcb80650a0 \
+                    size    103015
+
+compiler.cxx_standard \
+                    2014
 
 depends_lib-append  port:zlib \
                     port:libffi \
@@ -32,27 +33,40 @@ depends_lib-append  port:zlib \
 configure.args-append \
                     -DCastXML_INSTALL_DOC_DIR=share/doc/castxml
 
-variant clang60 conflicts clang70 clang80 description {Use clang 6.0 toolchain.} {
-    depends_build-append \
-                        port:clang-6.0
-    configure.args-append \
-                        -DLLVM_DIR=${prefix}/libexec/llvm-6.0/lib/cmake/llvm
+# List of clang versions to offer variants for
+set clang_vers { 6.0 7.0 8.0 9.0 10 11 }
+
+proc variant_name {ver} {
+    return clang[string map {. {}} ${ver}]
 }
 
-variant clang70 conflicts clang60 clang80 description {Use clang 7.0 toolchain.} {
-    depends_build-append \
-                        port:clang-7.0
-    configure.args-append \
-                        -DLLVM_DIR=${prefix}/libexec/llvm-7.0/lib/cmake/llvm
+# build list of all clang variant names
+set clang_variants {}
+foreach ver ${clang_vers} { lappend clang_variants [variant_name $ver] }
+
+proc build_conflicts {v} {
+    global clang_variants
+    set i [lsearch -exact ${clang_variants} ${v}]
+    return [lreplace ${clang_variants} ${i} ${i}]
 }
 
-variant clang80 conflicts clang60 clang70 description {Use clang 8.0 toolchain.} {
-    depends_build-append \
-                        port:clang-8.0
-    configure.args-append \
-                        -DLLVM_DIR=${prefix}/libexec/llvm-8.0/lib/cmake/llvm
+set has_variant no
+foreach ver ${clang_vers} {
+    set v_name [variant_name ${ver}]
+    set c [build_conflicts ${v_name}]
+    variant ${v_name} conflicts {*}${c} description "Use clang ${ver} toolchain" { }
+    if {[variant_isset ${v_name}]} {
+        set has_variant yes
+    }
 }
+if {!$has_variant} { default_variants +clang11 }
 
-if {![variant_isset clang60] && ![variant_isset clang80]} {
-    default_variants +clang70
+foreach ver ${clang_vers} {
+    set v_name [variant_name ${ver}]
+    if {[variant_isset ${v_name}]} {
+        depends_lib-append          port:llvm-${ver}
+        depends_build-append        port:clang-${ver}
+        configure.args-append       -DLLVM_DIR=${prefix}/libexec/llvm-${ver}/lib/cmake/llvm
+        cmake.install_rpath-append  ${prefix}/libexec/llvm-${ver}/lib
+    }
 }

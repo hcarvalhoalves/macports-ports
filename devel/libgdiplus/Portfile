@@ -4,8 +4,8 @@ PortSystem              1.0
 PortGroup               active_variants 1.1
 
 name                    libgdiplus
-version                 5.6.1
-revision                0
+version                 6.0.5
+revision                2
 categories              devel
 platforms               darwin
 maintainers             {mcalhoun @MarcusCalhoun-Lopez} openmaintainer
@@ -18,25 +18,27 @@ long_description        An implementation of the GDI+ API for Mono, an \
 homepage                https://www.mono-project.com/Libgdiplus
 master_sites            https://download.mono-project.com/sources/libgdiplus/
 
-checksums               rmd160  57f6f03b0734acabb557a0348f4e12e27db604b9 \
-                        sha256  78624f268fae77ba391037fe0c8c804924e8e9f94d4ca9a9dd5610d694cf9014 \
-                        size    734255
+checksums               rmd160  dca604e6298a95d55a5e4d45d0186c4e0e592b38 \
+                        sha256  b81e4e5cc3e4831b2945de08bef26eb1bdcd795aeaf8f971b221c51213a025ef \
+                        size    1391332
 
 depends_build           port:pkgconfig
 
-depends_lib             port:jpeg \
+depends_lib             path:include/turbojpeg.h:libjpeg-turbo \
                         port:tiff \
                         port:giflib \
                         port:libpng \
                         port:fontconfig \
                         port:libexif \
                         path:lib/pkgconfig/glib-2.0.pc:glib2 \
+                        path:lib/pkgconfig/pango.pc:pango \
                         path:lib/pkgconfig/cairo.pc:cairo
 
 patchfiles              patch-no_zlib.diff \
                         patch-fix_flags.diff
 
-configure.args-append   --without-x11
+configure.args-append   --without-x11 \
+                        --with-pango
 
 test.run                yes
 test.target             check
@@ -46,7 +48,7 @@ post-destroot {
     xinstall -d ${destroot}${docdir}
     xinstall -m 0644 -W ${worksrcpath} \
                         AUTHORS COPYING ChangeLog LICENSE NEWS \
-                        README TODO \
+                        README.md TODO \
                         ${destroot}${docdir}
 }
 
@@ -56,8 +58,3 @@ variant x11 {
     require_active_variants path:lib/pkgconfig/cairo.pc:cairo x11
 }
 default_variants +x11
-
-variant pango description {Enable Pango font rendering support (experimental)} {
-    depends_lib-append      path:lib/pkgconfig/pango.pc:pango
-    configure.args-append   --with-pango
-}

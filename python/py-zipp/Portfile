@@ -4,13 +4,14 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-zipp
-version             0.5.1
+version             3.4.1
 revision            0
 categories-append   devel
 platforms           darwin
 license             MIT
 
-python.versions     27 35 36 37
+# keep version for PY27 and PY34, these are (indirect) dependencies of py-virtualenv
+python.versions     27 34 35 36 37 38 39
 
 maintainers         {stromnov @stromnov} openmaintainer
 
@@ -18,18 +19,33 @@ description         A pathlib-compatible Zipfile object wrapper.
 long_description    ${description}
 
 homepage            https://github.com/jaraco/zipp
-master_sites        pypi:[string index ${python.rootname} 0]/${python.rootname}
 
-distname            ${python.rootname}-${version}
-
-checksums           rmd160  6205a16c83d1cc99eb18cdf2325eb51d11863e0a \
-                    sha256  ca943a7e809cc12257001ccfb99e3563da9af99d52f261725e96dfe0f9275bc3 \
-                    size    10763
+checksums           rmd160  5be874f067a836aac4cb23c7287ccb8f173bee84 \
+                    sha256  3607921face881ba3e026887d8150cca609d517579abe052ac81fc5aeffdbd76 \
+                    size    16545
 
 if {${name} ne ${subport}} {
+
     depends_build-append \
                         port:py${python.version}-setuptools \
                         port:py${python.version}-setuptools_scm
+
+    if {${python.version} <= 35} {
+        version             1.2.0
+        revision            0
+        distname            ${python.rootname}-${version}
+        checksums           rmd160  798ad5f33d1f7f44f5360679f3ab4a177b96d0bf \
+                            sha256  c70410551488251b0fee67b460fb9a536af8d6f9f008ad10ac51f615b6a521b1 \
+                            size    13357
+
+        if {${python.version} < 34} {
+            depends_lib-append  port:py${python.version}-contextlib2
+        }
+    } else {
+        depends_build-append \
+                            port:py${python.version}-toml
+
+    }
 
     livecheck.type      none
 }

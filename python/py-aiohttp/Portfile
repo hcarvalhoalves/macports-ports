@@ -4,12 +4,12 @@ PortSystem          1.0
 PortGroup           python 1.0
 
 name                py-aiohttp
-version             3.5.4
+version             3.7.4
 categories-append   devel
 platforms           darwin
 license             Apache-2
 
-python.versions     36 37
+python.versions     36 37 38 39
 
 maintainers         {ipglider.org:miguel @ipglider} openmaintainer
 
@@ -24,16 +24,16 @@ master_sites        pypi:a/aiohttp
 
 distname            aiohttp-${version}
 
-checksums           rmd160  dbbd6a9edc93631784ac714a55aaf52675b8f121 \
-                    sha256  9c4c83f4fa1938377da32bc2d59379025ceeee8e24b89f72fcbccd8ca22dc9bf \
-                    size    1097647
+checksums           rmd160  8193c0094d30fb421e41f7149768a4cf20a18954 \
+                    sha256  5d84ecc73141d0a0d61ece0742bb7ff5751b0657dab8405f899d3ceb104cc7de \
+                    size    1114533
 
 if {${name} ne ${subport}} {
     depends_build-append    port:py${python.version}-setuptools
     depends_lib-append      port:py${python.version}-aiodns \
                             port:py${python.version}-async-timeout \
                             port:py${python.version}-attrs \
-                            port:py${python.version}-brotlipy \
+                            port:py${python.version}-brotli \
                             port:py${python.version}-cchardet \
                             port:py${python.version}-multidict \
                             port:py${python.version}-yarl

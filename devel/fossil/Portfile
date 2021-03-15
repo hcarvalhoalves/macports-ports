@@ -3,7 +3,8 @@
 PortSystem          1.0
 
 name                fossil
-version             2.6
+version             2.13
+revision            1
 epoch               20110901182519
 categories          devel
 platforms           darwin
@@ -18,15 +19,16 @@ long_description    Fossil is a distributed software configuration management wh
                     an easy-to-use web interface to access and administrate projects over the \
                     built-in webserver or CGI.
 
-homepage            http://www.fossil-scm.org/
+homepage            https://www.fossil-scm.org/
 
 master_sites        ${homepage}index.html/uv
 distname            ${name}-src-${version}
 
 worksrcdir          ${name}-${version}
 
-checksums           rmd160  5799c0f76a2365ec25240bf3d56476f55c4c951a \
-                    sha256  76a794555918be179850739a90f157de0edb8568ad552b4c40ce186c79ff6ed9
+checksums           rmd160  2f9aa5461af25381ec017f4027fc2286b46b5278 \
+                    sha256  d933d3e0710eed3de5ee23bf8d2677419c4d4a8cd30b61f7161d9071d63a73f5 \
+                    size    6121223
 
 test.run            yes
 
@@ -40,11 +42,8 @@ configure.args-append       --with-tcl=${prefix}/lib \
                             --with-th1-hooks \
                             --with-exec-rel-paths \
                             --json
-if {[vercmp [macports_version] 2.5.99] >= 0} {
+
 configure.env-append "CC_FOR_BUILD=${configure.cc} [get_canonical_archflags]"
-} else {
-configure.env-append CC_FOR_BUILD="${configure.cc} [get_canonical_archflags]"
-}
 
 configure.ldflags-append    -liconv
 
@@ -67,5 +66,5 @@ not harm the integrity of a repository.
 "
 
 livecheck.type      regex
-livecheck.url       ${homepage}fossil/uv/download.html
-livecheck.regex     {Version ([\d.]*)}
+livecheck.url       ${homepage}home/juvlist
+livecheck.regex     {fossil-src-([\d.]+).tar.gz}

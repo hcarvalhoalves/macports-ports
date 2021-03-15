@@ -4,8 +4,8 @@ PortSystem      1.0
 PortGroup       compiler_blacklist_versions 1.0
 
 name            xorg-server
-conflicts       xorg-server-devel xorg-server-1.18
-version         1.20.4
+conflicts       xorg-server-legacy xorg-server-devel xorg-server-1.18
+version         1.20.10
 revision        0
 categories      x11 devel
 license         X11
@@ -15,33 +15,33 @@ homepage        https://www.x.org
 platforms       darwin macosx
 long_description The X.org X server allows you to run X11 applications on your computer.
 
-master_sites    http://xorg.freedesktop.org/archive/individual/xserver/
+master_sites    https://xorg.freedesktop.org/archive/individual/xserver/
 #master_sites    xorg:individual/xserver/
 
 distname        xorg-server-${version}
 
-checksums       rmd160  cad624e1d1ada0b46a76a1e5de6b12446f7c6dda \
-                sha256  fe0fd493ebe93bfc56bede382fa204458ff5f636ea54d413a5d1bd58e19166ee \
-                size    6123780
+checksums       rmd160  1b10aaa1cf48e9d7377f091826d5b5f97bec7eca \
+                sha256  977420c082450dc808de301ef56af4856d653eea71519a973c3490a780cb7c99 \
+                size    6307058
 
 use_bzip2       yes
 use_parallel_build yes
 
 # Yes, mesa is a *BUILD* dependency
-depends_build \
+depends_build-append \
         port:pkgconfig \
         port:mesa \
         port:xorg-xorgproto \
         port:xorg-xtrans
 
 # This xinit dependency needs to be port: not bin: because we specifically run ${prefix}/bin/startx from bundle-main.c
-depends_run \
+depends_run-append \
         port:xinit \
         port:quartz-wm \
         port:xorg-fonts \
         port:xkeyboard-config
 
-depends_lib \
+depends_lib-append \
         path:lib/pkgconfig/pixman-1.pc:libpixman \
         port:xorg-libxkbfile \
         port:xorg-libXfont \
@@ -53,7 +53,7 @@ depends_lib \
 # https://trac.macports.org/ticket/36055
 # https://llvm.org/bugs/show_bug.cgi?id=30346
 # https://trac.macports.org/ticket/53910
-compiler.blacklist gcc-4.0 macports-clang-3.9 macports-clang-devel {clang >= 802 < 900}
+compiler.blacklist gcc-4.0 macports-clang-devel {clang >= 802 < 900}
 
 configure.args --with-apple-applications-dir=${applications_dir} \
         --with-bundle-id-prefix=org.macports \
@@ -74,6 +74,7 @@ configure.env-append \
 
 patchfiles \
         0001-os-connection-Improve-abstraction-for-launchd-secure.patch \
+        0001-xquartz-Add-stub-ddxInputThread.patch \
         0002-randr-Initialize-RandR-even-if-there-are-currently-n.patch \
         0003-glx-Initialize-glx-even-if-there-are-currently-no-sc.patch \
         5000-sdksyms.sh-Use-CPPFLAGS-not-CFLAGS.patch \
@@ -87,9 +88,9 @@ patchfiles \
 # https://trac.macports.org/ticket/57333
 # another approach would be to update the port to build with gcc6+
 # patches to do that are in the above noted ticket/57333.
+# Edit: 5007 patch no longer needed with xorgproto 2019.1
 patchfiles-append \
-        5006-patch-xorg-server-dont-redefine-GLXscreen.diff \
-        5007-patch-randr-randrstr-h-dont-redefine-CARD32.diff
+        5006-patch-xorg-server-dont-redefine-GLXscreen.diff
 
 # Fixes what appears to be a mis-match in the way
 # hw/xquartz/GL/visualConfigs.c allocates __GLXconfig
@@ -103,6 +104,12 @@ patchfiles-append 5008-fix-calloc-free-mis-match-bug.patch
 # enables the automake option "subdir-objects" so that automake
 # doesn't complain about subdirectory *.in replacement files usage.
 patchfiles-append 2001-enable-automake-subdir-objects.patch
+
+# Workaround for Darwin19+
+# :info:build X11Application.m:431:17: error: use of undeclared identifier '_appFlags'
+# :info:build                 _appFlags._active = YES;
+# :info:build                 ^
+patchfiles-append Darwin19-Remove-AppFlags-Active-Hack.patch
 
 patch.pre_args -p1
 
@@ -128,6 +135,10 @@ platform macosx {
                 # Xplugin.h is missing on Tiger and incorrect on Leopard
                 configure.cppflags-append -I${filespath}/include
         }
+}
+
+variant xcsecurity description "Enable Security Extensions" {
+    configure.args-append  --enable-xcsecurity
 }
 
 variant docs description "Install extra documentation" {
@@ -160,5 +171,5 @@ variant docs description "Install extra documentation" {
 }
 
 livecheck.type  regex
-livecheck.url   http://xorg.freedesktop.org/archive/individual/xserver/?C=M&O=D
+livecheck.url   https://xorg.freedesktop.org/archive/individual/xserver/?C=M&O=D
 livecheck.regex ${name}-(\\d+\\.\\d+\\.\\d+)\\.tar

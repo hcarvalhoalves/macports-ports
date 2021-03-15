@@ -3,9 +3,9 @@
 PortSystem          1.0
 PortGroup           github 1.0
 
-github.setup        usbids usbids 97d0232c0e0e16e6d5d563ce7de4d654d238f129
+github.setup        usbids usbids 4190fb82389d167161c59594540706c943476c98
 name                usbids
-version             2019.04.23
+version             2020.01.09
 categories          sysutils
 platforms           darwin
 license             {GPL-2+ BSD}
@@ -21,9 +21,9 @@ long_description    This is a public repository of all known ID's used \
                     cryptic numeric codes.
 homepage            http://www.linux-usb.org/usb-ids.html
 
-checksums           rmd160  49b7b91e17e61a9faf056488db7e6fbdd3c556a8 \
-                    sha256  ff89a7e6cdb673fe9f6e3ee00c334668e76bc104de06f48c075f404368d14d5c \
-                    size    225339
+checksums           rmd160  2d368d1025b2abbf71cd000bef7944b960fb3447 \
+                    sha256  9894c0e457beaa1119f3b582832ed087e3a213641e30a66553a13c3c929a424d \
+                    size    226684
 
 use_configure       no
 build {}

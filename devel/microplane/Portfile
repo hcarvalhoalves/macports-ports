@@ -1,0 +1,39 @@
+# -*- coding: utf-8; mode: tcl; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- vim:fenc=utf-8:ft=tcl:et:sw=4:ts=4:sts=4
+
+PortSystem          1.0
+PortGroup           golang 1.0
+
+go.setup            github.com/Clever/microplane 0.0.26 v
+revision            0
+
+description         A CLI tool to make git changes across many repos, \
+                    especially useful with Microservices.
+
+long_description    {*}${description}
+
+maintainers         {gmail.com:herby.gillot @herbygillot} \
+                    openmaintainer
+
+categories          devel
+license             Apache-2
+platforms           darwin
+
+checksums           rmd160  92bbf3e27ddc5c211e7701540284ad4c9c0474e8 \
+                    sha256  e7c691a004d45352d303b7b797117da19c61218a18de264632d3b7d728cf9cbe \
+                    size    30519
+
+depends_build-append \
+                    port:dep
+
+build.cmd           make
+build.target        install_deps build
+use_parallel_build  no
+
+destroot {
+    xinstall -m 755 ${worksrcpath}/bin/mp ${destroot}${prefix}/bin/
+
+    set mp_doc_dir ${prefix}/share/doc/${name}
+
+    xinstall -d -m 755 ${destroot}${mp_doc_dir}
+    copy {*}[glob ${worksrcpath}/docs/*] ${destroot}${mp_doc_dir}/
+}

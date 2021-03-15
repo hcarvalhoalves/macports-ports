@@ -6,7 +6,7 @@ PortGroup           compiler_blacklist_versions 1.0
 PortGroup           meson 1.0
 PortGroup           muniversal 1.0
 
-github.setup        ebassi graphene 1.8.6
+github.setup        ebassi graphene 1.10.2
 license             Permissive
 categories          graphics gnome
 maintainers         {devans @dbevans} openmaintainer
@@ -17,9 +17,9 @@ description         A thin layer of graphic data types
 
 long_description    ${description}
 
-checksums           rmd160  3deafdd32e0d5aec94aad95a3e30438a805b872b \
-                    sha256  5df0eff2985e3d0e9a01d888f7112e3dbcd3adaf66fdc86e3f71df2a19c137e2 \
-                    size    160074
+checksums           rmd160  cd6d2ad814d126f0493ccc223ee1bdb4ad559571 \
+                    sha256  a9109334a65e377150a832f298bdf098291621b6b1c377dd5e68e6cce3b544b4 \
+                    size    174489
 
 depends_build-append \
                     port:pkgconfig
@@ -53,29 +53,24 @@ configure.args-append \
                     -Dtests=false \
                     -Dbenchmarks=false
 
-if {${build_arch} eq "i386" || ${build_arch} eq "x86_64"} {
+if {${build_arch} eq "arm64"} {
+    supported_archs     arm64
+} elseif {${build_arch} eq "i386" || ${build_arch} eq "x86_64"} {
     supported_archs     i386 x86_64
 } else {
     supported_archs     ppc ppc64
 }
 
+if {![info exists universal_possible]} {
+    set universal_possible [expr {${os.universal_supported} && [llength ${configure.universal_archs}] >= 2}]
+}
 # gobject-introspection uses g-ir-scanner, which uses $CC from env
-if {[variant_isset universal]} {
+if {${universal_possible} && [variant_isset universal]} {
     foreach arch ${configure.universal_archs} {
-        if {[vercmp [macports_version] 2.5.99] >= 0} {
         lappend merger_build_env(${arch})  "CC=${configure.cc} -arch ${arch}"
         lappend merger_destroot_env(${arch})  "CC=${configure.cc} -arch ${arch}"
-        } else {
-        lappend merger_build_env(${arch})  CC='${configure.cc} -arch ${arch}'
-        lappend merger_destroot_env(${arch})  CC='${configure.cc} -arch ${arch}'
-        }
     }
 } else {
-    if {[vercmp [macports_version] 2.5.99] >= 0} {
     build.env-append       "CC=${configure.cc} ${configure.cc_archflags}"
     destroot.env-append    "CC=${configure.cc} ${configure.cc_archflags}"
-    } else {
-    build.env-append       CC="${configure.cc} ${configure.cc_archflags}"
-    destroot.env-append    CC="${configure.cc} ${configure.cc_archflags}"
-    }
 }
